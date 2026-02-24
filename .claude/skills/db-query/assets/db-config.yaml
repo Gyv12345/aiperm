@@ -1,0 +1,13 @@
+# 数据库查询配置
+
+database:
+  # 数据库类型: sqlite | mysql
+  type: mysql
+
+  # MySQL 配置
+  mysql:
+    host: localhost
+    port: 3306
+    database: aiperm
+    user: root
+    password: ""
