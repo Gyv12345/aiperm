@@ -44,7 +44,8 @@ frontend/*.local
 
 # 根目录 node_modules（如果存在）
 /node_modules/
-package-lock.json
+/package.json
+/package-lock.json
 
 # 日志文件
 *.log
