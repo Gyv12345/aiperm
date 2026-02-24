@@ -100,3 +100,16 @@ logging:
   level:
     com.devlovecode.aiperm: debug
     com.baomidou.mybatisplus: debug
+
+# OSS 文件存储配置
+oss:
+  storage-type: local
+  local:
+    path: ./uploads
+    access-url: http://localhost:8080/files
+  aliyun:
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    access-key-id: your-access-key-id
+    access-key-secret: your-access-key-secret
+    bucket-name: your-bucket-name
+    access-url: https://your-bucket.oss-cn-hangzhou.aliyuncs.com

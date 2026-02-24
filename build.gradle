@@ -78,6 +78,11 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 
+    // 阿里云 OSS SDK（可选）
+    implementation('com.aliyun.oss:aliyun-sdk-oss:3.18.1') {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
