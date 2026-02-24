@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.devlovecode.aiperm.common.domain.PageResult;
@@ -47,7 +48,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     @Override
     public PageResult<SysRole> page(Long pageNum, Long pageSize, String roleName, String roleCode, Integer status) {
         Page<SysRole> page = new Page<>(pageNum, pageSize);
-        Page<SysRole> result = sysRoleMapper.selectRolePage(page, roleName, roleCode, status);
+        IPage<SysRole> result = sysRoleMapper.selectRolePage(page, roleName, roleCode, status);
         return PageResult.of(result);
     }
 
@@ -68,7 +69,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     public boolean update(SysRole role) {
         SysRole existRole = getById(role.getId());
         if (existRole == null) {
-            throw new BusinessException(ErrorCode.ROLE_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
         }
 
         // 内置角色不允许修改
@@ -92,7 +93,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     public boolean delete(Long roleId) {
         SysRole role = getById(roleId);
         if (role == null) {
-            throw new BusinessException(ErrorCode.ROLE_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
         }
 
         // 内置角色不允许删除

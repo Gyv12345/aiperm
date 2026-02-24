@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.devlovecode.aiperm.common.domain.PageResult;
@@ -64,7 +65,7 @@ public class SysPermissionServiceImpl extends ServiceImpl<SysPermissionMapper, S
     public PageResult<SysPermission> page(Long pageNum, Long pageSize, String permissionName, String permissionCode,
                                           Integer permissionType, Long menuId, Integer status) {
         Page<SysPermission> page = new Page<>(pageNum, pageSize);
-        Page<SysPermission> result = sysPermissionMapper.selectPermissionPage(page, permissionName, permissionCode,
+        IPage<SysPermission> result = sysPermissionMapper.selectPermissionPage(page, permissionName, permissionCode,
                 permissionType, menuId, status);
         return PageResult.of(result);
     }

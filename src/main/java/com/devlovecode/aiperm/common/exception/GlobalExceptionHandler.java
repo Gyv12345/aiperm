@@ -98,6 +98,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public R<Void> handleException(Exception e) {
         log.error("系统异常：", e);
-        return R.fail(ErrorCode.SERVER_ERROR.getCode(), "系统异常，请联系管理员");
+        return R.fail(ErrorCode.SYSTEM_ERROR.getCode(), "系统异常，请联系管理员");
     }
 }

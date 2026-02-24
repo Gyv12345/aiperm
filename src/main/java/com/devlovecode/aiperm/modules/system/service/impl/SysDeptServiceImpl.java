@@ -50,7 +50,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     public boolean update(SysDept dept) {
         SysDept existDept = getById(dept.getId());
         if (existDept == null) {
-            throw new BusinessException(ErrorCode.DEPT_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
         }
 
         // 检查是否将父部门设置为自己或自己的子部门
@@ -66,7 +66,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     public boolean delete(Long deptId) {
         SysDept dept = getById(deptId);
         if (dept == null) {
-            throw new BusinessException(ErrorCode.DEPT_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
         }
 
         // 检查是否有子部门

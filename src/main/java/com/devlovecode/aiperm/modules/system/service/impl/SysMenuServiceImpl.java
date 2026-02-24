@@ -67,7 +67,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     public boolean update(SysMenu menu) {
         SysMenu existMenu = getById(menu.getId());
         if (existMenu == null) {
-            throw new BusinessException(ErrorCode.MENU_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         }
 
         // 检查是否将父菜单设置为自己或自己的子菜单
@@ -83,7 +83,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     public boolean delete(Long menuId) {
         SysMenu menu = getById(menuId);
         if (menu == null) {
-            throw new BusinessException(ErrorCode.MENU_NOT_EXISTS);
+            throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         }
 
         // 检查是否有子菜单

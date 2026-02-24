@@ -27,12 +27,11 @@ repositories {
 ext {
     set('saTokenVersion', '1.39.0')
     set('mybatisPlusVersion', '3.5.9')
-    set('mapStructPlusVersion', '1.4.6')
+    set('mapStructPlusVersion', '1.4.8')
     set('dynamicDatasourceVersion', '4.3.1')
     set('hutoolVersion', '5.8.34')
-    set('fastExcelVersion', '1.0.0')
+    set('fastExcelVersion', '1.3.0')
     set('springDocVersion', '2.8.3')
-    set('commonUtilVersion', '8.0.0')
 }
 
 dependencies {
@@ -51,8 +50,8 @@ dependencies {
     implementation "com.baomidou:mybatis-plus-spring-boot3-starter:${mybatisPlusVersion}"
 
     // MapStruct-Plus 对象转换
-    implementation "io.github.icodening:mapstruct-plus-spring-boot-starter:${mapStructPlusVersion}"
-    annotationProcessor "io.github.icodening:mapstruct-plus-spring-boot-starter:${mapStructPlusVersion}"
+    implementation "io.github.linpeilie:mapstruct-plus-spring-boot-starter:${mapStructPlusVersion}"
+    annotationProcessor "io.github.linpeilie:mapstruct-plus-processor:${mapStructPlusVersion}"
 
     // Dynamic-Datasource 动态数据源
     implementation "com.baomidou:dynamic-datasource-spring-boot3-starter:${dynamicDatasourceVersion}"
@@ -61,13 +60,12 @@ dependencies {
     implementation "cn.hutool:hutool-all:${hutoolVersion}"
 
     // FastExcel
-    implementation "org.dhatim:fastexcel:${fastExcelVersion}"
+    implementation "cn.idev.excel:fastexcel:${fastExcelVersion}"
 
     // SpringDoc API文档
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
 
-    // CommonUtil (验证码等)
-    implementation "com.fhs-opensource:fhs-common-simple:${commonUtilVersion}"
+    // CommonUtil (验证码等) - 已移除
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

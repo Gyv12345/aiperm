@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.system.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.devlovecode.aiperm.common.domain.PageResult;
@@ -47,7 +48,7 @@ public class SysPostServiceImpl extends ServiceImpl<SysPostMapper, SysPost> impl
     @Override
     public PageResult<SysPost> page(Long pageNum, Long pageSize, String postName, String postCode, Integer status) {
         Page<SysPost> page = new Page<>(pageNum, pageSize);
-        Page<SysPost> result = sysPostMapper.selectPostPage(page, postName, postCode, status);
+        IPage<SysPost> result = sysPostMapper.selectPostPage(page, postName, postCode, status);
         return PageResult.of(result);
     }
 

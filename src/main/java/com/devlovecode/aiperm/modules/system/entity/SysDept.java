@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * 部门实体类
  *
@@ -49,4 +51,8 @@ public class SysDept extends BaseEntity {
     @Schema(description = "备注")
     @TableField("remark")
     private String remark;
+
+    @Schema(description = "子部门列表")
+    @TableField(exist = false)
+    private List<SysDept> children;
 }

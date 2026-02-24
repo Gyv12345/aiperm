@@ -1,4 +1,4 @@
-package com.devlovecode.aiperm.modules.system/entity;
+package com.devlovecode.aiperm.modules.system.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -6,6 +6,8 @@ import com.devlovecode.aiperm.common.domain.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * 菜单实体类
@@ -69,4 +71,8 @@ public class SysMenu extends BaseEntity {
     @Schema(description = "备注")
     @TableField("remark")
     private String remark;
+
+    @Schema(description = "子菜单列表")
+    @TableField(exist = false)
+    private List<SysMenu> children;
 }
