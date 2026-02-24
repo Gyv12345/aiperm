@@ -44,6 +44,10 @@ public class SysMenu extends BaseEntity {
     @TableField("component")
     private String component;
 
+    @Schema(description = "权限标识（按钮用，如 system:user:add）")
+    @TableField("perms")
+    private String perms;
+
     @Schema(description = "菜单图标")
     @TableField("icon")
     private String icon;

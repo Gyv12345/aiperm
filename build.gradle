@@ -74,6 +74,10 @@ dependencies {
     // Database Driver
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    // Flyway 数据库版本管理
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
