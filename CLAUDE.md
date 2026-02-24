@@ -261,3 +261,115 @@ cd frontend && pnpm run generate:api
 1. Redis 连接是否正常
 2. Token 是否过期（默认 30 天）
 3. 请求头是否包含 `Authorization`
+
+---
+
+## 后端开发规范（AI 必读）
+
+### 标准分层约定
+
+| 层 | 类名规范 | 继承/实现 |
+|----|---------|----------|
+| Entity | `SysXxx` | `extends BaseEntity`（common/domain） |
+| Mapper | `SysXxxMapper` | `extends BaseMapper<SysXxx>` + `@Mapper` |
+| Service 接口 | `ISysXxxService` | `extends IService<SysXxx>` |
+| Service 实现 | `SysXxxServiceImpl` | `extends ServiceImpl<Mapper, Entity>` + `@Service` |
+| Controller | `SysXxxController` | `@RestController @RequestMapping("/system/xxx")` |
+| 请求 DTO | `XxxCreateRequest` / `XxxUpdateRequest` | — |
+| 响应 VO | `XxxVO` | — |
+
+### 文件位置约定
+
+```
+modules/system/
+├── entity/        SysXxx.java
+├── mapper/        SysXxxMapper.java
+├── service/       ISysXxxService.java
+│   └── impl/      SysXxxServiceImpl.java
+├── controller/    SysXxxController.java
+├── dto/request/   XxxCreateRequest.java / XxxUpdateRequest.java
+└── vo/            XxxVO.java
+resources/mapper/system/SysXxxMapper.xml
+resources/db/migration/Vx.x.x__description.sql
+```
+
+### 新业务模块开发 7 步流程
+
+1. **建表** → 创建 `src/main/resources/db/migration/Vx.x.x__xxx.sql`（Flyway 自动执行）
+2. **Entity** → 继承 `BaseEntity`，加 `@TableName` `@Schema`
+3. **Mapper** → 继承 `BaseMapper`，加 `@Mapper`，建空 XML
+4. **Service** → 接口继承 `IService`，实现类继承 `ServiceImpl`
+5. **Controller** → 加 `@SaCheckLogin`，写操作加 `@Log` + `@SaCheckPermission`
+6. **DTO/VO** → 请求用 DTO（含 `@Valid` 注解），响应用 VO
+7. **前端生成** → `cd frontend && pnpm run generate:api`
+
+### 权限码约定
+
+格式：`模块:资源:操作`
+
+| 示例 | 说明 |
+|------|------|
+| `system:user:list` / `system:user:create` / `system:user:update` / `system:user:delete` | 用户管理 |
+| `system:role:list` / `system:role:create` | 角色管理 |
+| `system:dict:list` / `system:dict:create` / `system:dict:update` / `system:dict:delete` | 字典管理 |
+| `log:oper:list` / `log:oper:delete` | 操作日志 |
+| `oss:file:upload` / `oss:file:delete` | 文件管理 |
+
+### @Log 注解使用（每个写操作必须加）
+
+```java
+@Log(title = "用户管理", operType = OperType.CREATE)
+@PostMapping
+public R<Void> create(@RequestBody @Valid UserCreateRequest req) { ... }
+
+@Log(title = "用户管理", operType = OperType.UPDATE)
+@PutMapping("/{id}")
+public R<Void> update(@PathVariable Long id, @RequestBody @Valid UserUpdateRequest req) { ... }
+
+@Log(title = "用户管理", operType = OperType.DELETE)
+@DeleteMapping("/{id}")
+public R<Void> delete(@PathVariable Long id) { ... }
+```
+
+### MapStruct-Plus 对象转换
+
+使用 `@AutoMapper` 注解 + `Converter` bean（不要手写 mapper 接口）：
+
+```java
+// 在 Entity 或 VO 类上加 @AutoMapper
+@AutoMapper(target = UserVO.class)
+public class SysUser extends BaseEntity { ... }
+
+// 在 Service/Controller 中注入 Converter 使用
+@Autowired
+private Converter converter;
+
+UserVO vo = converter.convert(user, UserVO.class);
+List<UserVO> voList = converter.convert(userList, UserVO.class);
+```
+
+### OSS 上传使用示例
+
+```java
+@Autowired
+private OssService ossService;
+
+OssResult result = ossService.upload(multipartFile);
+String fileUrl = result.getUrl();      // 完整访问地址
+String fileName = result.getFileName(); // 存储文件名（用于删除）
+
+ossService.delete(fileName);
+```
+
+### 新增业务模块检查清单
+
+开发新模块前必须逐项确认：
+
+- [ ] 参照 `modules/system/entity/SysDictType.java` 及其相关文件作为模板
+- [ ] 建表 SQL 写入新 Flyway 迁移文件 `Vx.x.x__描述.sql`
+- [ ] Entity 继承 `BaseEntity`，加 `@TableName` `@Schema`
+- [ ] Controller 加 `@SaCheckLogin` + 方法级 `@SaCheckPermission`
+- [ ] Controller 每个写操作加 `@Log(title = "模块名", operType = OperType.xxx)`
+- [ ] 依赖注入使用 `@RequiredArgsConstructor` + `private final`，禁止 `@Autowired`
+- [ ] 后端完成后运行 `cd frontend && pnpm run generate:api`
+- [ ] 前端使用生成的 API 函数，禁止手写 axios 调用
