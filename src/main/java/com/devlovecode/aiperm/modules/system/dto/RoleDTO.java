@@ -23,14 +23,6 @@ public class RoleDTO {
     @Schema(description = "每页条数", example = "10")
     private Integer pageSize = 10;
 
-    @JsonView(Views.Query.class)
-    @Schema(description = "角色名称（模糊查询）")
-    private String roleName;
-
-    @JsonView(Views.Query.class)
-    @Schema(description = "角色编码（模糊查询）")
-    private String roleCode;
-
     // ========== 业务字段 ==========
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})

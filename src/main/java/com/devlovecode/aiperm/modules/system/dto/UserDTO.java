@@ -21,18 +21,6 @@ public class UserDTO {
     @Schema(description = "每页条数", example = "10")
     private Integer pageSize = 10;
 
-    @JsonView(Views.Query.class)
-    @Schema(description = "用户名（模糊查询）")
-    private String username;
-
-    @JsonView(Views.Query.class)
-    @Schema(description = "手机号（模糊查询）")
-    private String phone;
-
-    @JsonView(Views.Query.class)
-    @Schema(description = "部门ID")
-    private Long deptId;
-
     // ========== 业务字段 ==========
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
@@ -62,7 +50,7 @@ public class UserDTO {
     @Size(max = 100, message = "邮箱不能超过100个字符")
     private String email;
 
-    @JsonView({Views.Create.class, Views.Update.class})
+    @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
     @Schema(description = "手机号码")
     @Size(max = 20, message = "手机号码不能超过20个字符")
     private String phone;

@@ -21,14 +21,6 @@ public class PostDTO {
     @Schema(description = "每页条数", example = "10")
     private Integer pageSize = 10;
 
-    @JsonView(Views.Query.class)
-    @Schema(description = "岗位名称（模糊查询）")
-    private String postName;
-
-    @JsonView(Views.Query.class)
-    @Schema(description = "岗位编码（模糊查询）")
-    private String postCode;
-
     // ========== 业务字段 ==========
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})

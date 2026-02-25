@@ -3,7 +3,7 @@ package com.devlovecode.aiperm.modules.log.listener;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.aspect.LogEvent;
 import com.devlovecode.aiperm.modules.log.entity.SysOperLog;
-import com.devlovecode.aiperm.modules.log.service.ISysOperLogService;
+import com.devlovecode.aiperm.modules.log.repository.OperLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class LogEventListener {
 
-    private final ISysOperLogService operLogService;
+    private final OperLogRepository operLogRepo;
 
     @Async
     @EventListener
@@ -44,7 +44,7 @@ public class LogEventListener {
                 operLog.setOperUser("anonymous");
             }
 
-            operLogService.save(operLog);
+            operLogRepo.insert(operLog);
         } catch (Exception e) {
             log.error("保存操作日志失败", e);
         }

@@ -1,13 +1,13 @@
 package com.devlovecode.aiperm.modules.system.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepo;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
      * 分页查询
@@ -44,7 +43,7 @@ public class UserService {
 
         SysUser entity = new SysUser();
         entity.setUsername(dto.getUsername());
-        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        entity.setPassword(BCrypt.hashpw(dto.getPassword()));
         entity.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getUsername());
         entity.setRealName(dto.getRealName());
         entity.setEmail(dto.getEmail());
@@ -112,7 +111,7 @@ public class UserService {
         if (!userRepo.existsById(id)) {
             throw new BusinessException("用户不存在");
         }
-        userRepo.updatePassword(id, passwordEncoder.encode(newPassword));
+        userRepo.updatePassword(id, BCrypt.hashpw(newPassword));
     }
 
     /**

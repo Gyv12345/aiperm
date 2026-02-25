@@ -1,7 +1,5 @@
 package com.devlovecode.aiperm.common.domain;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -70,37 +68,5 @@ public class PageResult<T> implements Serializable {
                 .map(mapper)
                 .collect(Collectors.toList());
         return of(this.total, mappedList, this.pageNum, this.pageSize);
-    }
-
-    // ========== 临时兼容方法（Task 6 后删除）==========
-
-    /**
-     * 将MyBatis-Plus的Page对象转换为PageResult
-     * @deprecated 将在 Task 6 后移除
-     */
-    @Deprecated
-    public static <T> PageResult<T> of(Page<T> page) {
-        PageResult<T> result = new PageResult<>();
-        result.setTotal(page.getTotal());
-        result.setList(page.getRecords());
-        result.setPageNum(page.getCurrent());
-        result.setPageSize(page.getSize());
-        result.setPages(page.getPages());
-        return result;
-    }
-
-    /**
-     * 将MyBatis-Plus的IPage对象转换为PageResult
-     * @deprecated 将在 Task 6 后移除
-     */
-    @Deprecated
-    public static <T> PageResult<T> of(IPage<T> page) {
-        PageResult<T> result = new PageResult<>();
-        result.setTotal(page.getTotal());
-        result.setList(page.getRecords());
-        result.setPageNum(page.getCurrent());
-        result.setPageSize(page.getSize());
-        result.setPages(page.getPages());
-        return result;
     }
 }
