@@ -8,7 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 分页结果封装
@@ -40,8 +43,42 @@ public class PageResult<T> implements Serializable {
     private Long pages;
 
     /**
-     * 将MyBatis-Plus的Page对象转换为PageResult
+     * 构建分页结果
      */
+    public static <T> PageResult<T> of(Long total, List<T> list, Long pageNum, Long pageSize) {
+        PageResult<T> result = new PageResult<>();
+        result.setTotal(total);
+        result.setList(list);
+        result.setPageNum(pageNum);
+        result.setPageSize(pageSize);
+        result.setPages(pageSize > 0 ? (total + pageSize - 1) / pageSize : 0L);
+        return result;
+    }
+
+    /**
+     * 构建空分页结果
+     */
+    public static <T> PageResult<T> empty(Long pageNum, Long pageSize) {
+        return of(0L, Collections.emptyList(), pageNum, pageSize);
+    }
+
+    /**
+     * 转换列表元素类型
+     */
+    public <R> PageResult<R> map(Function<T, R> mapper) {
+        List<R> mappedList = this.list.stream()
+                .map(mapper)
+                .collect(Collectors.toList());
+        return of(this.total, mappedList, this.pageNum, this.pageSize);
+    }
+
+    // ========== 临时兼容方法（Task 6 后删除）==========
+
+    /**
+     * 将MyBatis-Plus的Page对象转换为PageResult
+     * @deprecated 将在 Task 6 后移除
+     */
+    @Deprecated
     public static <T> PageResult<T> of(Page<T> page) {
         PageResult<T> result = new PageResult<>();
         result.setTotal(page.getTotal());
@@ -54,7 +91,9 @@ public class PageResult<T> implements Serializable {
 
     /**
      * 将MyBatis-Plus的IPage对象转换为PageResult
+     * @deprecated 将在 Task 6 后移除
      */
+    @Deprecated
     public static <T> PageResult<T> of(IPage<T> page) {
         PageResult<T> result = new PageResult<>();
         result.setTotal(page.getTotal());
@@ -62,19 +101,6 @@ public class PageResult<T> implements Serializable {
         result.setPageNum(page.getCurrent());
         result.setPageSize(page.getSize());
         result.setPages(page.getPages());
-        return result;
-    }
-
-    /**
-     * 构建分页结果
-     */
-    public static <T> PageResult<T> of(Long total, List<T> list, Long pageNum, Long pageSize) {
-        PageResult<T> result = new PageResult<>();
-        result.setTotal(total);
-        result.setList(list);
-        result.setPageNum(pageNum);
-        result.setPageSize(pageSize);
-        result.setPages((total + pageSize - 1) / pageSize);
         return result;
     }
 }
