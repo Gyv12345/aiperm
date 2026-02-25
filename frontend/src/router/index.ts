@@ -1,7 +1,14 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+  type Router,
+} from 'vue-router'
 import type { App } from 'vue'
+import { useUserStore } from '@/stores/user'
 
-const routes: RouteRecordRaw[] = [
+// 路由配置
+export const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
@@ -28,33 +35,65 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-      component: () => import('@/views/error/404.vue'),
+    component: () => import('@/views/error/404.vue'),
     meta: {
       title: '404',
     },
   },
 ]
 
-const router = createRouter({
+// 创建路由实例
+const router: Router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+  routes: constantRoutes,
+  scrollBehavior: () => ({ top: 0 }),
 })
 
-// 路由守卫
-router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('access_token')
-  const requiresAuth = to.meta.requiresAuth !== false
+// 白名单路由（不需要登录）
+const whiteList = ['/login', '/404']
 
-  if (requiresAuth && !token) {
-    next('/login')
-  } else if (to.path === '/login' && token) {
-    next('/dashboard')
-  } else {
-    next()
-  }
-})
+// 设置路由守卫
+function setupRouterGuard(router: Router) {
+  router.beforeEach((to, _from, next) => {
+    // 获取用户 store（必须在路由守卫内部获取，确保 Pinia 已初始化）
+    const userStore = useUserStore()
+    const token = userStore.token
+    const requiresAuth = to.meta.requiresAuth !== false
 
+    // 设置页面标题
+    document.title = `${to.meta.title ?? 'AIPerm'} - 权限管理系统`
+
+    if (token) {
+      // 已登录
+      if (to.path === '/login') {
+        // 登录页跳转到首页
+        next('/dashboard')
+      }
+      else {
+        next()
+      }
+    }
+    else {
+      // 未登录
+      if (whiteList.includes(to.path) || !requiresAuth) {
+        // 白名单或不需要认证的页面
+        next()
+      }
+      else {
+        // 跳转到登录页
+        next(`/login?redirect=${to.path}`)
+      }
+    }
+  })
+
+  router.afterEach(() => {
+    // 路由切换后可以做一些处理，如关闭 loading
+  })
+}
+
+// 初始化路由
 export function setupRouter(app: App) {
+  setupRouterGuard(router)
   app.use(router)
 }
 

@@ -1,0 +1,49 @@
+package com.devlovecode.aiperm.modules.system.entity;
+
+import com.devlovecode.aiperm.common.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
+
+/**
+ * 用户实体类
+ *
+ * @author devlovecode
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class SysUser extends BaseEntity {
+
+    private String username;
+
+    @JsonIgnore
+    private String password;
+
+    private String nickname;
+
+    private String realName;
+
+    private String email;
+
+    private String phone;
+
+    private Integer gender;
+
+    private String avatar;
+
+    private Long deptId;
+
+    private String postIds;
+
+    private String roleIds;
+
+    private Integer status;
+
+    private String remark;
+
+    private String lastLoginIp;
+
+    private LocalDateTime lastLoginTime;
+}
