@@ -33,6 +33,24 @@ export const constantRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/system/dept',
+    name: 'Dept',
+    component: () => import('@/views/system/dept/index.vue'),
+    meta: {
+      title: '部门管理',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/system/post',
+    name: 'Post',
+    component: () => import('@/views/system/post/index.vue'),
+    meta: {
+      title: '岗位管理',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

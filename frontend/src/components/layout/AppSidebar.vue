@@ -15,6 +15,7 @@ const menuItems = [
   { path: '/system/permission', icon: 'Lock', title: '权限管理' },
   { path: '/system/menu', icon: 'Menu', title: '菜单管理' },
   { path: '/system/dept', icon: 'OfficeBuilding', title: '部门管理' },
+  { path: '/system/post', icon: 'Briefcase', title: '岗位管理' },
   { path: '/system/dict', icon: 'Collection', title: '字典管理' },
 ] as const
 
