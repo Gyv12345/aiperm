@@ -2,12 +2,12 @@ package com.devlovecode.aiperm.modules.log.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.devlovecode.aiperm.common.annotation.Log;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.common.enums.OperType;
 import com.devlovecode.aiperm.modules.log.entity.SysOperLog;
-import com.devlovecode.aiperm.modules.log.service.ISysOperLogService;
+import com.devlovecode.aiperm.modules.log.service.OperLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,44 +15,39 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "操作日志管理")
 @RestController
-@RequestMapping("/system/oper-log")
+@RequestMapping("/log/oper")
 @SaCheckLogin
 @RequiredArgsConstructor
 public class SysOperLogController {
 
-    private final ISysOperLogService operLogService;
+    private final OperLogService operLogService;
 
     @Operation(summary = "分页查询操作日志")
     @SaCheckPermission("log:oper:list")
-    @GetMapping("/page")
+    @GetMapping
     public R<PageResult<SysOperLog>> page(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Integer status) {
-
-        LambdaQueryWrapper<SysOperLog> wrapper = new LambdaQueryWrapper<SysOperLog>()
-                .like(title != null, SysOperLog::getTitle, title)
-                .eq(status != null, SysOperLog::getStatus, status)
-                .orderByDesc(SysOperLog::getCreateTime);
-
-        Page<SysOperLog> pageResult = operLogService.page(new Page<>(page, pageSize), wrapper);
-        return R.ok(PageResult.of(pageResult));
+        return R.ok(operLogService.queryPage(title, status, page, pageSize));
     }
 
     @Operation(summary = "删除操作日志")
     @SaCheckPermission("log:oper:delete")
+    @Log(title = "操作日志管理", operType = OperType.DELETE)
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
-        operLogService.removeById(id);
+        operLogService.delete(id);
         return R.ok();
     }
 
     @Operation(summary = "清空操作日志")
     @SaCheckPermission("log:oper:delete")
+    @Log(title = "操作日志管理", operType = OperType.DELETE)
     @DeleteMapping("/clean")
     public R<Void> clean() {
-        operLogService.remove(null);
+        operLogService.clean();
         return R.ok();
     }
 }
