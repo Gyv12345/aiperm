@@ -8,6 +8,7 @@ import 'uno.css'
 
 import App from './App.vue'
 import { setupRouter } from './router'
+import permissionDirectives from './directives/permission'
 
 const app = createApp(App)
 
@@ -22,6 +23,11 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(ElementPlus)
+
+// 注册权限指令
+app.directive('permission', permissionDirectives.permission)
+app.directive('role', permissionDirectives.role)
+
 setupRouter(app)
 
 app.mount('#app')

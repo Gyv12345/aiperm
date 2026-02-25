@@ -6,14 +6,10 @@ import {
 } from 'vue-router'
 import type { App } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { usePermissionStore } from '@/stores/permission'
 
-// 路由配置
+// 静态路由（不需要权限）
 export const constantRoutes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    name: 'Home',
-    redirect: '/dashboard',
-  },
   {
     path: '/login',
     name: 'Login',
@@ -24,52 +20,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/dashboard/index.vue'),
-    meta: {
-      title: '仪表板',
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/system/dept',
-    name: 'Dept',
-    component: () => import('@/views/system/dept/index.vue'),
-    meta: {
-      title: '部门管理',
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/system/post',
-    name: 'Post',
-    component: () => import('@/views/system/post/index.vue'),
-    meta: {
-      title: '岗位管理',
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/enterprise/notice',
-    name: 'Notice',
-    component: () => import('@/views/enterprise/notice/index.vue'),
-    meta: {
-      title: '公告通知',
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/enterprise/message',
-    name: 'Message',
-    component: () => import('@/views/enterprise/message/index.vue'),
-    meta: {
-      title: '消息中心',
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/:pathMatch(.*)*',
+    path: '/404',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
     meta: {
@@ -85,45 +36,77 @@ const router: Router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-// 白名单路由（不需要登录）
+// 白名单路由
 const whiteList = ['/login', '/404']
 
 // 设置路由守卫
 function setupRouterGuard(router: Router) {
-  router.beforeEach((to, _from, next) => {
-    // 获取用户 store（必须在路由守卫内部获取，确保 Pinia 已初始化）
+  router.beforeEach(async (to, from, next) => {
     const userStore = useUserStore()
+    const permissionStore = usePermissionStore()
     const token = userStore.token
-    const requiresAuth = to.meta.requiresAuth !== false
 
     // 设置页面标题
     document.title = `${to.meta.title ?? 'AIPerm'} - 权限管理系统`
 
-    if (token) {
-      // 已登录
-      if (to.path === '/login') {
-        // 登录页跳转到首页
-        next('/dashboard')
-      }
-      else {
-        next()
-      }
-    }
-    else {
-      // 未登录
-      if (whiteList.includes(to.path) || !requiresAuth) {
-        // 白名单或不需要认证的页面
+    // 未登录
+    if (!token) {
+      if (whiteList.includes(to.path)) {
         next()
       }
       else {
-        // 跳转到登录页
         next(`/login?redirect=${to.path}`)
       }
+      return
+    }
+
+    // 已登录访问登录页
+    if (to.path === '/login') {
+      next('/dashboard')
+      return
+    }
+
+    // 路由已加载
+    if (permissionStore.isRoutesLoaded) {
+      next()
+      return
+    }
+
+    // 动态加载路由
+    try {
+      // 1. 获取用户信息
+      await userStore.fetchUserInfo()
+
+      // 2. 获取菜单
+      await permissionStore.fetchMenus()
+
+      // 3. 生成路由
+      const routes = permissionStore.generateRoutes()
+
+      // 4. 动态添加路由
+      routes.forEach((route) => {
+        router.addRoute(route)
+      })
+
+      // 5. 添加 404 兜底路由（必须最后添加）
+      router.addRoute({
+        path: '/:pathMatch(.*)*',
+        redirect: '/404',
+      })
+
+      // 6. 重新导航
+      next({ ...to, replace: true })
+    }
+    catch (error) {
+      console.error('Failed to load routes:', error)
+      // 加载失败，清除 token 并跳转登录
+      userStore.logout()
+      next(`/login?redirect=${to.path}`)
     }
   })
 
   router.afterEach(() => {
-    // 路由切换后可以做一些处理，如关闭 loading
+    // 路由切换后处理
   })
 }
 

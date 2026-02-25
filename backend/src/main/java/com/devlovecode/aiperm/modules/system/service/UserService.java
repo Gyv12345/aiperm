@@ -51,8 +51,7 @@ public class UserService {
         entity.setGender(dto.getGender() != null ? dto.getGender() : 0);
         entity.setAvatar(dto.getAvatar());
         entity.setDeptId(dto.getDeptId());
-        entity.setPostIds(dto.getPostIds());
-        entity.setRoleIds(dto.getRoleIds());
+        entity.setPostId(dto.getPostId());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
@@ -80,8 +79,7 @@ public class UserService {
         entity.setGender(dto.getGender());
         entity.setAvatar(dto.getAvatar());
         entity.setDeptId(dto.getDeptId());
-        entity.setPostIds(dto.getPostIds());
-        entity.setRoleIds(dto.getRoleIds());
+        entity.setPostId(dto.getPostId());
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());

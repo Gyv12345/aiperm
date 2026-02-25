@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
+import { authControllerInfo } from '@/api/generated'
 
 export interface UserInfo {
   id: number
@@ -35,19 +36,43 @@ export const useUserStore = defineStore(
       userInfo.value = info
     }
 
+    // 从后端获取用户信息
+    async function fetchUserInfo() {
+      try {
+        const { data } = await authControllerInfo()
+        userInfo.value = {
+          id: data.id,
+          username: data.username,
+          nickname: data.nickname,
+          avatar: data.avatar,
+          roles: data.roles,
+          permissions: data.permissions,
+        }
+        return userInfo.value
+      }
+      catch (error) {
+        console.error('Failed to fetch user info:', error)
+        throw error
+      }
+    }
+
     // 检查是否有指定角色
     function hasRole(role: string): boolean {
       return roles.value.includes(role)
     }
 
-    // 检查是否有指定权限
+    // 检查是否有指定权限（超级管理员拥有所有权限）
     function hasPermission(permission: string): boolean {
+      // 超级管理员拥有所有权限
+      if (permissions.value.includes('*')) {
+        return true
+      }
       return permissions.value.includes(permission)
     }
 
     // 检查是否有任一权限
     function hasAnyPermission(permissionList: string[]): boolean {
-      return permissionList.some((p) => permissions.value.includes(p))
+      return permissionList.some(p => hasPermission(p))
     }
 
     // 登出
@@ -68,6 +93,7 @@ export const useUserStore = defineStore(
       // 方法
       setToken,
       setUserInfo,
+      fetchUserInfo,
       hasRole,
       hasPermission,
       hasAnyPermission,

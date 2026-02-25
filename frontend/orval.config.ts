@@ -19,7 +19,7 @@ export default defineConfig({
       },
     },
     input: {
-      target: 'http://localhost:8080/api/v3/api-docs',
+      target: 'http://localhost:8080/v3/api-docs',
     },
   },
 })

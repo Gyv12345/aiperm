@@ -24,9 +24,9 @@ public class UserRepository extends BaseRepository<SysUser> {
     public void insert(SysUser entity) {
         String sql = """
             INSERT INTO sys_user (username, password, nickname, real_name, email, phone, gender, avatar,
-                dept_id, post_ids, role_ids, status, remark, deleted, version, create_time, create_by)
+                dept_id, post_id, is_admin, status, remark, deleted, version, create_time, create_by)
             VALUES (:username, :password, :nickname, :realName, :email, :phone, :gender, :avatar,
-                :deptId, :postIds, :roleIds, :status, :remark, 0, 0, :createTime, :createBy)
+                :deptId, :postId, :isAdmin, :status, :remark, 0, 0, :createTime, :createBy)
             """;
         db.sql(sql)
                 .param("username", entity.getUsername())
@@ -38,8 +38,8 @@ public class UserRepository extends BaseRepository<SysUser> {
                 .param("gender", entity.getGender())
                 .param("avatar", entity.getAvatar())
                 .param("deptId", entity.getDeptId())
-                .param("postIds", entity.getPostIds())
-                .param("roleIds", entity.getRoleIds())
+                .param("postId", entity.getPostId())
+                .param("isAdmin", entity.getIsAdmin())
                 .param("status", entity.getStatus())
                 .param("remark", entity.getRemark())
                 .param("createTime", LocalDateTime.now())
@@ -54,8 +54,8 @@ public class UserRepository extends BaseRepository<SysUser> {
         String sql = """
             UPDATE sys_user
             SET nickname = :nickname, real_name = :realName, email = :email, phone = :phone,
-                gender = :gender, avatar = :avatar, dept_id = :deptId, post_ids = :postIds,
-                role_ids = :roleIds, status = :status, remark = :remark,
+                gender = :gender, avatar = :avatar, dept_id = :deptId, post_id = :postId,
+                is_admin = :isAdmin, status = :status, remark = :remark,
                 update_time = :updateTime, update_by = :updateBy
             WHERE id = :id AND deleted = 0
             """;
@@ -67,8 +67,8 @@ public class UserRepository extends BaseRepository<SysUser> {
                 .param("gender", entity.getGender())
                 .param("avatar", entity.getAvatar())
                 .param("deptId", entity.getDeptId())
-                .param("postIds", entity.getPostIds())
-                .param("roleIds", entity.getRoleIds())
+                .param("postId", entity.getPostId())
+                .param("isAdmin", entity.getIsAdmin())
                 .param("status", entity.getStatus())
                 .param("remark", entity.getRemark())
                 .param("updateTime", LocalDateTime.now())

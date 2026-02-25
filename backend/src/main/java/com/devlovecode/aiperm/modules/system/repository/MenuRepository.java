@@ -130,4 +130,50 @@ public class MenuRepository extends BaseRepository<SysMenu> {
                 .single();
         return count != null && count > 0;
     }
+
+    /**
+     * 根据用户ID查询菜单ID列表（通过角色关联）
+     */
+    public List<Long> findMenuIdsByUserId(Long userId) {
+        String sql = """
+            SELECT DISTINCT rm.menu_id
+            FROM sys_role_menu rm
+            INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+            WHERE ur.user_id = :userId
+            """;
+        return db.sql(sql)
+                .param("userId", userId)
+                .query(Long.class)
+                .list();
+    }
+
+    /**
+     * 根据菜单ID列表查询菜单（启用状态）
+     */
+    public List<SysMenu> findByIds(List<Long> menuIds) {
+        if (menuIds == null || menuIds.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", menuIds.stream().map(String::valueOf).toArray(String[]::new));
+        String sql = String.format(
+                "SELECT * FROM sys_menu WHERE id IN (%s) AND status = 1 AND deleted = 0 ORDER BY parent_id ASC, sort ASC",
+                placeholders
+        );
+        return db.sql(sql).query(SysMenu.class).list();
+    }
+
+    /**
+     * 查询所有启用的菜单（用于超级管理员）
+     */
+    public List<SysMenu> findAllEnabled() {
+        String sql = "SELECT * FROM sys_menu WHERE status = 1 AND deleted = 0 ORDER BY parent_id ASC, sort ASC";
+        return db.sql(sql).query(SysMenu.class).list();
+    }
+
+    /**
+     * 获取 JdbcClient（供其他服务使用）
+     */
+    public JdbcClient getJdbcClient() {
+        return this.db;
+    }
 }

@@ -7,13 +7,17 @@
  */
 import type {
   ChangeStatusParams,
-  Delete9Params,
+  ConfigDTO,
+  Delete11Params,
   DeptDTO,
   DictDataDTO,
   DictTypeDTO,
+  JobDTO,
   List1Params,
   List3Params,
   List4Params,
+  List5Params,
+  List6Params,
   ListByDictTypeParams,
   LoginRequest,
   MenuDTO,
@@ -26,8 +30,10 @@ import type {
   PostDTO,
   PublishedParams,
   RCaptchaVO,
+  RConfigVO,
   RDictTypeVO,
   RInteger,
+  RJobVO,
   RListDictDataVO,
   RListDictTypeVO,
   RListLong,
@@ -42,7 +48,9 @@ import type {
   RMessageVO,
   RNoticeVO,
   ROssResult,
+  RPageResultConfigVO,
   RPageResultDictTypeVO,
+  RPageResultJobVO,
   RPageResultMessageVO,
   RPageResultNoticeVO,
   RPageResultSysOperLog,
@@ -458,6 +466,108 @@ const markAllAsRead = (
     }
   
 /**
+ * @summary 查询定时任务详情
+ */
+const detail2 = (
+    id: number,
+ ) => {
+      return customFetch<RJobVO>(
+      {url: `/enterprise/job/${id}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * @summary 更新定时任务
+ */
+const update8 = (
+    id: number,
+    jobDTO: JobDTO,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/job/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: jobDTO
+    },
+      );
+    }
+  
+/**
+ * @summary 删除定时任务
+ */
+const delete8 = (
+    id: number,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/job/${id}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * @summary 恢复定时任务
+ */
+const resume = (
+    id: number,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/job/${id}/resume`, method: 'PUT'
+    },
+      );
+    }
+  
+/**
+ * @summary 暂停定时任务
+ */
+const pause = (
+    id: number,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/job/${id}/pause`, method: 'PUT'
+    },
+      );
+    }
+  
+/**
+ * @summary 查询系统配置详情
+ */
+const detail3 = (
+    id: number,
+ ) => {
+      return customFetch<RConfigVO>(
+      {url: `/enterprise/config/${id}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * @summary 更新系统配置
+ */
+const update9 = (
+    id: number,
+    configDTO: ConfigDTO,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/config/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: configDTO
+    },
+      );
+    }
+  
+/**
+ * @summary 删除系统配置
+ */
+const delete9 = (
+    id: number,
+ ) => {
+      return customFetch<RVoid>(
+      {url: `/enterprise/config/${id}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
  * @summary 分页查询用户列表
  */
 const page = (
@@ -727,6 +837,60 @@ const send = (
     }
   
 /**
+ * @summary 分页查询定时任务
+ */
+const list5 = (
+    params: List5Params,
+ ) => {
+      return customFetch<RPageResultJobVO>(
+      {url: `/enterprise/job`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * @summary 创建定时任务
+ */
+const create8 = (
+    jobDTO: JobDTO,
+ ) => {
+      return customFetch<RLong>(
+      {url: `/enterprise/job`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: jobDTO
+    },
+      );
+    }
+  
+/**
+ * @summary 分页查询系统配置
+ */
+const list6 = (
+    params: List6Params,
+ ) => {
+      return customFetch<RPageResultConfigVO>(
+      {url: `/enterprise/config`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * @summary 创建系统配置
+ */
+const create9 = (
+    configDTO: ConfigDTO,
+ ) => {
+      return customFetch<RLong>(
+      {url: `/enterprise/config`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: configDTO
+    },
+      );
+    }
+  
+/**
  * @summary 登出
  */
 const logout = (
@@ -755,7 +919,7 @@ const login = (
 /**
  * @summary 查询所有角色
  */
-const list5 = (
+const list7 = (
     
  ) => {
       return customFetch<RListSysRole>(
@@ -767,7 +931,7 @@ const list5 = (
 /**
  * @summary 查询所有岗位
  */
-const list6 = (
+const list8 = (
     
  ) => {
       return customFetch<RListSysPost>(
@@ -878,7 +1042,7 @@ const published = (
 /**
  * @summary 查询消息详情
  */
-const detail2 = (
+const detail4 = (
     id: number,
  ) => {
       return customFetch<RMessageVO>(
@@ -890,7 +1054,7 @@ const detail2 = (
 /**
  * @summary 删除消息
  */
-const delete8 = (
+const delete10 = (
     id: number,
  ) => {
       return customFetch<RVoid>(
@@ -907,6 +1071,18 @@ const unreadCount = (
  ) => {
       return customFetch<RInteger>(
       {url: `/enterprise/message/unread-count`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * @summary 根据配置键查询
+ */
+const getByKey = (
+    configKey: string,
+ ) => {
+      return customFetch<RConfigVO>(
+      {url: `/enterprise/config/key/${configKey}`, method: 'GET'
     },
       );
     }
@@ -938,8 +1114,8 @@ const captcha = (
 /**
  * @summary 删除文件
  */
-const delete9 = (
-    params: Delete9Params,
+const delete11 = (
+    params: Delete11Params,
  ) => {
       return customFetch<RVoid>(
       {url: `/oss`, method: 'DELETE',
@@ -951,7 +1127,7 @@ const delete9 = (
 /**
  * @summary 删除操作日志
  */
-const delete10 = (
+const delete12 = (
     id: number,
  ) => {
       return customFetch<RVoid>(
@@ -972,7 +1148,7 @@ const clean = (
       );
     }
   
-return {getById,update,_delete,changeStatus,resetPassword,getById1,update1,delete1,getById2,update2,delete2,getById3,update3,delete3,detail,update4,delete4,update5,delete5,getById4,update6,delete6,detail1,update7,delete7,withdraw,publish,markAsRead,markAsReadByIds,markAllAsRead,page,create,page1,create1,getRoleMenus,assignMenus,page2,create2,list,create3,list1,create4,create5,list2,create6,upload,list3,create7,list4,send,logout,login,list5,list6,tree,getChildren,all,listByDictType,tree1,getChildren1,page3,published,detail2,delete8,unreadCount,userInfo,captcha,delete9,delete10,clean}};
+return {getById,update,_delete,changeStatus,resetPassword,getById1,update1,delete1,getById2,update2,delete2,getById3,update3,delete3,detail,update4,delete4,update5,delete5,getById4,update6,delete6,detail1,update7,delete7,withdraw,publish,markAsRead,markAsReadByIds,markAllAsRead,detail2,update8,delete8,resume,pause,detail3,update9,delete9,page,create,page1,create1,getRoleMenus,assignMenus,page2,create2,list,create3,list1,create4,create5,list2,create6,upload,list3,create7,list4,send,list5,create8,list6,create9,logout,login,list7,list8,tree,getChildren,all,listByDictType,tree1,getChildren1,page3,published,detail4,delete10,unreadCount,getByKey,userInfo,captcha,delete11,delete12,clean}};
 export type GetByIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['getById']>>>
 export type UpdateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['update']>>>
 export type _DeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['_delete']>>>
@@ -1003,6 +1179,14 @@ export type PublishResult = NonNullable<Awaited<ReturnType<ReturnType<typeof get
 export type MarkAsReadResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['markAsRead']>>>
 export type MarkAsReadByIdsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['markAsReadByIds']>>>
 export type MarkAllAsReadResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['markAllAsRead']>>>
+export type Detail2Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['detail2']>>>
+export type Update8Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['update8']>>>
+export type Delete8Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete8']>>>
+export type ResumeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['resume']>>>
+export type PauseResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['pause']>>>
+export type Detail3Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['detail3']>>>
+export type Update9Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['update9']>>>
+export type Delete9Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete9']>>>
 export type PageResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['page']>>>
 export type CreateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['create']>>>
 export type Page1Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['page1']>>>
@@ -1023,10 +1207,14 @@ export type List3Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAi
 export type Create7Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['create7']>>>
 export type List4Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list4']>>>
 export type SendResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['send']>>>
+export type List5Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list5']>>>
+export type Create8Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['create8']>>>
+export type List6Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list6']>>>
+export type Create9Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['create9']>>>
 export type LogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['logout']>>>
 export type LoginResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['login']>>>
-export type List5Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list5']>>>
-export type List6Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list6']>>>
+export type List7Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list7']>>>
+export type List8Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['list8']>>>
 export type TreeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['tree']>>>
 export type GetChildrenResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['getChildren']>>>
 export type AllResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['all']>>>
@@ -1035,11 +1223,12 @@ export type Tree1Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAi
 export type GetChildren1Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['getChildren1']>>>
 export type Page3Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['page3']>>>
 export type PublishedResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['published']>>>
-export type Detail2Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['detail2']>>>
-export type Delete8Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete8']>>>
+export type Detail4Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['detail4']>>>
+export type Delete10Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete10']>>>
 export type UnreadCountResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['unreadCount']>>>
+export type GetByKeyResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['getByKey']>>>
 export type UserInfoResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['userInfo']>>>
 export type CaptchaResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['captcha']>>>
-export type Delete9Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete9']>>>
-export type Delete10Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete10']>>>
+export type Delete11Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete11']>>>
+export type Delete12Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['delete12']>>>
 export type CleanResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAiPermRBACAPI>['clean']>>>

@@ -21,7 +21,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        // 排除登录接口
+                        // 排除认证相关接口
                         "/auth/login",
                         "/auth/captcha",
                         // 排除Swagger相关

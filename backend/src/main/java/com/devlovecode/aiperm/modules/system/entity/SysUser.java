@@ -35,9 +35,9 @@ public class SysUser extends BaseEntity {
 
     private Long deptId;
 
-    private String postIds;
+    private Long postId;
 
-    private String roleIds;
+    private Integer isAdmin;
 
     private Integer status;
 

@@ -1,28 +1,35 @@
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Picture } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { getAiPermRBACAPI } from '@/api/generated'
+import type { LoginRequest, CaptchaVO } from '@/models'
 
 const router = useRouter()
 const userStore = useUserStore()
+const api = getAiPermRBACAPI()
 
 // 表单引用
 const formRef = ref<FormInstance>()
 
 // 表单数据
-const loginForm = reactive({
+const loginForm = reactive<LoginRequest>({
   username: '',
   password: '',
-  rememberMe: false,
+  captcha: '',
+  captchaKey: '',
+})
+
+// 验证码数据
+const captchaData = ref<CaptchaVO>({
+  captchaKey: '',
+  captchaImage: '',
 })
 
 // 加载状态
 const loading = ref(false)
-
-// 密码可见性
-const passwordVisible = ref(false)
 
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
@@ -34,7 +41,31 @@ const rules = computed<FormRules>(() => ({
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度为 6-20 个字符', trigger: 'blur' },
   ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { min: 4, max: 4, message: '验证码为 4 位字符', trigger: 'blur' },
+  ],
 }))
+
+// 获取验证码
+async function fetchCaptcha() {
+  try {
+    const response = await api.captcha() as any
+    // API 返回 { data: RCaptchaVO }，验证码数据在 data.data 中
+    const captchaInfo = response.data?.data
+    if (captchaInfo) {
+      captchaData.value = {
+        captchaKey: captchaInfo.captchaKey || '',
+        captchaImage: captchaInfo.captchaImage || '',
+      }
+      loginForm.captchaKey = captchaInfo.captchaKey || ''
+    }
+  }
+  catch (error) {
+    console.error('获取验证码失败:', error)
+    ElMessage.error('获取验证码失败，请刷新页面')
+  }
+}
 
 // 处理登录
 async function handleLogin() {
@@ -45,46 +76,50 @@ async function handleLogin() {
     await formRef.value.validate()
     loading.value = true
 
-    // TODO: 调用实际的登录 API
-    // const { authControllerLogin } = getScrmApi()
-    // const res = await authControllerLogin(loginForm)
-    // userStore.setToken(res.data.token)
-    // userStore.setUserInfo(res.data.userInfo)
+    const response = await api.login(loginForm) as any
+    // API 返回 { data: RLoginVO }，登录数据在 data.data 中
+    const loginData = response.data?.data
 
-    // Mock 登录逻辑（待替换为真实 API）
-    await mockLogin()
-    ElMessage.success('登录成功')
-    router.push('/dashboard')
+    if (loginData) {
+      // 保存 token
+      userStore.setToken(loginData.token || '')
+
+      // 保存用户信息
+      if (loginData.userInfo) {
+        userStore.setUserInfo({
+          id: loginData.userInfo.id || 0,
+          username: loginData.userInfo.username || '',
+          nickname: loginData.userInfo.nickname || '',
+          roles: ['admin'],
+          permissions: ['*'],
+        })
+      }
+
+      ElMessage.success('登录成功')
+      router.push('/dashboard')
+    }
   }
-  catch (error) {
+  catch (error: any) {
     console.error('登录失败:', error)
+    // 刷新验证码
+    fetchCaptcha()
+    loginForm.captcha = ''
   }
   finally {
     loading.value = false
   }
 }
 
-// Mock 登录（开发阶段使用）
-function mockLogin() {
-  return new Promise<void>((resolve) => {
-    setTimeout(() => {
-      userStore.setToken('mock-token-' + Date.now())
-      userStore.setUserInfo({
-        id: 1,
-        username: loginForm.username,
-        nickname: '管理员',
-        roles: ['admin'],
-        permissions: ['*'],
-      })
-      resolve()
-    }, 800)
-  })
-}
-
 // 重置表单
 function resetForm() {
   formRef.value?.resetFields()
+  fetchCaptcha()
 }
+
+// 页面加载时获取验证码
+onMounted(() => {
+  fetchCaptcha()
+})
 </script>
 
 <template>
@@ -121,22 +156,39 @@ function resetForm() {
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
-            :type="passwordVisible ? 'text' : 'password'"
+            type="password"
             placeholder="请输入密码"
             :prefix-icon="Lock"
             show-password
-            @change="passwordVisible = !passwordVisible"
           />
         </el-form-item>
 
-        <el-form-item>
-          <div class="flex justify-between w-full">
-            <el-checkbox v-model="loginForm.rememberMe">
-              记住我
-            </el-checkbox>
-            <el-link type="primary" :underline="false">
-              忘记密码？
-            </el-link>
+        <el-form-item prop="captcha">
+          <div class="flex w-full gap-2">
+            <el-input
+              v-model="loginForm.captcha"
+              placeholder="请输入验证码"
+              :prefix-icon="Picture"
+              clearable
+              class="flex-1"
+            />
+            <div
+              class="captcha-box cursor-pointer"
+              @click="fetchCaptcha"
+            >
+              <img
+                v-if="captchaData.captchaImage"
+                :src="captchaData.captchaImage"
+                alt="验证码"
+                class="h-10 w-24 object-contain"
+              >
+              <div
+                v-else
+                class="h-10 w-24 bg-gray-100 flex items-center justify-center text-xs text-gray-400"
+              >
+                点击刷新
+              </div>
+            </div>
           </div>
         </el-form-item>
 
@@ -160,6 +212,10 @@ function resetForm() {
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="text-center text-xs text-gray-400 mt-4">
+        默认账号: admin / admin123
+      </div>
     </el-card>
   </div>
 </template>
@@ -172,5 +228,16 @@ function resetForm() {
 .login-card {
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);
+}
+
+.captcha-box {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.captcha-box:hover {
+  border-color: #409eff;
 }
 </style>

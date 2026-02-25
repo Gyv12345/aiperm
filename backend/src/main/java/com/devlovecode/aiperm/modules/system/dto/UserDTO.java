@@ -69,12 +69,8 @@ public class UserDTO {
     private Long deptId;
 
     @JsonView({Views.Create.class, Views.Update.class})
-    @Schema(description = "岗位ID列表（逗号分隔）")
-    private String postIds;
-
-    @JsonView({Views.Create.class, Views.Update.class})
-    @Schema(description = "角色ID列表（逗号分隔）")
-    private String roleIds;
+    @Schema(description = "岗位ID")
+    private Long postId;
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
     @Schema(description = "用户状态（0=正常，1=停用）")

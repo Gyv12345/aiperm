@@ -32,7 +32,8 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token')
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      // Sa-Token 默认直接读取 token 值，不需要 Bearer 前缀
+      config.headers.Authorization = token
     }
     return config
   },
@@ -123,5 +124,7 @@ axiosInstance.interceptors.response.use(
   },
 )
 
-// 导出给 Orval 使用
-export const customFetch = axiosInstance
+// 导出给 Orval 使用的 mutator 函数
+export const customFetch = <T>(config: InternalAxiosRequestConfig): Promise<T> => {
+  return axiosInstance.request<any, T>(config)
+}
