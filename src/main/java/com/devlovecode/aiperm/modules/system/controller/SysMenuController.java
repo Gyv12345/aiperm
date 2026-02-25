@@ -1,89 +1,84 @@
 package com.devlovecode.aiperm.modules.system.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.devlovecode.aiperm.common.annotation.Log;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.common.domain.Views;
+import com.devlovecode.aiperm.common.enums.OperType;
+import com.devlovecode.aiperm.modules.system.dto.MenuDTO;
 import com.devlovecode.aiperm.modules.system.entity.SysMenu;
-import com.devlovecode.aiperm.modules.system.service.ISysMenuService;
+import com.devlovecode.aiperm.modules.system.service.MenuService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-/**
- * 菜单控制器
- *
- * @author devlovecode
- */
-@Slf4j
+@Tag(name = "菜单管理")
 @RestController
-@RequestMapping("/api/system/menu")
+@RequestMapping("/system/menu")
+@SaCheckLogin
 @RequiredArgsConstructor
-@Tag(name = "菜单管理", description = "菜单相关接口")
-@Validated
 public class SysMenuController {
 
-    private final ISysMenuService sysMenuService;
+    private final MenuService menuService;
 
-    @GetMapping("/tree")
     @Operation(summary = "查询菜单树")
     @SaCheckPermission("system:menu:list")
+    @GetMapping("/tree")
     public R<List<SysMenu>> tree() {
-        List<SysMenu> tree = sysMenuService.getMenuTree();
-        return R.ok(tree);
+        return R.ok(menuService.getMenuTree());
     }
 
-    @GetMapping("/list")
     @Operation(summary = "查询所有菜单")
     @SaCheckPermission("system:menu:list")
+    @GetMapping
     public R<List<SysMenu>> list() {
-        List<SysMenu> list = sysMenuService.list();
-        return R.ok(list);
+        return R.ok(menuService.listAll());
     }
 
-    @GetMapping("/{id}")
     @Operation(summary = "根据ID查询菜单")
-    @SaCheckPermission("system:menu:query")
-    public R<SysMenu> getById(@Parameter(description = "菜单ID") @PathVariable("id") @NotNull Long id) {
-        SysMenu menu = sysMenuService.getById(id);
-        return R.ok(menu);
+    @SaCheckPermission("system:menu:list")
+    @GetMapping("/{id}")
+    public R<SysMenu> getById(@PathVariable Long id) {
+        return R.ok(menuService.findById(id));
     }
 
-    @GetMapping("/children/{parentId}")
     @Operation(summary = "查询子菜单列表")
     @SaCheckPermission("system:menu:list")
-    public R<List<SysMenu>> getChildren(@Parameter(description = "父菜单ID") @PathVariable("parentId") @NotNull Long parentId) {
-        List<SysMenu> children = sysMenuService.listByParentId(parentId);
-        return R.ok(children);
+    @GetMapping("/children/{parentId}")
+    public R<List<SysMenu>> getChildren(@PathVariable Long parentId) {
+        return R.ok(menuService.listByParentId(parentId));
     }
 
-    @PostMapping
     @Operation(summary = "创建菜单")
-    @SaCheckPermission("system:menu:add")
-    public R<Void> create(@Valid @RequestBody SysMenu menu) {
-        boolean success = sysMenuService.create(menu);
-        return success ? R.ok() : R.fail();
+    @SaCheckPermission("system:menu:create")
+    @Log(title = "菜单管理", operType = OperType.CREATE)
+    @PostMapping
+    public R<Void> create(@RequestBody @Validated({Default.class, Views.Create.class}) MenuDTO dto) {
+        menuService.create(dto);
+        return R.ok();
     }
 
-    @PutMapping
     @Operation(summary = "更新菜单")
-    @SaCheckPermission("system:menu:edit")
-    public R<Void> update(@Valid @RequestBody SysMenu menu) {
-        boolean success = sysMenuService.update(menu);
-        return success ? R.ok() : R.fail();
+    @SaCheckPermission("system:menu:update")
+    @Log(title = "菜单管理", operType = OperType.UPDATE)
+    @PutMapping("/{id}")
+    public R<Void> update(@PathVariable Long id, @RequestBody @Validated({Default.class, Views.Update.class}) MenuDTO dto) {
+        menuService.update(id, dto);
+        return R.ok();
     }
 
-    @DeleteMapping("/{id}")
     @Operation(summary = "删除菜单")
-    @SaCheckPermission("system:menu:remove")
-    public R<Void> delete(@Parameter(description = "菜单ID") @PathVariable("id") @NotNull Long id) {
-        boolean success = sysMenuService.delete(id);
-        return success ? R.ok() : R.fail();
+    @SaCheckPermission("system:menu:delete")
+    @Log(title = "菜单管理", operType = OperType.DELETE)
+    @DeleteMapping("/{id}")
+    public R<Void> delete(@PathVariable Long id) {
+        menuService.delete(id);
+        return R.ok();
     }
 }
