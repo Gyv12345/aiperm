@@ -5,16 +5,19 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.devlovecode.aiperm.common.annotation.Log;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.common.domain.Views;
 import com.devlovecode.aiperm.common.enums.OperType;
-import com.devlovecode.aiperm.modules.system.dto.request.DictTypeCreateRequest;
-import com.devlovecode.aiperm.modules.system.dto.request.DictTypeUpdateRequest;
-import com.devlovecode.aiperm.modules.system.entity.SysDictType;
-import com.devlovecode.aiperm.modules.system.service.ISysDictTypeService;
+import com.devlovecode.aiperm.modules.system.dto.DictTypeDTO;
+import com.devlovecode.aiperm.modules.system.service.DictTypeService;
+import com.devlovecode.aiperm.modules.system.vo.DictTypeVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "字典类型管理")
 @RestController
@@ -23,51 +26,45 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SysDictTypeController {
 
-    private final ISysDictTypeService dictTypeService;
+    private final DictTypeService dictTypeService;
 
     @Operation(summary = "分页查询字典类型")
     @SaCheckPermission("system:dict:list")
-    @GetMapping("/page")
-    public R<PageResult<SysDictType>> page(
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String dictName,
-            @RequestParam(required = false) String dictType) {
-        return R.ok(dictTypeService.page(page, pageSize, dictName, dictType));
+    @Log(title = "字典类型管理", operType = OperType.QUERY)
+    @GetMapping
+    public R<PageResult<DictTypeVO>> list(@Validated({Default.class, Views.Query.class}) DictTypeDTO dto) {
+        return R.ok(dictTypeService.queryPage(dto));
     }
 
-    @Operation(summary = "根据ID查询字典类型")
+    @Operation(summary = "查询所有启用的字典类型")
+    @SaCheckPermission("system:dict:list")
+    @GetMapping("/all")
+    public R<List<DictTypeVO>> all() {
+        return R.ok(dictTypeService.findAllEnabled());
+    }
+
+    @Operation(summary = "查询字典类型详情")
     @SaCheckPermission("system:dict:list")
     @GetMapping("/{id}")
-    public R<SysDictType> getById(@PathVariable Long id) {
-        return R.ok(dictTypeService.getById(id));
+    public R<DictTypeVO> detail(@PathVariable Long id) {
+        return R.ok(dictTypeService.findById(id));
     }
 
     @Operation(summary = "创建字典类型")
     @SaCheckPermission("system:dict:create")
     @Log(title = "字典类型管理", operType = OperType.CREATE)
     @PostMapping
-    public R<Void> create(@Valid @RequestBody DictTypeCreateRequest req) {
-        SysDictType dictType = new SysDictType();
-        dictType.setDictName(req.getDictName());
-        dictType.setDictType(req.getDictType());
-        dictType.setRemark(req.getRemark());
-        dictType.setStatus(1);
-        dictTypeService.create(dictType);
-        return R.ok();
+    public R<Long> create(@RequestBody @Validated({Default.class, Views.Create.class}) DictTypeDTO dto) {
+        return R.ok(dictTypeService.create(dto));
     }
 
     @Operation(summary = "更新字典类型")
     @SaCheckPermission("system:dict:update")
     @Log(title = "字典类型管理", operType = OperType.UPDATE)
-    @PutMapping
-    public R<Void> update(@Valid @RequestBody DictTypeUpdateRequest req) {
-        SysDictType dictType = new SysDictType();
-        dictType.setId(req.getId());
-        dictType.setDictName(req.getDictName());
-        dictType.setStatus(req.getStatus());
-        dictType.setRemark(req.getRemark());
-        dictTypeService.update(dictType);
+    @PutMapping("/{id}")
+    public R<Void> update(@PathVariable Long id,
+                          @RequestBody @Validated({Default.class, Views.Update.class}) DictTypeDTO dto) {
+        dictTypeService.update(id, dto);
         return R.ok();
     }
 
