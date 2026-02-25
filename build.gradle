@@ -68,6 +68,9 @@ dependencies {
     // Database Driver
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    // Apache Commons Pool2（Sa-Token alone-redis 需要）
+    implementation 'org.apache.commons:commons-pool2'
+
     // Flyway 数据库版本管理
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
