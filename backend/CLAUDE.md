@@ -9,6 +9,7 @@
 | Java | 21 | 编程语言 |
 | Spring Boot | 3.5.11 | 基础框架 |
 | Sa-Token | 1.44.0 | 权限认证 |
+| Spring JdbcClient | - | 数据库操作（替代 MyBatis-Plus） |
 | MySQL | 8.x | 关系数据库 |
 | Redis | 7.x | 缓存/Session |
 | Flyway | - | 数据库版本管理 |
@@ -22,10 +23,10 @@ backend/src/main/java/com/devlovecode/aiperm/
 ├── common/                     # 公共组件
 │   ├── annotation/             # 注解（@Log）
 │   ├── aspect/                 # 切面（LogAspect）
-│   ├── domain/                 # 基础类（BaseEntity, R, PageResult）
+│   ├── domain/                 # 基础类（BaseEntity, R, PageResult, Views）
 │   ├── enums/                  # 枚举（ErrorCode, OperType）
 │   ├── exception/              # 异常（BusinessException, GlobalExceptionHandler）
-│   └── repository/             # 基础 Repository
+│   └── repository/             # 基础 Repository（BaseRepository, SqlBuilder）
 ├── config/                     # 配置类
 │   ├── SaTokenConfig.java      # Sa-Token 配置
 │   └── WebMvcConfig.java       # Web MVC 配置
@@ -40,13 +41,12 @@ backend/src/main/java/com/devlovecode/aiperm/
 
 | 层 | 类名规范 | 继承/实现 | 注解 |
 |----|---------|----------|------|
-| Entity | `SysXxx` | `extends BaseEntity` | `@TableName("sys_xxx")` |
+| Entity | `SysXxx` | `extends BaseEntity` | 无需注解 |
 | Repository | `XxxRepository` | `extends BaseRepository<Xxx>` | `@Repository` |
 | Service | `XxxService` | - | `@Service` |
 | Controller | `SysXxxController` | - | `@RestController` |
-| 请求 DTO | `XxxCreateRequest` / `XxxUpdateRequest` / `XxxQueryRequest` | - | 含 `@Valid` 注解 |
-| 响应 VO | `XxxVO` | - | - |
-| DTO | `XxxDTO` | - | 内部数据传输 |
+| DTO | `XxxDTO` | - | 含 `@JsonView` 和验证注解 |
+| VO | `XxxVO` | - | - |
 
 ## 文件位置约定
 
@@ -56,7 +56,6 @@ modules/system/
 ├── repository/                 XxxRepository.java
 ├── service/                    XxxService.java
 ├── controller/                 SysXxxController.java
-├── dto/request/                XxxCreateRequest.java
 ├── dto/                        XxxDTO.java
 └── vo/                         XxxVO.java
 
@@ -65,7 +64,7 @@ resources/
 └── application.yaml
 ```
 
-## 新业务模块开发 7 步流程
+## 新业务模块开发 6 步流程
 
 ### 1. 建表
 
@@ -74,21 +73,27 @@ resources/
 ```sql
 CREATE TABLE sys_xxx (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    -- 业务字段
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted TINYINT DEFAULT 0
-);
+    name VARCHAR(100) NOT NULL COMMENT '名称',
+    status INT DEFAULT 1 COMMENT '状态',
+    remark VARCHAR(500) COMMENT '备注',
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    create_by VARCHAR(50),
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    update_by VARCHAR(50)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ### 2. Entity
 
 ```java
 @Data
-@TableName("sys_xxx")
+@EqualsAndHashCode(callSuper = true)
 public class SysXxx extends BaseEntity {
-    private Long id;
-    // 业务字段
+    private String name;
+    private Integer status;
+    private String remark;
 }
 ```
 
@@ -97,8 +102,58 @@ public class SysXxx extends BaseEntity {
 ```java
 @Repository
 public class XxxRepository extends BaseRepository<SysXxx> {
+
+    public XxxRepository(JdbcClient db) {
+        super(db, "sys_xxx", SysXxx.class);
+    }
+
+    public void insert(SysXxx entity) {
+        String sql = """
+            INSERT INTO sys_xxx (name, status, remark, deleted, version, create_time, create_by)
+            VALUES (:name, :status, :remark, 0, 0, :createTime, :createBy)
+            """;
+        db.sql(sql)
+                .param("name", entity.getName())
+                .param("status", entity.getStatus())
+                .param("remark", entity.getRemark())
+                .param("createTime", LocalDateTime.now())
+                .param("createBy", entity.getCreateBy())
+                .update();
+    }
+
+    public int update(SysXxx entity) {
+        String sql = """
+            UPDATE sys_xxx
+            SET name = :name, status = :status, remark = :remark,
+                update_time = :updateTime, update_by = :updateBy
+            WHERE id = :id AND deleted = 0
+            """;
+        return db.sql(sql)
+                .param("name", entity.getName())
+                .param("status", entity.getStatus())
+                .param("remark", entity.getRemark())
+                .param("updateTime", LocalDateTime.now())
+                .param("updateBy", entity.getUpdateBy())
+                .param("id", entity.getId())
+                .update();
+    }
+
+    public PageResult<SysXxx> queryPage(String name, Integer status, int pageNum, int pageSize) {
+        SqlBuilder sb = new SqlBuilder();
+        sb.likeIf(name != null && !name.isBlank(), "name", name)
+          .whereIf(status != null, "status = ?", status);
+        return queryPage(sb.getWhereClause(), sb.getParams(), pageNum, pageSize);
+    }
 }
 ```
+
+**BaseRepository 提供的方法：**
+- `findById(Long id)` - 根据 ID 查询
+- `findAll()` - 查询所有
+- `deleteById(Long id)` - 软删除
+- `count()` - 统计总数
+- `existsById(Long id)` - 检查是否存在
+- `queryPage(...)` - 通用分页查询
 
 ### 4. Service
 
@@ -106,11 +161,65 @@ public class XxxRepository extends BaseRepository<SysXxx> {
 @Service
 @RequiredArgsConstructor
 public class XxxService {
-    private final XxxRepository xxxRepository;
-    private final Converter converter;
+    private final XxxRepository xxxRepo;
 
-    public List<XxxVO> findAll(XxxQueryRequest req) {
-        // 实现逻辑
+    public PageResult<XxxVO> queryPage(XxxDTO dto) {
+        PageResult<SysXxx> result = xxxRepo.queryPage(
+                dto.getName(), dto.getStatus(),
+                dto.getPage(), dto.getPageSize()
+        );
+        return result.map(this::toVO);
+    }
+
+    public XxxVO findById(Long id) {
+        return xxxRepo.findById(id)
+                .map(this::toVO)
+                .orElseThrow(() -> new BusinessException("数据不存在"));
+    }
+
+    @Transactional
+    public Long create(XxxDTO dto) {
+        SysXxx entity = new SysXxx();
+        entity.setName(dto.getName());
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+        entity.setRemark(dto.getRemark());
+        entity.setCreateBy(getCurrentUsername());
+        xxxRepo.insert(entity);
+        return entity.getId();
+    }
+
+    @Transactional
+    public void update(Long id, XxxDTO dto) {
+        SysXxx entity = xxxRepo.findById(id)
+                .orElseThrow(() -> new BusinessException("数据不存在"));
+        entity.setName(dto.getName());
+        entity.setStatus(dto.getStatus());
+        entity.setRemark(dto.getRemark());
+        entity.setUpdateBy(getCurrentUsername());
+        xxxRepo.update(entity);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        xxxRepo.deleteById(id);
+    }
+
+    private XxxVO toVO(SysXxx entity) {
+        XxxVO vo = new XxxVO();
+        vo.setId(entity.getId());
+        vo.setName(entity.getName());
+        vo.setStatus(entity.getStatus());
+        vo.setRemark(entity.getRemark());
+        vo.setCreateTime(entity.getCreateTime());
+        return vo;
+    }
+
+    private String getCurrentUsername() {
+        try {
+            return StpUtil.getLoginIdAsString();
+        } catch (Exception e) {
+            return "system";
+        }
     }
 }
 ```
@@ -118,23 +227,46 @@ public class XxxService {
 ### 5. Controller
 
 ```java
+@Tag(name = "xxx管理")
 @RestController
 @RequestMapping("/system/xxx")
-@RequiredArgsConstructor
 @SaCheckLogin
+@RequiredArgsConstructor
 public class SysXxxController {
     private final XxxService xxxService;
 
+    @Operation(summary = "分页查询")
+    @SaCheckPermission("system:xxx:list")
+    @Log(title = "xxx管理", operType = OperType.QUERY)
     @GetMapping
-    public R<PageResult<XxxVO>> list(XxxQueryRequest req) {
-        return R.ok(xxxService.findAll(req));
+    public R<PageResult<XxxVO>> list(@Validated({Default.class, Views.Query.class}) XxxDTO dto) {
+        return R.ok(xxxService.queryPage(dto));
     }
 
-    @PostMapping
+    @Operation(summary = "创建")
     @SaCheckPermission("system:xxx:create")
-    @Log(title = "Xxx管理", operType = OperType.CREATE)
-    public R<Void> create(@RequestBody @Valid XxxCreateRequest req) {
-        xxxService.create(req);
+    @Log(title = "xxx管理", operType = OperType.CREATE)
+    @PostMapping
+    public R<Long> create(@RequestBody @Validated({Default.class, Views.Create.class}) XxxDTO dto) {
+        return R.ok(xxxService.create(dto));
+    }
+
+    @Operation(summary = "更新")
+    @SaCheckPermission("system:xxx:update")
+    @Log(title = "xxx管理", operType = OperType.UPDATE)
+    @PutMapping("/{id}")
+    public R<Void> update(@PathVariable Long id,
+                          @RequestBody @Validated({Default.class, Views.Update.class}) XxxDTO dto) {
+        xxxService.update(id, dto);
+        return R.ok();
+    }
+
+    @Operation(summary = "删除")
+    @SaCheckPermission("system:xxx:delete")
+    @Log(title = "xxx管理", operType = OperType.DELETE)
+    @DeleteMapping("/{id}")
+    public R<Void> delete(@PathVariable Long id) {
+        xxxService.delete(id);
         return R.ok();
     }
 }
@@ -143,26 +275,48 @@ public class SysXxxController {
 ### 6. DTO/VO
 
 ```java
-// 请求 DTO
+// DTO
 @Data
-public class XxxCreateRequest {
-    @NotBlank(message = "名称不能为空")
+@Schema(description = "xxx数据")
+public class XxxDTO {
+    @JsonView(Views.Query.class)
+    private Integer page = 1;
+
+    @JsonView(Views.Query.class)
+    private Integer pageSize = 10;
+
+    @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
+    @NotBlank(message = "名称不能为空", groups = {Views.Create.class, Views.Update.class})
     private String name;
+
+    @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
+    private Integer status;
+
+    @JsonView({Views.Create.class, Views.Update.class})
+    private String remark;
 }
 
-// 响应 VO
+// VO
 @Data
 public class XxxVO {
     private Long id;
     private String name;
-    private LocalDateTime createdAt;
+    private Integer status;
+    private String remark;
+    private LocalDateTime createTime;
 }
 ```
 
-### 7. 前端生成
+## SqlBuilder 使用
 
-```bash
-cd frontend && pnpm run generate:api
+```java
+SqlBuilder sb = new SqlBuilder();
+sb.likeIf(name != null, "name", name);           // LIKE 模糊查询
+sb.whereIf(status != null, "status = ?", status); // 精确条件
+sb.inIf(ids != null, "id", ids);                  // IN 条件
+
+String whereClause = sb.getWhereClause();  // 获取 WHERE 子句
+List<Object> params = sb.getParams();      // 获取参数列表
 ```
 
 ## 权限注解使用
@@ -171,7 +325,6 @@ cd frontend && pnpm run generate:api
 @SaCheckLogin                              // 检查登录
 @SaCheckRole("admin")                      // 检查角色
 @SaCheckPermission("system:user:create")   // 检查权限
-@SaCheckPermission(value = {"user:update", "user:delete"}, mode = SaMode.OR)  // 满足任一
 ```
 
 ## 权限码约定
@@ -186,83 +339,50 @@ cd frontend && pnpm run generate:api
 | `log:oper:list/delete` | 操作日志 |
 | `oss:file:upload/delete` | 文件管理 |
 
-## @Log 注解使用（每个写操作必须加）
+## @Log 注解使用
 
 ```java
-@Log(title = "用户管理", operType = OperType.CREATE)
-@PostMapping
-public R<Void> create(@RequestBody @Valid XxxCreateRequest req) { ... }
-
-@Log(title = "用户管理", operType = OperType.UPDATE)
-@PutMapping("/{id}")
-public R<Void> update(@PathVariable Long id, @RequestBody @Valid XxxUpdateRequest req) { ... }
-
-@Log(title = "用户管理", operType = OperType.DELETE)
-@DeleteMapping("/{id}")
-public R<Void> delete(@PathVariable Long id) { ... }
+@Log(title = "用户管理", operType = OperType.QUERY)   // 查询
+@Log(title = "用户管理", operType = OperType.CREATE)  // 新增
+@Log(title = "用户管理", operType = OperType.UPDATE)  // 修改
+@Log(title = "用户管理", operType = OperType.DELETE)  // 删除
 ```
 
 ## 依赖注入规范
 
-**必须使用构造函数注入，禁止 `@Autowired` 字段注入：**
+**必须使用构造函数注入：**
 
 ```java
-// 正确做法
+// 正确
 @Service
 @RequiredArgsConstructor
 public class XxxService {
-    private final XxxRepository xxxRepository;
-    private final Converter converter;
+    private final XxxRepository xxxRepo;
 }
 
-// 错误做法（禁止）
+// 禁止
 @Service
 public class XxxService {
     @Autowired
-    private XxxRepository xxxRepository;
+    private XxxRepository xxxRepo;
 }
 ```
 
 ## 统一响应格式
 
 ```java
-// 成功响应
-return R.ok(data);
-return R.ok();
-
-// 分页响应
-return R.ok(PageResult.of(list, total));
-
-// 失败响应
-throw new BusinessException(ErrorCode.PARAM_ERROR, "参数错误");
-```
-
-## OSS 文件上传使用
-
-```java
-@Service
-@RequiredArgsConstructor
-public class XxxService {
-    private final OssService ossService;
-
-    public String upload(MultipartFile file) {
-        OssResult result = ossService.upload(file);
-        return result.getUrl();        // 完整访问地址
-    }
-
-    public void deleteFile(String fileName) {
-        ossService.delete(fileName);   // 删除文件
-    }
-}
+R.ok(data)                        // 成功响应
+R.ok()                            // 成功无数据
+PageResult.of(total, list, page, pageSize)  // 分页
+result.map(this::toVO)            // 分页转换
 ```
 
 ## 开发检查清单
 
-开发新模块前必须逐项确认：
-
 - [ ] 建表 SQL 写入 Flyway 迁移文件
-- [ ] Entity 继承 `BaseEntity`
+- [ ] Entity 继承 `BaseEntity`（无需注解）
+- [ ] Repository 继承 `BaseRepository`
 - [ ] Controller 类加 `@SaCheckLogin`
 - [ ] 写操作加 `@Log` + `@SaCheckPermission`
-- [ ] 依赖注入使用 `@RequiredArgsConstructor` + `private final`
-- [ ] 参照 `modules/system/entity/SysDictType.java` 及相关文件作为模板
+- [ ] 依赖注入使用 `@RequiredArgsConstructor`
+- [ ] 参照 `modules/system/entity/SysDictType.java` 作为模板
