@@ -51,6 +51,24 @@ export const constantRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/enterprise/notice',
+    name: 'Notice',
+    component: () => import('@/views/enterprise/notice/index.vue'),
+    meta: {
+      title: '公告通知',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/enterprise/message',
+    name: 'Message',
+    component: () => import('@/views/enterprise/message/index.vue'),
+    meta: {
+      title: '消息中心',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
