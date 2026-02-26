@@ -24,6 +24,9 @@ onMounted(async () => {
   try {
     options.value = await dictApi.dataList(props.dictType)
   }
+  catch {
+    options.value = []
+  }
   finally {
     loading.value = false
   }
@@ -31,16 +34,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <el-radio-group
-    v-model="model"
-    :disabled="disabled"
-  >
-    <el-radio
-      v-for="item in options"
-      :key="item.dictValue"
-      :value="item.dictValue"
+  <div v-loading="loading">
+    <el-radio-group
+      v-model="model"
+      :disabled="disabled"
     >
-      {{ item.dictLabel }}
-    </el-radio>
-  </el-radio-group>
+      <el-radio
+        v-for="item in options"
+        :key="item.dictValue"
+        :value="item.dictValue"
+      >
+        {{ item.dictLabel }}
+      </el-radio>
+    </el-radio-group>
+  </div>
 </template>
