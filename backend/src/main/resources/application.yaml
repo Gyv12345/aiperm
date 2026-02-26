@@ -17,17 +17,12 @@ spring:
     baseline-version: 1
     validate-on-migrate: false
     clean-disabled: false
-  # 动态数据源配置
+  # 数据源配置
   datasource:
-    dynamic:
-      primary: master
-      strict: true
-      datasource:
-        master:
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-          username: root
-          password: ''
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: root
+    password: ''
 
   # Redis配置
   data:
