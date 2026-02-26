@@ -62,10 +62,17 @@ public abstract class BaseRepository<T> {
         if (ids == null || ids.isEmpty()) {
             return 0;
         }
-        String placeholders = String.join(",", ids.stream().map(String::valueOf).toList());
-        String sql = "UPDATE " + tableName + " SET deleted = 1, update_time = :updateTime WHERE id IN (" + placeholders + ")";
+        // 使用参数化查询防止 SQL 注入
+        String placeholders = ids.stream().map(id -> "?").collect(java.util.stream.Collectors.joining(","));
+        String sql = "UPDATE " + tableName + " SET deleted = 1, update_time = ? WHERE id IN (" + placeholders + ")";
+
+        // 构建参数列表：先添加 updateTime，再添加所有 id
+        List<Object> params = new java.util.ArrayList<>();
+        params.add(LocalDateTime.now());
+        params.addAll(ids);
+
         return db.sql(sql)
-                .param("updateTime", LocalDateTime.now())
+                .params(params)
                 .update();
     }
 
