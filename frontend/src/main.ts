@@ -30,7 +30,7 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(ElementPlus)
 
-// 注册字典组件
+// 注册全局组件
 app.component('DictTag', DictTag)
 app.component('DictSelect', DictSelect)
 app.component('DictRadio', DictRadio)
