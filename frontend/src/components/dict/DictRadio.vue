@@ -34,18 +34,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <el-radio-group
-      v-model="model"
-      :disabled="disabled"
+  <el-radio-group
+    v-model="model"
+    v-loading="loading"
+    :disabled="disabled"
+  >
+    <el-radio
+      v-for="item in options"
+      :key="item.dictValue"
+      :value="item.dictValue"
     >
-      <el-radio
-        v-for="item in options"
-        :key="item.dictValue"
-        :value="item.dictValue"
-      >
-        {{ item.dictLabel }}
-      </el-radio>
-    </el-radio-group>
-  </div>
+      {{ item.dictLabel }}
+    </el-radio>
+  </el-radio-group>
 </template>
