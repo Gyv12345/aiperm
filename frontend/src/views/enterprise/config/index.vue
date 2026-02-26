@@ -74,7 +74,7 @@ async function fetchConfigList() {
 
     const data = await request.get<PageResult<ConfigVO>>('/enterprise/config', { params })
     if (data) {
-      configList.value = data.records || []
+      configList.value = data.list || []
       pagination.total = data.total || 0
     }
   }

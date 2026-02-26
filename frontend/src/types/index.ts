@@ -13,9 +13,10 @@ export interface R<T = any> {
 // 分页结果
 export interface PageResult<T> {
   total: number
-  records: T[]
-  page: number
+  list: T[]
+  pageNum: number
   pageSize: number
+  pages: number
 }
 
 // 分页请求参数

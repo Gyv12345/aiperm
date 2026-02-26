@@ -94,12 +94,10 @@ public class RoleRepository extends BaseRepository<SysRole> {
     }
 
     /**
-     * 检查是否为内置角色
+     * 检查是否为内置角色（ID=1 为超级管理员角色）
      */
     public boolean isBuiltin(Long id) {
-        String sql = "SELECT is_builtin FROM sys_role WHERE id = :id AND deleted = 0";
-        Integer isBuiltin = db.sql(sql).param("id", id).query(Integer.class).single();
-        return isBuiltin != null && isBuiltin == 1;
+        return id != null && id == 1L;
     }
 
     // ========== 角色菜单关联 ==========

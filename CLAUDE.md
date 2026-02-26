@@ -1,5 +1,8 @@
 # aiperm - RBAC 权限管理系统
 
+## 重要
+宿主自己启动前端和后端，自己测试，开发过程中可以调用编译查看报错，但是不用帮助宿主重启服务
+
 ## 项目概述
 
 **aiperm** 是一个 RBAC（基于角色的访问控制）权限管理系统，采用前后端分离架构。
@@ -23,6 +26,48 @@
 3. **操作日志**：每个写操作必须加 `@Log` 注解
 4. **类型安全**：前后端全程类型安全，拒绝 `any`
 5. **模块化**：按业务领域划分模块，遵循标准分层
+6. **前后端规范一致**：接口字段名必须与后端完全一致
+
+## ⚠️ 前后端接口规范（重要！）
+
+**前后端字段名必须保持一致！**
+
+### 分页结果 PageResult
+
+后端 `PageResult<T>` 返回格式：
+```json
+{
+  "total": 100,
+  "list": [...],
+  "pageNum": 1,
+  "pageSize": 10,
+  "pages": 10
+}
+```
+
+前端类型定义（`src/types/index.ts`）：
+```typescript
+export interface PageResult<T> {
+  total: number
+  list: T[]        // 注意：是 list，不是 records
+  pageNum: number  // 注意：是 pageNum，不是 page
+  pageSize: number
+  pages: number
+}
+```
+
+### 常见错误
+
+| 错误 | 正确 |
+|------|------|
+| `result.records` | `result.list` |
+| `result.page` | `result.pageNum` |
+
+### 检查清单
+
+- [ ] 前端类型定义与后端返回字段名完全一致
+- [ ] 分页数据使用 `result.list` 而非 `result.records`
+- [ ] 页码使用 `result.pageNum` 而非 `result.page`
 
 ## 常用命令
 

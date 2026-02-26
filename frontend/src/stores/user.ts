@@ -55,12 +55,8 @@ export const useUserStore = defineStore(
       return roles.value.includes(role)
     }
 
-    // 检查是否有指定权限（超级管理员拥有所有权限）
+    // 检查是否有指定权限
     function hasPermission(permission: string): boolean {
-      // 超级管理员拥有所有权限
-      if (permissions.value.includes('*')) {
-        return true
-      }
       return permissions.value.includes(permission)
     }
 

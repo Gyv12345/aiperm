@@ -56,10 +56,6 @@ export const authApi = {
   logout: () =>
     request.post<void>('/auth/logout'),
 
-  /** 获取当前用户信息 */
-  userInfo: () =>
-    request.get<LoginVO>('/auth/user-info'),
-
   /** 获取用户详细信息（含角色权限） */
   info: () =>
     request.get<UserInfoVO>('/auth/info'),

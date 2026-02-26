@@ -90,7 +90,7 @@ async function handleLogin() {
       }
 
       ElMessage.success('登录成功')
-      router.push('/dashboard')
+      router.push('/')
     }
   }
   catch (error: any) {

@@ -35,20 +35,31 @@ export const usePermissionStore = defineStore('permission', () => {
   function generateRoutes() {
     const dynamicRoutes: RouteRecordRaw[] = []
 
-    // 遍历菜单生成路由
-    menus.value.forEach((menu) => {
-      const route = generateRoute(menu)
-      if (route) {
-        dynamicRoutes.push(route)
-      }
-    })
+    // 递归提取所有菜单类型的路由
+    function extractRoutes(menuList: MenuItem[]) {
+      menuList.forEach((menu) => {
+        const route = generateRoute(menu)
+        if (route) {
+          dynamicRoutes.push(route)
+        }
+        // 递归处理子菜单
+        if (menu.children && menu.children.length > 0) {
+          extractRoutes(menu.children)
+        }
+      })
+    }
+
+    extractRoutes(menus.value)
+
+    // 获取第一个子菜单的路径作为默认重定向
+    const firstRoutePath = dynamicRoutes.length > 0 ? dynamicRoutes[0].path : '/404'
 
     // 根路由
     const rootRoute: RouteRecordRaw = {
       path: '/',
       name: 'Root',
       component: () => import('@/components/layout/MainLayout.vue'),
-      redirect: '/dashboard',
+      redirect: firstRoutePath,
       children: dynamicRoutes,
     }
 

@@ -252,23 +252,31 @@ export const userApi = {
 ```vue
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { authApi, type UserInfoVO } from '@/api/auth'
+import { userApi, type UserVO } from '@/api/system/user'
+import type { PageResult } from '@/types'
 
 const loading = ref(false)
-const userInfo = ref<UserInfoVO | null>(null)
+const tableData = ref<UserVO[]>([])
+const pagination = reactive({
+  page: 1,
+  pageSize: 10,
+  total: 0,
+})
 
-async function fetchUserInfo() {
+async function fetchUserList() {
   loading.value = true
   try {
-    const { data } = await authApi.userInfo()
-    userInfo.value = data
+    const result = await userApi.list(pagination) as PageResult<UserVO>
+    // 注意：使用 result.list，不是 result.records
+    tableData.value = result.list || []
+    pagination.total = result.total || 0
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  fetchUserInfo()
+  fetchUserList()
 })
 </script>
 ```
@@ -313,7 +321,7 @@ export const useUserStore = defineStore('user', () => {
 | `LocalDateTime` | `string` |
 | `List<T>` | `T[]` |
 | `R<T>` | `{ code: number, message: string, data: T }` |
-| `PageResult<T>` | `{ total: number, records: T[], page: number, pageSize: number }` |
+| `PageResult<T>` | `{ total: number, list: T[], pageNum: number, pageSize: number, pages: number }` |
 
 ### 通用类型
 
@@ -327,13 +335,24 @@ export interface R<T = any> {
   data: T
 }
 
-// 分页结果
+// 分页结果（注意：字段名必须与后端一致！）
 export interface PageResult<T> {
   total: number
-  records: T[]
-  page: number
+  list: T[]        // 注意：是 list，不是 records
+  pageNum: number  // 注意：是 pageNum，不是 page
   pageSize: number
+  pages: number
 }
+```
+
+### ⚠️ 常见错误
+
+```typescript
+// ❌ 错误：字段名与后端不一致
+tableData.value = result.records || []  // 后端返回的是 list，不是 records！
+
+// ✅ 正确：与后端字段名一致
+tableData.value = result.list || []
 ```
 
 ## 开发检查清单
@@ -342,6 +361,8 @@ export interface PageResult<T> {
 
 - [ ] 查看后端 Controller 确认接口路径和方法
 - [ ] 查看后端 DTO/VO 确认字段类型
+- [ ] **确认 PageResult 使用 `list` 而非 `records`**
+- [ ] **确认页码使用 `pageNum` 而非 `page`**
 - [ ] 在正确的目录创建/更新 API 文件
 - [ ] 导出类型定义和 API 对象
 - [ ] 使用 `request.get/post/put/delete` 调用接口
@@ -349,7 +370,18 @@ export interface PageResult<T> {
 
 ## 常见错误
 
-### 错误 1：路径不一致
+### 错误 1：分页字段名不一致（最常见！）
+
+```typescript
+// ❌ 错误：使用 records（与后端不一致）
+const result = await userApi.list(params) as PageResult<UserVO>
+tableData.value = result.records || []  // records 不存在，数据为空！
+
+// ✅ 正确：使用 list（与后端一致）
+tableData.value = result.list || []
+```
+
+### 错误 2：路径不一致
 
 ```typescript
 // ❌ 错误：路径与后端不一致
@@ -359,7 +391,7 @@ request.get('/users')  // 后端是 /system/user
 request.get('/system/user')
 ```
 
-### 错误 2：方法不一致
+### 错误 3：方法不一致
 
 ```typescript
 // ❌ 错误：方法与后端不一致
@@ -369,7 +401,7 @@ request.get('/system/user')  // 后端是 POST
 request.post('/system/user', data)
 ```
 
-### 错误 3：类型未定义
+### 错误 4：类型未定义
 
 ```typescript
 // ❌ 错误：使用 any

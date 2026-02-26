@@ -3,8 +3,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { noticeApi, type NoticeVO, type NoticeDTO } from '@/api/enterprise/notice'
 import type { PageResult } from '@/types'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 
 // 列表数据
 const loading = ref(false)
@@ -55,7 +53,7 @@ const fetchData = async () => {
       status: queryParams.status,
     }
     const result = await noticeApi.list(params) as PageResult<NoticeVO>
-    tableData.value = result.records || []
+    tableData.value = result.list || []
     total.value = result.total || 0
   } catch (error) {
     console.error('获取列表失败', error)
@@ -235,17 +233,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="notice-container flex h-screen">
-    <AppSidebar />
-
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <AppHeader>
-        <template #title>公告通知管理</template>
-      </AppHeader>
-
-      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-        <!-- 搜索区域 -->
-        <el-card class="mb-4">
+  <div class="notice-content">
+    <!-- 搜索区域 -->
+    <el-card class="mb-4">
           <el-form :inline="true" :model="queryParams">
             <el-form-item label="标题">
               <el-input
@@ -360,8 +350,6 @@ onMounted(() => {
             />
           </div>
         </el-card>
-      </div>
-    </main>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
@@ -415,7 +403,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.notice-container {
-  min-height: 100vh;
+.notice-content {
+  /* content only */
 }
 </style>

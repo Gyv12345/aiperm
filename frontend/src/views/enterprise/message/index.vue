@@ -3,8 +3,6 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { messageApi, type MessageVO, type MessageDTO } from '@/api/enterprise/message'
 import type { PageResult } from '@/types'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 
 // 列表数据
 const loading = ref(false)
@@ -63,7 +61,7 @@ const fetchData = async () => {
       isRead: queryParams.isRead,
     }
     const result = await messageApi.list(params) as PageResult<MessageVO>
-    tableData.value = result.records || []
+    tableData.value = result.list || []
     total.value = result.total || 0
   } catch (error) {
     console.error('获取列表失败', error)
@@ -245,26 +243,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="message-container flex h-screen">
-    <AppSidebar />
-
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <AppHeader>
-        <template #title>
-          <div class="flex items-center gap-2">
-            <span>消息中心</span>
-            <el-badge
-              v-if="unreadCount > 0"
-              :value="unreadBadge"
-              type="danger"
-              class="ml-2"
-            />
-          </div>
-        </template>
-      </AppHeader>
-
-      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-        <!-- 搜索区域 -->
+  <div class="message-content">
+    <!-- 搜索区域 -->
         <el-card class="mb-4">
           <el-form :inline="true" :model="queryParams">
             <el-form-item label="阅读状态">
@@ -369,8 +349,6 @@ onMounted(() => {
             />
           </div>
         </el-card>
-      </div>
-    </main>
 
     <!-- 发送消息对话框 -->
     <el-dialog v-model="sendDialogVisible" title="发送消息" width="500px">
@@ -430,7 +408,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.message-container {
-  min-height: 100vh;
+.message-content {
+  /* content only */
 }
 </style>

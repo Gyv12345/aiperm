@@ -96,7 +96,7 @@ async function fetchJobList() {
 
     const data = await request.get<PageResult<JobVO>>('/enterprise/job', { params })
     if (data) {
-      jobList.value = data.records || []
+      jobList.value = data.list || []
       pagination.total = data.total || 0
     }
   }

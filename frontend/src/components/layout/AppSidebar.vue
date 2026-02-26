@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { usePermissionStore } from '@/stores/permission'
 import type { MenuVO } from '@/api/system/menu'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 interface MenuItem extends MenuVO {
   children?: MenuItem[]
@@ -20,27 +21,27 @@ const menuItems = computed(() => permissionStore.menus)
 // 侧边栏折叠状态
 const collapsed = computed(() => appStore.sidebarCollapsed)
 
+// 当前激活的菜单
+const activeMenu = computed(() => route.path)
+
+// 打开的子菜单
+const defaultOpeneds = computed(() => {
+  const opens: string[] = []
+  menuItems.value.forEach((menu) => {
+    if (menu.menuType === '1' && menu.children && menu.children.length > 0) {
+      opens.push(`menu-${menu.id}`)
+    }
+  })
+  return opens
+})
+
 // 切换侧边栏
 function toggleSidebar() {
   appStore.toggleSidebar()
 }
 
-// 导航到指定路径
-function navigateTo(menu: MenuItem) {
-  // 构建完整路径
-  const fullPath = buildMenuPath(menu)
-  router.push(fullPath)
-}
-
 // 构建菜单路径
 function buildMenuPath(menu: MenuItem): string {
-  if (menu.menuType === '1') {
-    // 目录类型，跳转到第一个子菜单
-    if (menu.children && menu.children.length > 0) {
-      return buildMenuPath(menu.children[0] as MenuItem)
-    }
-    return menu.path || '/'
-  }
   // 菜单类型，查找父菜单构建完整路径
   const parent = findParent(menuItems.value, menu.parentId)
   if (parent && parent.path) {
@@ -67,25 +68,33 @@ function findParent(menus: MenuItem[], parentId: number | null): MenuItem | null
   return null
 }
 
-// 检查是否激活
-function isActive(menu: MenuItem): boolean {
-  const fullPath = buildMenuPath(menu)
-  return route.path === fullPath || route.path.startsWith(fullPath + '/')
+// 选择菜单
+function handleSelect(index: string) {
+  // index 格式为 "menu-{id}"，需要找到对应菜单并跳转
+  const menu = findMenuById(menuItems.value, parseInt(index.replace('menu-', '')))
+  if (menu && menu.menuType === '2') {
+    const path = buildMenuPath(menu)
+    router.push(path)
+  }
 }
 
-// 获取需要显示的菜单（过滤掉目录，只显示一级菜单）
-const displayMenus = computed(() => {
-  return menuItems.value.map((menu) => {
-    // 如果是目录，显示第一个子菜单的信息
-    if (menu.menuType === '1' && menu.children && menu.children.length > 0) {
-      return {
-        ...menu,
-        firstChild: menu.children[0],
-      }
+// 根据 ID 查找菜单
+function findMenuById(menus: MenuItem[], id: number): MenuItem | null {
+  for (const menu of menus) {
+    if (menu.id === id) return menu
+    if (menu.children) {
+      const found = findMenuById(menu.children as MenuItem[], id)
+      if (found) return found
     }
-    return menu
-  })
-})
+  }
+  return null
+}
+
+// 获取图标组件
+function getIconComponent(iconName: string | null | undefined) {
+  if (!iconName) return null
+  return (ElementPlusIconsVue as Record<string, any>)[iconName]
+}
 </script>
 
 <template>
@@ -110,30 +119,57 @@ const displayMenus = computed(() => {
     </div>
 
     <!-- 菜单列表 -->
-    <nav class="flex-1 p-2 overflow-y-auto">
-      <ul class="space-y-1">
-        <li
-          v-for="menu in displayMenus"
-          :key="menu.id"
+    <el-menu
+      :default-active="activeMenu"
+      :default-openeds="defaultOpeneds"
+      :collapse="collapsed"
+      :collapse-transition="false"
+      background-color="#1f2937"
+      text-color="#fff"
+      active-text-color="#409eff"
+      class="sidebar-menu border-none flex-1"
+      @select="handleSelect"
+    >
+      <template
+        v-for="menu in menuItems"
+        :key="menu.id"
+      >
+        <!-- 目录类型：有子菜单 -->
+        <el-sub-menu
+          v-if="menu.menuType === '1' && menu.children && menu.children.length > 0"
+          :index="`menu-${menu.id}`"
         >
-          <div
-            class="menu-item flex items-center px-3 py-2 rounded cursor-pointer transition-colors"
-            :class="isActive(menu as MenuItem) ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'"
-            @click="navigateTo(menu as MenuItem)"
-          >
-            <el-icon class="text-lg">
-              <component :is="menu.icon || 'Document'" />
+          <template #title>
+            <el-icon>
+              <component :is="getIconComponent(menu.icon) || Document" />
             </el-icon>
-            <span
-              v-if="!collapsed"
-              class="ml-3"
-            >
-              {{ menu.menuName }}
-            </span>
-          </div>
-        </li>
-      </ul>
-    </nav>
+            <span>{{ menu.menuName }}</span>
+          </template>
+          <!-- 子菜单 -->
+          <el-menu-item
+            v-for="child in menu.children"
+            :key="child.id"
+            :index="`menu-${child.id}`"
+          >
+            <el-icon>
+              <component :is="getIconComponent(child.icon) || Document" />
+            </el-icon>
+            <span>{{ child.menuName }}</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- 菜单类型：无子菜单 -->
+        <el-menu-item
+          v-else-if="menu.menuType === '2'"
+          :index="`menu-${menu.id}`"
+        >
+          <el-icon>
+            <component :is="getIconComponent(menu.icon) || Document" />
+          </el-icon>
+          <span>{{ menu.menuName }}</span>
+        </el-menu-item>
+      </template>
+    </el-menu>
 
     <!-- 折叠按钮 -->
     <div class="p-2 border-t border-gray-700">
@@ -141,7 +177,7 @@ const displayMenus = computed(() => {
         class="flex items-center justify-center py-2 rounded cursor-pointer hover:bg-gray-700"
         @click="toggleSidebar"
       >
-        <el-icon class="text-lg">
+        <el-icon class="text-lg text-white">
           <Expand v-if="collapsed" />
           <Fold v-else />
         </el-icon>
@@ -155,7 +191,29 @@ const displayMenus = computed(() => {
   min-height: 100vh;
 }
 
-.menu-item {
-  white-space: nowrap;
+.sidebar-menu {
+  border-right: none;
+}
+
+.sidebar-menu:not(.el-menu--collapse) {
+  width: 256px;
+}
+
+:deep(.el-menu) {
+  border-right: none;
+}
+
+:deep(.el-sub-menu__title) {
+  height: 48px;
+  line-height: 48px;
+}
+
+:deep(.el-menu-item) {
+  height: 48px;
+  line-height: 48px;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #1e40af !important;
 }
 </style>

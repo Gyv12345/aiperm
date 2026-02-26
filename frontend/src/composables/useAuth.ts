@@ -32,11 +32,6 @@ export function useAuth() {
    * 检查是否有指定权限
    */
   function hasPermission(permission: string | string[]): boolean {
-    // 超级管理员拥有所有权限
-    if (permissions.value.includes('*')) {
-      return true
-    }
-
     if (Array.isArray(permission)) {
       return userStore.hasAnyPermission(permission)
     }
@@ -47,10 +42,6 @@ export function useAuth() {
    * 检查是否有所有指定权限
    */
   function hasAllPermissions(permissionList: string[]): boolean {
-    // 超级管理员拥有所有权限
-    if (permissions.value.includes('*')) {
-      return true
-    }
     return permissionList.every(p => userStore.hasPermission(p))
   }
 

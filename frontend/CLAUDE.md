@@ -153,6 +153,46 @@ onMounted(() => {
 | Store 文件 | 小写 | `user.ts` |
 | 类型/接口 | PascalCase | `UserVO`, `LoginRequest` |
 
+## ⚠️ 前后端接口规范（重要！）
+
+**前后端字段名必须保持一致！**
+
+### 分页结果 PageResult
+
+后端返回的分页格式：
+```json
+{
+  "total": 100,
+  "list": [...],
+  "pageNum": 1,
+  "pageSize": 10,
+  "pages": 10
+}
+```
+
+前端类型定义（`src/types/index.ts`）：
+```typescript
+export interface PageResult<T> {
+  total: number
+  list: T[]        // 注意：是 list，不是 records！
+  pageNum: number  // 注意：是 pageNum，不是 page！
+  pageSize: number
+  pages: number
+}
+```
+
+### 正确使用方式
+
+```typescript
+// ✅ 正确
+const result = await userApi.list(params) as PageResult<UserVO>
+tableData.value = result.list || []
+pagination.total = result.total || 0
+
+// ❌ 错误 - 会导致数据不显示
+tableData.value = result.records || []  // records 不存在！
+```
+
 ## 状态管理
 
 ### Pinia Store 规范

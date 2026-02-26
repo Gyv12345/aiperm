@@ -3,8 +3,6 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import { deptApi, type DeptVO, type DeptDTO } from '@/api/system/dept'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -219,22 +217,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="dept-container flex h-screen">
-    <!-- 侧边栏 -->
-    <AppSidebar />
-
-    <!-- 主内容区 -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <!-- 顶部导航 -->
-      <AppHeader>
-        <template #title>
-          部门管理
-        </template>
-      </AppHeader>
-
-      <!-- 内容区 -->
-      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-        <!-- 搜索区域 -->
+  <div class="dept-content">
+    <!-- 搜索区域 -->
         <el-card class="mb-4">
           <el-form
             :inline="true"
@@ -384,8 +368,6 @@ onMounted(() => {
             </el-table-column>
           </el-table>
         </el-card>
-      </div>
-    </main>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -505,7 +487,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.dept-container {
-  background: #f5f7fa;
+.dept-content {
+  /* content only */
 }
 </style>

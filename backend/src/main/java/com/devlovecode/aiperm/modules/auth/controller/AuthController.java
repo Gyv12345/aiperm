@@ -49,13 +49,6 @@ public class AuthController {
         return R.ok();
     }
 
-    @Operation(summary = "获取当前用户信息")
-    @SaCheckLogin
-    @GetMapping("/user-info")
-    public R<LoginVO.UserInfo> userInfo() {
-        return R.ok(authService.getCurrentUserInfo());
-    }
-
     @Operation(summary = "获取当前用户信息（含角色权限）")
     @SaCheckLogin
     @GetMapping("/info")

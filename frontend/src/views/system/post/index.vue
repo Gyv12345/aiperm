@@ -4,8 +4,6 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import { postApi, type PostVO, type PostDTO } from '@/api/system/post'
 import type { PageResult } from '@/types'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -76,7 +74,7 @@ async function fetchPostList() {
       status: queryForm.status,
     }
     const result = await postApi.list(params) as PageResult<PostVO>
-    tableData.value = result.records || []
+    tableData.value = result.list || []
     pagination.total = result.total || 0
   }
   catch (error) {
@@ -219,22 +217,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="post-container flex h-screen">
-    <!-- 侧边栏 -->
-    <AppSidebar />
-
-    <!-- 主内容区 -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <!-- 顶部导航 -->
-      <AppHeader>
-        <template #title>
-          岗位管理
-        </template>
-      </AppHeader>
-
-      <!-- 内容区 -->
-      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-        <!-- 搜索区域 -->
+  <div class="post-content">
+    <!-- 搜索区域 -->
         <el-card class="mb-4">
           <el-form
             :inline="true"
@@ -397,8 +381,6 @@ onMounted(() => {
             />
           </div>
         </el-card>
-      </div>
-    </main>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -483,7 +465,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.post-container {
-  background: #f5f7fa;
+.post-content {
+  /* content only */
 }
 </style>

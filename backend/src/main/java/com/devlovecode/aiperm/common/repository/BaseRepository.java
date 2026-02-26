@@ -86,7 +86,7 @@ public abstract class BaseRepository<T> {
 
         // 查列表
         String listSql = "SELECT * FROM " + tableName + " WHERE deleted = 0" + whereClause +
-                " ORDER BY create_time DESC LIMIT :limit OFFSET :offset";
+                " ORDER BY create_time DESC LIMIT ? OFFSET ?";
         List<Object> listParams = new java.util.ArrayList<>(params);
         listParams.add(pageSize);
         listParams.add((pageNum - 1) * pageSize);

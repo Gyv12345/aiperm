@@ -145,7 +145,7 @@ async function fetchUserList() {
       status: queryForm.status,
     }
     const result = await userApi.list(params) as PageResult<UserVO>
-    tableData.value = result.records || []
+    tableData.value = result.list || []
     pagination.total = result.total || 0
   }
   catch (error) {

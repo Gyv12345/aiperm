@@ -131,9 +131,9 @@ public class AuthService {
         List<String> permissions;
 
         if (SUPER_ADMIN_ID.equals(userId)) {
-            // 超级管理员
+            // 超级管理员：返回所有启用的权限
             roles = List.of("super_admin");
-            permissions = List.of("*");
+            permissions = getAllPermissions();
         } else {
             // 普通用户：查询角色和权限
             roles = getUserRoles(userId);
@@ -215,7 +215,7 @@ public class AuthService {
     /**
      * 获取用户角色
      */
-    private List<String> getUserRoles(Long userId) {
+    public List<String> getUserRoles(Long userId) {
         String sql = """
             SELECT r.role_key
             FROM sys_role r
@@ -231,7 +231,7 @@ public class AuthService {
     /**
      * 获取用户权限
      */
-    private List<String> getUserPermissions(Long userId) {
+    public List<String> getUserPermissions(Long userId) {
         // 获取用户所有角色的权限标识
         String sql = """
             SELECT DISTINCT m.perms
@@ -243,6 +243,20 @@ public class AuthService {
             """;
         return menuRepo.getJdbcClient().sql(sql)
                 .param("userId", userId)
+                .query(String.class)
+                .list();
+    }
+
+    /**
+     * 获取所有启用的权限（超级管理员使用）
+     */
+    public List<String> getAllPermissions() {
+        String sql = """
+            SELECT DISTINCT perms
+            FROM sys_menu
+            WHERE perms IS NOT NULL AND perms != '' AND status = 1 AND deleted = 0
+            """;
+        return menuRepo.getJdbcClient().sql(sql)
                 .query(String.class)
                 .list();
     }

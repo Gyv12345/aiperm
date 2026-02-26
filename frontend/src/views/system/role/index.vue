@@ -95,7 +95,7 @@ async function fetchRoleList() {
       status: queryForm.status,
     }
     const result = await roleApi.list(params) as PageResult<RoleVO>
-    tableData.value = result.records || []
+    tableData.value = result.list || []
     pagination.total = result.total || 0
   }
   catch (error) {

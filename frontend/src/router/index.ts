@@ -62,7 +62,7 @@ function setupRouterGuard(router: Router) {
 
     // 已登录访问登录页
     if (to.path === '/login') {
-      next('/dashboard')
+      next('/')
       return
     }
 

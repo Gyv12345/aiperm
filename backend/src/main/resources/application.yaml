@@ -97,6 +97,8 @@ springdoc:
 logging:
   level:
     com.devlovecode.aiperm: debug
+    org.springframework.jdbc.core.JdbcTemplate: debug
+    org.springframework.jdbc.core.StatementCreatorUtils: trace
 
 # OSS 文件存储配置
 oss:

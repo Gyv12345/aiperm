@@ -377,6 +377,26 @@ PageResult.of(total, list, page, pageSize)  // 分页
 result.map(this::toVO)            // 分页转换
 ```
 
+### PageResult 字段说明（重要！）
+
+后端 `PageResult` 返回的 JSON 格式：
+
+```json
+{
+  "total": 100,
+  "list": [...],      // 数据列表，不是 records！
+  "pageNum": 1,       // 当前页码，不是 page！
+  "pageSize": 10,
+  "pages": 10         // 总页数
+}
+```
+
+**前端必须使用相同的字段名：**
+- ✅ `list` - 数据列表
+- ✅ `pageNum` - 当前页码
+- ❌ `records` - 错误！
+- ❌ `page` - 错误！
+
 ## 开发检查清单
 
 - [ ] 建表 SQL 写入 Flyway 迁移文件
