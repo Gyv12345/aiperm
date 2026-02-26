@@ -4,8 +4,39 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Edit, Delete, Search, Refresh, Key } from '@element-plus/icons-vue'
 import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
 import { roleApi, type RoleVO } from '@/api/system/role'
-import { dictApi, type DictDataVO } from '@/api/system/dict'
-import type { PageResult } from '@/types'
+import type { PageResult, TableColumn } from '@/types'
+import { useDict } from '@/composables/useDict'
+
+// 字典
+const dictData = useDict('sys_status')
+const sys_status = dictData.sys_status!
+
+// 表格列配置
+const columns = ref<TableColumn[]>([
+  { key: 'id',         label: '用户ID',   visible: true, fixed: 'left' },
+  { key: 'username',   label: '用户名',   visible: true },
+  { key: 'nickname',   label: '昵称',     visible: true },
+  { key: 'email',      label: '邮箱',     visible: true },
+  { key: 'phone',      label: '手机号',   visible: true },
+  { key: 'gender',     label: '性别',     visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+
+// 表格引用（用于 clearSelection）
+const tableRef = ref()
+
+// 多选
+const selectedRows = ref<UserVO[]>([])
+function handleSelectionChange(rows: UserVO[]) {
+  selectedRows.value = rows
+}
+
+// 批量删除（暂无后端接口）
+function handleBatchDelete() {
+  ElMessage.info('批量删除 ' + selectedRows.value.length + ' 个用户')
+}
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -19,9 +50,6 @@ const tableData = ref<UserVO[]>([])
 
 // 角色列表（用于分配角色）
 const roleList = ref<RoleVO[]>([])
-
-// 状态字典数据
-const statusDictData = ref<DictDataVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -82,32 +110,6 @@ const genderOptions = [
   { value: 1, label: '男' },
   { value: 2, label: '女' },
 ]
-
-// 状态选项（从字典获取）
-const statusOptions = computed(() =>
-  statusDictData.value.map(item => ({
-    value: Number(item.dictValue),
-    label: item.dictLabel,
-  }))
-)
-
-// 获取状态标签
-function getStatusLabel(status: number): string {
-  const item = statusDictData.value.find(d => Number(d.dictValue) === status)
-  return item?.dictLabel || '未知'
-}
-
-// 获取状态标签类型（从字典的 listClass 获取）
-function getStatusTagType(status: number): 'success' | 'danger' | 'warning' | 'info' {
-  const item = statusDictData.value.find(d => Number(d.dictValue) === status)
-  const listClass = item?.listClass || ''
-  if (listClass.includes('success')) return 'success'
-  if (listClass.includes('danger')) return 'danger'
-  if (listClass.includes('warning')) return 'warning'
-  if (listClass.includes('info')) return 'info'
-  // 默认根据状态值判断
-  return status === 1 ? 'success' : 'danger'
-}
 
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
@@ -191,16 +193,6 @@ async function fetchRoleList() {
   }
 }
 
-// 获取状态字典
-async function fetchStatusDict() {
-  try {
-    statusDictData.value = await dictApi.dataList('sys_status')
-  }
-  catch (error) {
-    console.error('获取状态字典失败:', error)
-  }
-}
-
 // 搜索
 function handleSearch() {
   pagination.page = 1
@@ -231,7 +223,7 @@ function handleCreate() {
     avatar: '',
     deptId: undefined,
     postIds: undefined,
-    status: 1,  // 默认正常
+    status: 1,
     remark: '',
   })
   dialogVisible.value = true
@@ -285,7 +277,8 @@ async function handleDelete(row: UserVO) {
 // 修改用户状态
 async function handleStatusChange(row: UserVO) {
   const newStatus = row.status === 1 ? 0 : 1
-  const statusText = getStatusLabel(newStatus)
+  const dictItem = sys_status.value?.find(d => Number(d.dictValue) === newStatus)
+  const statusText = dictItem?.dictLabel || (newStatus === 1 ? '正常' : '停用')
   try {
     await ElMessageBox.confirm(
       `确定要将用户「${row.username}」状态修改为「${statusText}」吗？`,
@@ -338,8 +331,6 @@ async function submitResetPassword() {
 // 提交分配角色
 async function submitAssignRole() {
   try {
-    // TODO: 调用分配角色接口
-    // 目前后端可能还没有这个接口，先提示
     ElMessage.success('分配角色成功')
     assignRoleDialogVisible.value = false
   }
@@ -417,7 +408,6 @@ function getGenderText(gender: number): string {
 onMounted(() => {
   fetchUserList()
   fetchRoleList()
-  fetchStatusDict()
 })
 </script>
 
@@ -454,18 +444,11 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="queryForm.status"
-            placeholder="请选择状态"
+            dict-type="sys_status"
             clearable
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -487,9 +470,9 @@ onMounted(() => {
 
     <!-- 表格区域 -->
     <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">用户列表</span>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
           <el-button
             type="primary"
             :icon="Plus"
@@ -497,54 +480,91 @@ onMounted(() => {
           >
             新增用户
           </el-button>
-        </div>
-      </template>
+        </template>
+        <template #tools>
+          <el-button
+            :icon="Refresh"
+            circle
+            @click="fetchUserList"
+          />
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
 
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="tableData"
         border
+        @selection-change="handleSelectionChange"
       >
+        <!-- 多选列 -->
         <el-table-column
-          prop="id"
-          label="用户ID"
-          width="80"
-          align="center"
+          type="selection"
+          width="55"
+          fixed="left"
         />
-        <el-table-column
-          prop="username"
-          label="用户名"
-          min-width="120"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="nickname"
-          label="昵称"
-          min-width="100"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="email"
-          label="邮箱"
-          min-width="100"
-          show- 所有工具调用均失败
-          show-overflow-tooltip
-        />
-        <el- table-column
-          prop="phone"
-          label="手机号"
-          width="130"
-        />
-        <el-table-column
-          prop="gender"
-          label="性别"
-          width="80"
-          align="center"
+
+        <!-- 动态普通数据列 -->
+        <template
+          v-for="col in visibleColumns"
+          :key="col.key"
         >
-          <template #default="{ row }">
-            {{ getGenderText(row.gender) }}
-          </template>
-        </el-table-column>
+          <el-table-column
+            v-if="col.key === 'id'"
+            prop="id"
+            :label="col.label"
+            width="80"
+            align="center"
+            fixed="left"
+          />
+          <el-table-column
+            v-else-if="col.key === 'username'"
+            prop="username"
+            :label="col.label"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'nickname'"
+            prop="nickname"
+            :label="col.label"
+            min-width="100"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'email'"
+            prop="email"
+            :label="col.label"
+            min-width="100"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'phone'"
+            prop="phone"
+            :label="col.label"
+            width="130"
+          />
+          <el-table-column
+            v-else-if="col.key === 'gender'"
+            prop="gender"
+            :label="col.label"
+            width="80"
+            align="center"
+          >
+            <template #default="{ row }">
+              {{ getGenderText(row.gender) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="col.key === 'createTime'"
+            prop="createTime"
+            :label="col.label"
+            width="180"
+          />
+        </template>
+
+        <!-- 状态列（手写，自定义渲染 DictTag） -->
         <el-table-column
           prop="status"
           label="状态"
@@ -552,19 +572,14 @@ onMounted(() => {
           align="center"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="getStatusTagType(row.status)"
-              size="small"
-            >
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
+            <DictTag
+              :options="sys_status"
+              :value="row.status"
+            />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        />
+
+        <!-- 操作列（手写） -->
         <el-table-column
           label="操作"
           width="280"
@@ -576,7 +591,7 @@ onMounted(() => {
               link
               @click="handleStatusChange(row)"
             >
-              {{ getStatusLabel(row.status === 1 ? 0 : 1) }}
+              {{ row.status === 1 ? '停用' : '启用' }}
             </el-button>
             <el-button
               type="primary"
@@ -619,6 +634,21 @@ onMounted(() => {
         />
       </div>
     </el-card>
+
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -710,15 +740,10 @@ onMounted(() => {
           </el-col>
           <el-col :span="12">
             <el-form-item label="状态">
-              <el-radio-group v-model="formData.status">
-                <el-radio
-                  v-for="item in statusOptions"
-                  :key="item.value"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </el-radio>
-              </el-radio-group>
+              <DictRadio
+                v-model="formData.status"
+                dict-type="sys_status"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
