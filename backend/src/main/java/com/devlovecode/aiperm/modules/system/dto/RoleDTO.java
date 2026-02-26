@@ -50,6 +50,10 @@ public class RoleDTO {
     @Size(max = 500, message = "备注不能超过500个字符")
     private String remark;
 
+    @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
+    @Schema(description = "数据权限范围：1-全部，2-本部门，3-本部门及下级，4-仅本人")
+    private Integer dataScope;
+
     // ========== 关联字段 ==========
 
     @JsonView(Views.Query.class)

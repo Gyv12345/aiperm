@@ -33,6 +33,9 @@ public class RoleVO {
     @Schema(description = "备注", example = "这是备注信息")
     private String remark;
 
+    @Schema(description = "数据权限范围：1-全部，2-本部门，3-本部门及下级，4-仅本人", example = "1")
+    private Integer dataScope;
+
     @Schema(description = "菜单列表")
     private List<MenuVO> menus;
 
