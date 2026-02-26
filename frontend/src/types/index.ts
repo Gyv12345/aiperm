@@ -24,3 +24,11 @@ export interface PageParams {
   page?: number
   pageSize?: number
 }
+
+// 表格列配置（用于 ColumnSetting 组件）
+export interface TableColumn {
+  key: string       // 对应 el-table-column 的 prop
+  label: string     // 列标题
+  visible: boolean  // 是否显示
+  fixed?: boolean   // 固定列（固定列不允许隐藏）
+}
