@@ -22,7 +22,7 @@ async function handleLogout() {
       type: 'warning',
     })
 
-    userStore.logout()
+    await userStore.logout()
     router.push('/login')
   }
   catch {
