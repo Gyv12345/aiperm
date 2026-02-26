@@ -7,6 +7,9 @@ import com.devlovecode.aiperm.modules.system.entity.SysDictData;
 import com.devlovecode.aiperm.modules.system.repository.DictDataRepository;
 import com.devlovecode.aiperm.modules.system.vo.DictDataVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@CacheConfig(cacheNames = "dict")
 public class DictDataService {
 
     private final DictDataRepository dictDataRepo;
@@ -22,6 +26,7 @@ public class DictDataService {
     /**
      * 根据字典类型查询
      */
+    @Cacheable(key = "#dictType")
     public List<DictDataVO> listByDictType(String dictType) {
         return dictDataRepo.findByDictType(dictType).stream()
                 .map(this::toVO)
@@ -32,6 +37,7 @@ public class DictDataService {
      * 创建
      */
     @Transactional
+    @CacheEvict(allEntries = true)
     public void create(DictDataDTO dto) {
         SysDictData entity = new SysDictData();
         entity.setDictType(dto.getDictType());
@@ -50,6 +56,7 @@ public class DictDataService {
      * 更新
      */
     @Transactional
+    @CacheEvict(allEntries = true)
     public void update(Long id, DictDataDTO dto) {
         SysDictData entity = dictDataRepo.findById(id)
                 .orElseThrow(() -> new BusinessException("字典数据不存在"));
@@ -69,6 +76,7 @@ public class DictDataService {
      * 删除
      */
     @Transactional
+    @CacheEvict(allEntries = true)
     public void delete(Long id) {
         if (!dictDataRepo.existsById(id)) {
             throw new BusinessException("字典数据不存在");
