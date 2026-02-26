@@ -14,14 +14,9 @@ export const permission: Directive = {
       return
     }
 
-    let hasAuth = false
-
-    if (Array.isArray(value)) {
-      hasAuth = value.some(p => hasPermission(p))
-    }
-    else {
-      hasAuth = hasPermission(value)
-    }
+    const hasAuth = Array.isArray(value)
+      ? value.some(p => hasPermission(p))
+      : hasPermission(value)
 
     if (!hasAuth) {
       el.parentNode?.removeChild(el)
@@ -42,14 +37,9 @@ export const role: Directive = {
       return
     }
 
-    let hasAuth = false
-
-    if (Array.isArray(value)) {
-      hasAuth = value.some(r => userStore.hasRole(r))
-    }
-    else {
-      hasAuth = userStore.hasRole(value)
-    }
+    const hasAuth = Array.isArray(value)
+      ? value.some(r => userStore.hasRole(r))
+      : userStore.hasRole(value)
 
     if (!hasAuth) {
       el.parentNode?.removeChild(el)
