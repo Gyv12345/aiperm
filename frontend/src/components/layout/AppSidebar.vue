@@ -189,8 +189,10 @@ function getIconComponent(iconName: string | null | undefined) {
 <style scoped>
 .sidebar {
   min-height: 100vh;
-  background-color: var(--color-bg-sidebar);
-  border-right: 1px solid var(--color-border-sidebar);
+  background-color: #1f2937; /* 默认深色背景 */
+  background-color: var(--color-bg-sidebar, #1f2937);
+  border-right: 1px solid #374151;
+  border-right-color: var(--color-border-sidebar, #374151);
 }
 
 .sidebar-header {

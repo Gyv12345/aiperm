@@ -7,7 +7,8 @@ const appStore = useAppStore()
 
 // 应用初始化时恢复主题
 onMounted(() => {
-  appStore.toggleTheme() // 先切换确保生效
+  // 恢复保存的主题状态
+  appStore.updateThemeClass()
 })
 </script>
 

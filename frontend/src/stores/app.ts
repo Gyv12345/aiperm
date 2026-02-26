@@ -54,6 +54,7 @@ export const useAppStore = defineStore(
       setLoading,
       toggleTheme,
       setTheme,
+      updateThemeClass,
     }
   },
   {
