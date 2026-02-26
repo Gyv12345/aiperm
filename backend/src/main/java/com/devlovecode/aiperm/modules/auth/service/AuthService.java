@@ -72,8 +72,8 @@ public class AuthService {
      * 登录
      */
     public LoginVO login(LoginRequest request) {
-        // 验证码校验（暂时跳过，方便开发调试）
-        // validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
+        // 验证码校验
+        validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
 
         // 查询用户
         SysUser user = userRepo.findByUsername(request.getUsername())
