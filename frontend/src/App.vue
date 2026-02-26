@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
+import { useAppStore } from '@/stores/app'
+
+const appStore = useAppStore()
+
+// 应用初始化时恢复主题
+onMounted(() => {
+  appStore.toggleTheme() // 先切换确保生效
+})
 </script>
 
 <template>
@@ -10,17 +19,5 @@ import { RouterView } from 'vue-router'
 #app {
   width: 100%;
   height: 100vh;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
 }
 </style>

@@ -99,11 +99,11 @@ function getIconComponent(iconName: string | null | undefined) {
 
 <template>
   <aside
-    class="sidebar flex flex-col bg-gray-800 text-white transition-all duration-300"
+    class="sidebar flex flex-col text-white transition-all duration-300"
     :class="collapsed ? 'w-16' : 'w-64'"
   >
     <!-- Logo 区域 -->
-    <div class="h-16 flex items-center justify-center border-b border-gray-700">
+    <div class="sidebar-header h-16 flex items-center justify-center border-b">
       <h1
         v-if="!collapsed"
         class="text-xl font-bold"
@@ -124,8 +124,8 @@ function getIconComponent(iconName: string | null | undefined) {
       :default-openeds="defaultOpeneds"
       :collapse="collapsed"
       :collapse-transition="false"
-      background-color="#1f2937"
-      text-color="#fff"
+      background-color="transparent"
+      text-color="rgba(255, 255, 255, 0.85)"
       active-text-color="#409eff"
       class="sidebar-menu border-none flex-1"
       @select="handleSelect"
@@ -172,12 +172,12 @@ function getIconComponent(iconName: string | null | undefined) {
     </el-menu>
 
     <!-- 折叠按钮 -->
-    <div class="p-2 border-t border-gray-700">
+    <div class="sidebar-footer p-2 border-t">
       <div
-        class="flex items-center justify-center py-2 rounded cursor-pointer hover:bg-gray-700"
+        class="flex items-center justify-center py-2 rounded cursor-pointer hover:bg-white/10"
         @click="toggleSidebar"
       >
-        <el-icon class="text-lg text-white">
+        <el-icon class="text-lg">
           <Expand v-if="collapsed" />
           <Fold v-else />
         </el-icon>
@@ -189,6 +189,16 @@ function getIconComponent(iconName: string | null | undefined) {
 <style scoped>
 .sidebar {
   min-height: 100vh;
+  background-color: var(--color-bg-sidebar);
+  border-right: 1px solid var(--color-border-sidebar);
+}
+
+.sidebar-header {
+  border-color: var(--color-border-sidebar);
+}
+
+.sidebar-footer {
+  border-color: var(--color-border-sidebar);
 }
 
 .sidebar-menu {
@@ -201,6 +211,7 @@ function getIconComponent(iconName: string | null | undefined) {
 
 :deep(.el-menu) {
   border-right: none;
+  background-color: transparent !important;
 }
 
 :deep(.el-sub-menu__title) {
@@ -208,12 +219,20 @@ function getIconComponent(iconName: string | null | undefined) {
   line-height: 48px;
 }
 
+:deep(.el-sub-menu__title:hover) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 :deep(.el-menu-item) {
   height: 48px;
   line-height: 48px;
 }
 
+:deep(.el-menu-item:hover) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 :deep(.el-menu-item.is-active) {
-  background-color: #1e40af !important;
+  background-color: rgba(64, 158, 255, 0.15) !important;
 }
 </style>

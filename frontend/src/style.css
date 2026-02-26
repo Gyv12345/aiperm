@@ -1,79 +1,165 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+/* 亮色主题变量 */
+:root,
+:root.light {
+  --color-bg-page: #f3f4f6;
+  --color-bg-header: #ffffff;
+  --color-bg-sidebar: #1f2937;
+  --color-bg-card: #ffffff;
+
+  --color-text-primary: #1f293b;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-text-sidebar: #ffffff;
+
+  --color-border: #e5e7eb;
+  --color-border-sidebar: #374151;
+
+  --color-primary: #409eff;
+  --color-primary-hover: #66b1ff;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 暗色主题变量 */
+:root.dark {
+  --color-bg-page: #111827;
+  --color-bg-header: #1f2937;
+  --color-bg-sidebar: #111827;
+  --color-bg-card: #1f2937;
+
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #6b7280;
+  --color-text-sidebar: #f9fafb;
+
+  --color-border: #374151;
+  --color-border-sidebar: #1f2937;
+
+  --color-primary: #409eff;
+  --color-primary-hover: #66b1ff;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* 基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-.card {
-  padding: 2em;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  height: 100vh;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Element Plus 暗色主题覆盖 */
+:root.dark .el-card {
+  --el-card-bg-color: var(--color-bg-card);
+  --el-card-border-color: var(--color-border);
+}
+
+:root.dark .el-table {
+  --el-table-bg-color: var(--color-bg-card);
+  --el-table-tr-bg-color: var(--color-bg-card);
+  --el-table-header-bg-color: var(--color-bg-page);
+  --el-table-row-hover-bg-color: #374151;
+  --el-table-border-color: var(--color-border);
+  --el-table-text-color: var(--color-text-primary);
+}
+
+:root.dark .el-input__wrapper {
+  background-color: var(--color-bg-page);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+:root.dark .el-input__inner {
+  color: var(--color-text-primary);
+}
+
+:root.dark .el-form-item__label {
+  color: var(--color-text-secondary);
+}
+
+:root.dark .el-dialog {
+  --el-dialog-bg-color: var(--color-bg-card);
+  --el-dialog-title-font-size: var(--color-text-primary);
+}
+
+:root.dark .el-message-box {
+  --el-messagebox-title-color: var(--color-text-primary);
+  background-color: var(--color-bg-card);
+}
+
+:root.dark .el-pagination {
+  --el-pagination-bg-color: var(--color-bg-card);
+  --el-pagination-text-color: var(--color-text-secondary);
+  --el-pagination-button-bg-color: var(--color-bg-card);
+}
+
+:root.dark .el-select-dropdown {
+  background-color: var(--color-bg-card);
+}
+
+:root.dark .el-select-dropdown__item {
+  color: var(--color-text-primary);
+}
+
+:root.dark .el-select-dropdown__item.hover {
+  background-color: var(--color-bg-page);
+}
+
+:root.dark .el-tree {
+  --el-tree-bg-color: transparent;
+  --el-tree-text-color: var(--color-text-primary);
+  background-color: transparent;
+}
+
+:root.dark .el-dropdown-menu {
+  background-color: var(--color-bg-card);
+}
+
+:root.dark .el-dropdown-menu__item {
+  color: var(--color-text-primary);
+}
+
+:root.dark .el-dropdown-menu__item:hover {
+  background-color: var(--color-bg-page);
+  color: var(--color-primary);
+}
+
+:root.dark .el-tooltip__popper {
+  background-color: var(--color-bg-card) !important;
+  color: var(--color-text-primary) !important;
+}
+
+:root.dark .el-empty__description {
+  color: var(--color-text-secondary);
 }

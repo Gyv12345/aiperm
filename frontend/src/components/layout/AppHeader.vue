@@ -42,10 +42,10 @@ function goToProfile() {
 </script>
 
 <template>
-  <header class="h-16 bg-white shadow flex items-center justify-between px-6">
+  <header class="app-header h-16 flex items-center justify-between px-6">
     <!-- 左侧标题 -->
     <div class="flex items-center">
-      <h2 class="text-lg font-semibold text-gray-800">
+      <h2 class="text-lg font-semibold header-title">
         <slot name="title">
           仪表板
         </slot>
@@ -59,6 +59,7 @@ function goToProfile() {
         <el-button
           text
           circle
+          class="theme-btn"
           @click="toggleTheme"
         >
           <el-icon class="text-xl">
@@ -70,14 +71,14 @@ function goToProfile() {
 
       <!-- 用户下拉菜单 -->
       <el-dropdown trigger="click">
-        <div class="flex items-center cursor-pointer hover:text-blue-500">
+        <div class="user-dropdown flex items-center cursor-pointer">
           <el-avatar
             :size="32"
             class="mr-2"
           >
             <el-icon><User /></el-icon>
           </el-avatar>
-          <span class="text-gray-700">{{ username }}</span>
+          <span class="username">{{ username }}</span>
           <el-icon class="ml-1">
             <ArrowDown />
           </el-icon>
@@ -98,3 +99,37 @@ function goToProfile() {
     </div>
   </header>
 </template>
+
+<style scoped>
+.app-header {
+  background-color: var(--color-bg-header);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.header-title {
+  color: var(--color-text-primary);
+}
+
+.theme-btn {
+  color: var(--color-text-secondary);
+}
+
+.theme-btn:hover {
+  color: var(--color-primary);
+  background-color: var(--color-bg-page);
+}
+
+.user-dropdown {
+  color: var(--color-text-primary);
+}
+
+.user-dropdown:hover {
+  color: var(--color-primary);
+}
+
+.username {
+  color: var(--color-text-primary);
+}
+</style>

@@ -27,7 +27,7 @@ const pageTitle = computed(() => {
       </AppHeader>
 
       <!-- 内容区域 -->
-      <main class="flex-1 overflow-auto bg-gray-100 p-4">
+      <main class="main-content flex-1 overflow-auto p-4">
         <router-view />
       </main>
     </div>
@@ -38,5 +38,10 @@ const pageTitle = computed(() => {
 .main-layout {
   width: 100%;
   height: 100vh;
+}
+
+.main-content {
+  background-color: var(--color-bg-page);
+  transition: background-color 0.3s ease;
 }
 </style>
