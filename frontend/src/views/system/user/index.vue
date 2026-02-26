@@ -97,11 +97,15 @@ function getStatusLabel(status: number): string {
   return item?.dictLabel || '未知'
 }
 
-// 获取状态标签类型
-function getStatusTagType(status: number): 'success' | 'danger' | 'info' {
+// 获取状态标签类型（从字典的 listClass 获取）
+function getStatusTagType(status: number): 'success' | 'danger' | 'warning' | 'info' {
   const item = statusDictData.value.find(d => Number(d.dictValue) === status)
-  if (item?.listClass === 'success') return 'success'
-  if (item?.listClass === 'danger') return 'danger'
+  const listClass = item?.listClass || ''
+  if (listClass.includes('success')) return 'success'
+  if (listClass.includes('danger')) return 'danger'
+  if (listClass.includes('warning')) return 'warning'
+  if (listClass.includes('info')) return 'info'
+  // 默认根据状态值判断
   return status === 1 ? 'success' : 'danger'
 }
 
