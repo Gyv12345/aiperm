@@ -64,5 +64,9 @@ Thumbs.db
 
 # 敏感配置（如果有）
 application-prod.yaml
+
+# 环境变量文件
+.env
 .env.local
 .env.*.local
+backend/.env

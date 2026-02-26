@@ -17,20 +17,20 @@ spring:
     baseline-version: 1
     validate-on-migrate: false
     clean-disabled: false
-  # 数据源配置
+  # 数据源配置 - 使用环境变量
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-    username: root
-    password: ''
+    url: ${DB_URL:jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
 
-  # Redis配置
+  # Redis配置 - 使用环境变量
   data:
     redis:
-      host: localhost
-      port: 6379
-      password:
-      database: 0
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
       timeout: 10s
       lettuce:
         pool:
@@ -56,7 +56,7 @@ sa-token:
   token-style: uuid
   is-log: false
   is-print-cookie: false
-  jwt-secret-key: change_me
+  jwt-secret-key: ${SA_TOKEN_JWT_SECRET:change-this-to-random-string}
   alone-redis:
     database: 1
     host: ${spring.data.redis.host}
