@@ -1,12 +1,15 @@
 package com.devlovecode.aiperm.config;
 
+import com.devlovecode.aiperm.common.interceptor.DataScopeInterceptor;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -16,7 +19,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @author DevLoveCode
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final DataScopeInterceptor dataScopeInterceptor;
 
     /**
      * 本地 OSS 文件访问映射
@@ -41,6 +47,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     /**
+     * 拦截器配置
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(dataScopeInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/auth/**", "/error", "/v3/api-docs/**", "/swagger-ui/**");
+    }
+
+    /**
      * OpenAPI配置
      */
     @Bean
@@ -49,7 +65,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .info(new Info()
                         .title("AiPerm RBAC权限系统API")
                         .version("1.0.0")
-                        .description("基于Spring Boot 3 + Sa-Token + MyBatis-Plus的RBAC权限管理系统")
+                        .description("基于Spring Boot 3 + Sa-Token的RBAC权限管理系统")
                         .contact(new Contact()
                                 .name("DevLoveCode")
                                 .email("dev@lovecode.com"))
