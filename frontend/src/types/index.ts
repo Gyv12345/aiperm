@@ -30,5 +30,5 @@ export interface TableColumn {
   key: string       // 对应 el-table-column 的 prop
   label: string     // 列标题
   visible: boolean  // 是否显示
-  fixed?: boolean   // 固定列（固定列不允许隐藏）
+  fixed?: boolean | 'left' | 'right'   // 固定列：true/'left'为左固定，'right'为右固定（固定列不允许隐藏）
 }
