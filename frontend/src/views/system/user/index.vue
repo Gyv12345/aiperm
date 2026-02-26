@@ -82,7 +82,7 @@ const genderOptions = [
 // 状态选项
 const statusOptions = [
   { value: 0, label: '正常' },
-  { value: 1, label: 'stop' },
+  { value: 1, label: '停用' },
 ]
 
 // 表单验证规则
