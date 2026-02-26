@@ -34,6 +34,10 @@ public class DictDataDTO {
     private Integer status;
 
     @JsonView({Views.Create.class, Views.Update.class})
+    @Schema(description = "样式属性（tag类型或十六进制颜色，如 success、#ff5500）")
+    private String listClass;
+
+    @JsonView({Views.Create.class, Views.Update.class})
     @Schema(description = "备注")
     private String remark;
 }

@@ -56,6 +56,20 @@ public abstract class BaseRepository<T> {
     }
 
     /**
+     * 批量软删除
+     */
+    public int deleteByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        String placeholders = String.join(",", ids.stream().map(String::valueOf).toList());
+        String sql = "UPDATE " + tableName + " SET deleted = 1, update_time = :updateTime WHERE id IN (" + placeholders + ")";
+        return db.sql(sql)
+                .param("updateTime", LocalDateTime.now())
+                .update();
+    }
+
+    /**
      * 统计总数（排除已删除）
      */
     public long count() {
@@ -76,8 +90,18 @@ public abstract class BaseRepository<T> {
      * 通用分页查询
      */
     protected PageResult<T> queryPage(String whereClause, List<Object> params, int pageNum, int pageSize) {
+        // 处理 whereClause：可能以 "WHERE " 开头，也可能为空
+        String condition = "";
+        if (whereClause != null && !whereClause.isEmpty()) {
+            if (whereClause.trim().startsWith("WHERE ")) {
+                condition = " AND " + whereClause.substring(6).trim(); // 去掉 "WHERE "
+            } else {
+                condition = " AND " + whereClause.trim();
+            }
+        }
+
         // 查总数
-        String countSql = "SELECT COUNT(*) FROM " + tableName + " WHERE deleted = 0" + whereClause;
+        String countSql = "SELECT COUNT(*) FROM " + tableName + " WHERE deleted = 0" + condition;
         Long total = db.sql(countSql).params(params).query(Long.class).single();
 
         if (total == null || total == 0) {
@@ -85,7 +109,7 @@ public abstract class BaseRepository<T> {
         }
 
         // 查列表
-        String listSql = "SELECT * FROM " + tableName + " WHERE deleted = 0" + whereClause +
+        String listSql = "SELECT * FROM " + tableName + " WHERE deleted = 0" + condition +
                 " ORDER BY create_time DESC LIMIT ? OFFSET ?";
         List<Object> listParams = new java.util.ArrayList<>(params);
         listParams.add(pageSize);

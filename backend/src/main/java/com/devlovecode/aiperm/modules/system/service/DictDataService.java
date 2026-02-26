@@ -39,6 +39,7 @@ public class DictDataService {
         entity.setDictValue(dto.getDictValue());
         entity.setSort(dto.getSort() != null ? dto.getSort() : 0);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+        entity.setListClass(dto.getListClass() != null ? dto.getListClass() : "");
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
 
@@ -57,6 +58,7 @@ public class DictDataService {
         entity.setDictValue(dto.getDictValue());
         entity.setSort(dto.getSort());
         entity.setStatus(dto.getStatus());
+        entity.setListClass(dto.getListClass() != null ? dto.getListClass() : "");
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
 
@@ -84,6 +86,7 @@ public class DictDataService {
         vo.setDictValue(entity.getDictValue());
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
+        vo.setListClass(entity.getListClass());
         vo.setRemark(entity.getRemark());
         return vo;
     }

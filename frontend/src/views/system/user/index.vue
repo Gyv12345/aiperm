@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Edit, Delete, Search, Refresh, Key } from '@element-plus/icons-vue'
 import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
 import { roleApi, type RoleVO } from '@/api/system/role'
+import { deptApi, type DeptVO } from '@/api/system/dept'
 import type { PageResult, TableColumn } from '@/types'
 import { useDict } from '@/composables/useDict'
 
@@ -33,9 +34,35 @@ function handleSelectionChange(rows: UserVO[]) {
   selectedRows.value = rows
 }
 
-// 批量删除（暂无后端接口）
-function handleBatchDelete() {
-  ElMessage.info('批量删除 ' + selectedRows.value.length + ' 个用户')
+// 批量删除
+async function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的用户')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRows.value.length} 个用户吗？`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    const ids = selectedRows.value.map(row => row.id!)
+    await userApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    tableRef.value?.clearSelection()
+    fetchUserList()
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
 }
 
 // 表单引用
@@ -50,6 +77,9 @@ const tableData = ref<UserVO[]>([])
 
 // 角色列表（用于分配角色）
 const roleList = ref<RoleVO[]>([])
+
+// 部门树（用于选择部门）
+const deptTree = ref<DeptVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -80,6 +110,7 @@ const formData = reactive<UserDTO>({
   avatar: '',
   deptId: undefined,
   postIds: undefined,
+  roleIds: [],
   status: 1,
   remark: '',
 })
@@ -193,6 +224,16 @@ async function fetchRoleList() {
   }
 }
 
+// 获取部门树
+async function fetchDeptTree() {
+  try {
+    deptTree.value = await deptApi.tree()
+  }
+  catch (error) {
+    console.error('获取部门树失败:', error)
+  }
+}
+
 // 搜索
 function handleSearch() {
   pagination.page = 1
@@ -223,6 +264,7 @@ function handleCreate() {
     avatar: '',
     deptId: undefined,
     postIds: undefined,
+    roleIds: [],
     status: 1,
     remark: '',
   })
@@ -243,6 +285,7 @@ function handleUpdate(row: UserVO) {
     avatar: row.avatar || '',
     deptId: row.deptId,
     postIds: row.postIds,
+    roleIds: row.roleIds || [],
     status: row.status || 0,
     remark: '',
   })
@@ -357,6 +400,7 @@ async function handleSubmit() {
       avatar: formData.avatar || undefined,
       deptId: formData.deptId,
       postIds: formData.postIds,
+      roleIds: formData.roleIds,
       status: formData.status,
       remark: formData.remark || undefined,
     }
@@ -408,6 +452,7 @@ function getGenderText(gender: number): string {
 onMounted(() => {
   fetchUserList()
   fetchRoleList()
+  fetchDeptTree()
 })
 </script>
 
@@ -734,6 +779,36 @@ onMounted(() => {
                   :key="item.value"
                   :label="item.label"
                   :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="部门">
+              <el-tree-select
+                v-model="formData.deptId"
+                :data="deptTree"
+                :props="{ label: 'deptName', value: 'id', children: 'children' }"
+                placeholder="请选择部门"
+                clearable
+                check-strictly
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="角色">
+              <el-select
+                v-model="formData.roleIds"
+                multiple
+                placeholder="请选择角色"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="role in roleList"
+                  :key="role.id"
+                  :label="role.roleName"
+                  :value="role.id!"
                 />
               </el-select>
             </el-form-item>

@@ -9,6 +9,7 @@ import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -99,6 +100,23 @@ public class UserService {
             throw new BusinessException("不能删除管理员用户");
         }
         userRepo.deleteById(id);
+    }
+
+    /**
+     * 批量删除
+     */
+    @Transactional
+    public void deleteBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        // 过滤掉管理员用户
+        List<Long> toDelete = ids.stream()
+                .filter(id -> !userRepo.isAdmin(id))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            userRepo.deleteByIds(toDelete);
+        }
     }
 
     /**

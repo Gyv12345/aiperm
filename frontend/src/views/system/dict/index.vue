@@ -51,7 +51,38 @@ const dataForm = reactive<DictDataDTO & { id?: number }>({
   dictValue: '',
   sort: 0,
   status: 1,
+  listClass: '',
   remark: '',
+})
+
+// 预设 Tag 样式
+const tagStyleOptions = [
+  { value: 'default', label: '默认' },
+  { value: 'primary', label: '主要' },
+  { value: 'success', label: '成功' },
+  { value: 'warning', label: '警告' },
+  { value: 'danger', label: '危险' },
+  { value: 'info', label: '信息' },
+] as const
+
+// 判断是否是预设 Tag 类型
+function isPresetTagType(val: string) {
+  return tagStyleOptions.some(o => o.value === val)
+}
+
+// 选中预设 Tag 类型
+function selectTagType(val: string) {
+  dataForm.listClass = val
+}
+
+// 自定义颜色值（从 listClass 提取，仅当 listClass 是十六进制颜色时）
+const customColor = computed({
+  get() {
+    return dataForm.listClass && !isPresetTagType(dataForm.listClass) ? dataForm.listClass : null
+  },
+  set(val: string | null) {
+    dataForm.listClass = val || ''
+  },
 })
 
 // 字典类型表单验证规则
@@ -262,6 +293,7 @@ function handleEditData(row: DictDataVO) {
       dictValue: row.dictValue,
       sort: row.sort,
       status: row.status,
+      listClass: row.listClass || '',
       remark: row.remark,
     })
   }
@@ -347,6 +379,7 @@ async function submitDataForm() {
       dictValue: dataForm.dictValue,
       sort: dataForm.sort,
       status: dataForm.status,
+      listClass: dataForm.listClass || '',
       remark: dataForm.remark || undefined,
     }
 
@@ -533,8 +566,25 @@ onMounted(() => {
           prop="dictLabel"
           label="字典标签"
           min-width="120"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.listClass && isPresetTagType(row.listClass)"
+              :type="row.listClass === 'default' ? '' : row.listClass"
+              size="small"
+            >
+              {{ row.dictLabel }}
+            </el-tag>
+            <el-tag
+              v-else-if="row.listClass && row.listClass.startsWith('#')"
+              :style="{ backgroundColor: row.listClass, borderColor: row.listClass, color: '#fff' }"
+              size="small"
+            >
+              {{ row.dictLabel }}
+            </el-tag>
+            <span v-else>{{ row.dictLabel }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="dictValue"
           label="字典键值"
@@ -718,6 +768,35 @@ onMounted(() => {
             controls-position="right"
             style="width: 100%"
           />
+        </el-form-item>
+        <el-form-item label="样式">
+          <div class="flex flex-wrap gap-2 mb-2">
+            <el-tag
+              v-for="opt in tagStyleOptions"
+              :key="opt.value"
+              :type="opt.value === 'default' ? '' : opt.value as any"
+              :effect="dataForm.listClass === opt.value ? 'dark' : 'light'"
+              class="cursor-pointer"
+              @click="selectTagType(opt.value)"
+            >
+              {{ opt.label }}
+            </el-tag>
+          </div>
+          <div class="flex items-center gap-2">
+            <el-color-picker
+              v-model="customColor"
+              show-alpha
+              size="small"
+            />
+            <span class="text-gray-400 text-xs">自定义颜色</span>
+            <el-tag
+              v-if="customColor"
+              :style="{ backgroundColor: customColor, borderColor: customColor, color: '#fff' }"
+              size="small"
+            >
+              预览
+            </el-tag>
+          </div>
         </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="dataForm.status">

@@ -69,6 +69,10 @@ export const userApi = {
   delete: (id: number) =>
     request.delete<void>(`/system/user/${id}`),
 
+  /** 批量删除用户 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/system/user/batch', { data: { ids } }),
+
   /** 重置用户密码 */
   resetPassword: (id: number, newPassword: string) =>
     request.put<void>(`/system/user/${id}/reset-password`, { newPassword }),

@@ -501,6 +501,293 @@ result.map(this::toVO)                      // 分页结果转换
 前端使用生成的 API 函数（类型安全，无需手写）
 ```
 
+## 字典通用组件使用规范
+
+系统提供三个字典相关工具，**已全局注册，无需手动导入**。
+
+### `useDict` 组合式函数
+
+```typescript
+import { useDict } from '@/composables'
+
+// 支持同时获取多个字典类型
+const { sys_status } = useDict('sys_status')
+const { sys_status, sys_user_sex } = useDict('sys_status', 'sys_user_sex')
+// 返回 Ref<DictDataVO[]>，每次调用直接请求后端（后端 Redis 缓存）
+```
+
+### `DictTag` 展示组件（用于表格列）
+
+```vue
+<script setup>
+const { sys_status } = useDict('sys_status')
+</script>
+
+<template>
+  <!-- 自动根据 listClass 渲染颜色/类型 -->
+  <DictTag :options="sys_status" :value="row.status" />
+</template>
+```
+
+- `options`：字典数据数组（由 `useDict` 提供）
+- `value`：当前值（与 `dictValue` 比对），找不到时直接显示原始值
+
+### `DictSelect` 下拉选择组件（用于表单/筛选）
+
+```vue
+<!-- 基础用法 -->
+<DictSelect v-model="form.status" dict-type="sys_status" />
+
+<!-- 带占位符和可清空 -->
+<DictSelect
+  v-model="queryForm.status"
+  dict-type="sys_status"
+  placeholder="请选择状态"
+  clearable
+/>
+```
+
+- `dict-type`：字典类型标识（对应后端 `dictType` 字段）
+- 选项左侧带彩色 Tag 预览样式
+- 支持 `v-model`、`placeholder`、`clearable`、`disabled`
+
+### 字典项样式（listClass）规范
+
+在字典管理页面配置字典项时，`listClass` 支持：
+
+| 值 | 效果 |
+|----|------|
+| `default` / `primary` / `success` / `warning` / `danger` / `info` | Element Plus Tag 预设类型 |
+| `#ff5500`（十六进制颜色） | 自定义背景色，白色文字 |
+| 空字符串 | 无样式，显示纯文本 |
+
+### 完整示例（用户列表）
+
+```vue
+<script setup lang="ts">
+import { useDict } from '@/composables'
+const { sys_user_status, sys_user_sex } = useDict('sys_user_status', 'sys_user_sex')
+</script>
+
+<template>
+  <el-table-column label="状态">
+    <template #default="{ row }">
+      <DictTag :options="sys_user_status" :value="row.status" />
+    </template>
+  </el-table-column>
+
+  <!-- 搜索表单 -->
+  <DictSelect v-model="queryForm.status" dict-type="sys_user_status" clearable />
+</template>
+```
+
+---
+
+## 前端列表页面 UI 规范
+
+前端标准列表页由以下几部分组成，组件已全局注册，无需手动导入。
+
+### 页面结构模板
+
+```vue
+<template>
+  <div class="p-4">
+    <!-- 搜索区 -->
+    <el-card class="mb-4">
+      <el-form :inline="true" :model="query">
+        <el-form-item label="状态">
+          <DictSelect v-model="query.status" dict-type="sys_status" clearable />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
+          <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 表格区 -->
+    <el-card>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
+          <el-button type="primary" :icon="Plus" @click="handleCreate">新增</el-button>
+          <el-button :icon="Download" @click="handleExport">导出</el-button>
+        </template>
+        <template #tools>
+          <el-tooltip content="刷新">
+            <el-button :icon="Refresh" circle @click="fetchList" />
+          </el-tooltip>
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
+
+      <!-- 表格 -->
+      <el-table
+        ref="tableRef"
+        v-loading="loading"
+        :data="tableData"
+        border
+        @selection-change="handleSelectionChange"
+        @sort-change="handleSortChange"
+      >
+        <el-table-column type="selection" width="55" fixed="left" />
+        <el-table-column
+          v-for="col in visibleColumns"
+          :key="col.key"
+          :prop="col.key"
+          :label="col.label"
+          :fixed="col.fixed"
+        />
+        <!-- 字典列示例 -->
+        <el-table-column label="状态" width="80" align="center">
+          <template #default="{ row }">
+            <DictTag :options="sys_status" :value="row.status" />
+          </template>
+        </el-table-column>
+        <!-- 操作列 -->
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="handleUpdate(row)">编辑</el-button>
+            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="mt-4 flex justify-end">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
+    </el-card>
+
+    <!-- 浮动多选操作条 -->
+    <SelectionBar :count="selectedRows.length" @clear="tableRef?.clearSelection()">
+      <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
+    </SelectionBar>
+  </div>
+</template>
+```
+
+### 字典三场景规则
+
+| 场景 | 组件 | 说明 |
+|------|------|------|
+| 列表（表格列） | `DictTag` | 始终使用，自动根据 listClass 渲染颜色 |
+| 筛选区 | `DictSelect` | 始终使用，加 `clearable` 属性 |
+| 表单（≤4项） | `DictRadio` | 选项少用单选组，更直观 |
+| 表单（>4项） | `DictSelect` | 选项多用下拉，节省空间 |
+
+### TableToolbar — 工具栏布局组件
+
+只做布局容器，左侧操作按钮、右侧工具图标：
+
+```vue
+<TableToolbar>
+  <template #actions>
+    <!-- 新增、导出等操作按钮 -->
+  </template>
+  <template #tools>
+    <!-- 刷新、ColumnSetting 等工具图标 -->
+  </template>
+</TableToolbar>
+```
+
+### ColumnSetting — 列显示设置组件
+
+```typescript
+// columns 格式
+interface TableColumn {
+  key: string       // 对应 el-table-column 的 prop
+  label: string     // 列标题
+  visible: boolean  // 是否显示
+  fixed?: boolean   // 固定列（固定列不允许隐藏）
+}
+
+const columns = ref<TableColumn[]>([
+  { key: 'id',         label: 'ID',    visible: true, fixed: true },
+  { key: 'username',   label: '用户名', visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+```
+
+```vue
+<ColumnSetting v-model="columns" />
+```
+
+### SelectionBar — 浮动多选操作条
+
+勾选行后从底部滑入，取消选择后消失：
+
+```vue
+<SelectionBar :count="selectedRows.length" @clear="tableRef?.clearSelection()">
+  <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
+  <el-button :icon="Download" @click="handleBatchExport">批量导出</el-button>
+</SelectionBar>
+```
+
+- `count`：已选行数，为 0 时自动隐藏（动画收起）
+- `@clear`：点击「清空」按钮时触发
+
+### 多选列规范
+
+- **始终放在第一列**
+- **固定左侧** `fixed="left"`
+- 监听 `@selection-change="handleSelectionChange"`
+
+```typescript
+const selectedRows = ref<XxxVO[]>([])
+function handleSelectionChange(rows: XxxVO[]) {
+  selectedRows.value = rows
+}
+```
+
+### 排序规范
+
+使用 ElTable 原生排序（`sortable="custom"`），后端处理排序逻辑：
+
+```typescript
+// 查询参数统一用 sortField / sortOrder
+const query = reactive({
+  sortField: undefined as string | undefined,
+  sortOrder: undefined as 'asc' | 'desc' | undefined,
+})
+
+function handleSortChange({ prop, order }: { prop: string; order: string | null }) {
+  query.sortField = prop || undefined
+  query.sortOrder = order === 'ascending' ? 'asc'
+    : order === 'descending' ? 'desc'
+    : undefined
+  fetchList()
+}
+```
+
+```vue
+<!-- 列上加 sortable="custom" -->
+<el-table-column prop="createTime" label="创建时间" sortable="custom" />
+```
+
+### 全局注册组件清单
+
+| 组件 | 路径 | 用途 |
+|------|------|------|
+| `DictTag` | `components/dict/DictTag.vue` | 列表字典标签 |
+| `DictSelect` | `components/dict/DictSelect.vue` | 筛选/表单下拉 |
+| `DictRadio` | `components/dict/DictRadio.vue` | 表单单选组（≤4项） |
+| `TableToolbar` | `components/table/TableToolbar.vue` | 工具栏布局 |
+| `ColumnSetting` | `components/table/ColumnSetting.vue` | 列显示设置 |
+| `SelectionBar` | `components/table/SelectionBar.vue` | 浮动多选操作条 |
+
+---
+
 ## 开发检查清单
 
 开发新模块前逐项确认：
@@ -516,3 +803,5 @@ result.map(this::toVO)                      // 分页结果转换
 - [ ] DTO 使用 `@JsonView` 和验证分组
 - [ ] 后端完成后运行 `pnpm run generate:api` 同步前端
 - [ ] IDE 中无编译错误和类型错误
+- [ ] 前端列表页使用 `TableToolbar` + `ColumnSetting` + `SelectionBar` 结构
+- [ ] 字典列表用 `DictTag`，筛选用 `DictSelect`，表单按数量用 `DictRadio`/`DictSelect`

@@ -16,6 +16,7 @@ import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @Tag(name = "用户管理")
 @RestController
@@ -65,6 +66,15 @@ public class SysUserController {
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
         userService.delete(id);
+        return R.ok();
+    }
+
+    @Operation(summary = "批量删除用户")
+    @SaCheckPermission("system:user:delete")
+    @Log(title = "用户管理", operType = OperType.DELETE)
+    @DeleteMapping("/batch")
+    public R<Void> deleteBatch(@RequestBody List<Long> ids) {
+        userService.deleteBatch(ids);
         return R.ok();
     }
 

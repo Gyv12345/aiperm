@@ -18,5 +18,7 @@ public class SysDictData extends BaseEntity {
 
     private Integer status;
 
+    private String listClass;
+
     private String remark;
 }

@@ -20,8 +20,8 @@ public class DictDataRepository extends BaseRepository<SysDictData> {
      */
     public void insert(SysDictData entity) {
         String sql = """
-            INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, sort, status, remark, deleted, version, create_time, create_by)
-            VALUES (:dictType, :dictLabel, :dictValue, :sort, :status, :remark, 0, 0, :createTime, :createBy)
+            INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, sort, status, list_class, remark, deleted, version, create_time, create_by)
+            VALUES (:dictType, :dictLabel, :dictValue, :sort, :status, :listClass, :remark, 0, 0, :createTime, :createBy)
             """;
         db.sql(sql)
                 .param("dictType", entity.getDictType())
@@ -29,6 +29,7 @@ public class DictDataRepository extends BaseRepository<SysDictData> {
                 .param("dictValue", entity.getDictValue())
                 .param("sort", entity.getSort())
                 .param("status", entity.getStatus())
+                .param("listClass", entity.getListClass() != null ? entity.getListClass() : "")
                 .param("remark", entity.getRemark())
                 .param("createTime", LocalDateTime.now())
                 .param("createBy", entity.getCreateBy())
@@ -41,7 +42,8 @@ public class DictDataRepository extends BaseRepository<SysDictData> {
     public int update(SysDictData entity) {
         String sql = """
             UPDATE sys_dict_data
-            SET dict_label = :dictLabel, dict_value = :dictValue, sort = :sort, status = :status, remark = :remark,
+            SET dict_label = :dictLabel, dict_value = :dictValue, sort = :sort, status = :status,
+                list_class = :listClass, remark = :remark,
                 update_time = :updateTime, update_by = :updateBy
             WHERE id = :id AND deleted = 0
             """;
@@ -50,6 +52,7 @@ public class DictDataRepository extends BaseRepository<SysDictData> {
                 .param("dictValue", entity.getDictValue())
                 .param("sort", entity.getSort())
                 .param("status", entity.getStatus())
+                .param("listClass", entity.getListClass() != null ? entity.getListClass() : "")
                 .param("remark", entity.getRemark())
                 .param("updateTime", LocalDateTime.now())
                 .param("updateBy", entity.getUpdateBy())

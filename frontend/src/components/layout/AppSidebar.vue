@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { usePermissionStore } from '@/stores/permission'
@@ -24,16 +24,37 @@ const collapsed = computed(() => appStore.sidebarCollapsed)
 // 当前激活的菜单
 const activeMenu = computed(() => route.path)
 
-// 打开的子菜单
-const defaultOpeneds = computed(() => {
-  const opens: string[] = []
-  menuItems.value.forEach((menu) => {
-    if (menu.menuType === '1' && menu.children && menu.children.length > 0) {
-      opens.push(`menu-${menu.id}`)
+// 当前打开的子菜单（只保持一个打开）
+const openedMenu = ref<string>('')
+
+// 根据当前路由自动展开包含当前页面的父菜单
+watch(
+  () => route.path,
+  (path) => {
+    // 查找当前路由对应的父菜单
+    const parentMenu = findParentMenuByPath(menuItems.value, path)
+    if (parentMenu) {
+      openedMenu.value = `menu-${parentMenu.id}`
     }
-  })
-  return opens
-})
+  },
+  { immediate: true }
+)
+
+// 根据路径查找父菜单
+function findParentMenuByPath(menus: MenuItem[], targetPath: string): MenuItem | null {
+  for (const menu of menus) {
+    if (menu.menuType === '1' && menu.children) {
+      for (const child of menu.children) {
+        const childPath = child.path?.startsWith('/') ? child.path : `/${child.path}`
+        const fullPath = menu.path ? `${menu.path}/${child.path}` : childPath
+        if (fullPath === targetPath || childPath === targetPath) {
+          return menu
+        }
+      }
+    }
+  }
+  return null
+}
 
 // 切换侧边栏
 function toggleSidebar() {
@@ -78,6 +99,39 @@ function handleSelect(index: string) {
   }
 }
 
+// 处理子菜单展开
+function handleMenuOpen(index: string) {
+  openedMenu.value = index
+}
+
+// 获取当前激活菜单的索引
+function getActiveMenuIndex(): string {
+  // 根据当前路由找到对应的菜单项
+  const menu = findMenuByPath(menuItems.value, route.path)
+  return menu ? `menu-${menu.id}` : route.path
+}
+
+// 根据路径查找菜单
+function findMenuByPath(menus: MenuItem[], targetPath: string): MenuItem | null {
+  for (const menu of menus) {
+    // 检查子菜单
+    if (menu.children) {
+      for (const child of menu.children) {
+        const childPath = child.path?.startsWith('/') ? child.path : `/${child.path}`
+        if (childPath === targetPath) {
+          return child
+        }
+      }
+    }
+    // 检查当前菜单
+    const menuPath = menu.path?.startsWith('/') ? menu.path : `/${menu.path}`
+    if (menuPath === targetPath) {
+      return menu
+    }
+  }
+  return null
+}
+
 // 根据 ID 查找菜单
 function findMenuById(menus: MenuItem[], id: number): MenuItem | null {
   for (const menu of menus) {
@@ -120,15 +174,17 @@ function getIconComponent(iconName: string | null | undefined) {
 
     <!-- 菜单列表 -->
     <el-menu
-      :default-active="activeMenu"
-      :default-openeds="defaultOpeneds"
+      :default-active="getActiveMenuIndex()"
+      :default-openeds="openedMenu ? [openedMenu] : []"
       :collapse="collapsed"
       :collapse-transition="false"
+      :unique-opened="true"
       background-color="transparent"
       text-color="rgba(255, 255, 255, 0.85)"
       active-text-color="#409eff"
       class="sidebar-menu border-none flex-1"
       @select="handleSelect"
+      @open="handleMenuOpen"
     >
       <template
         v-for="menu in menuItems"
