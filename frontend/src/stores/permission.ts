@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
-import { authControllerMenus } from '@/api/generated'
-import type { MenuVO } from '@/models'
+import { authApi } from '@/api/auth'
+import type { MenuVO } from '@/api/system/menu'
 
 // 组件映射表
 const componentModules = import.meta.glob('@/views/**/*.vue')
@@ -26,15 +26,9 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // 获取用户菜单
   async function fetchMenus() {
-    try {
-      const { data } = await authControllerMenus()
-      menus.value = data as MenuItem[]
-      return menus.value
-    }
-    catch (error) {
-      console.error('Failed to fetch menus:', error)
-      throw error
-    }
+    const data = await authApi.menus()
+    menus.value = data as MenuItem[]
+    return menus.value
   }
 
   // 根据菜单生成路由

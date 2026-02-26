@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
-import { authControllerInfo } from '@/api/generated'
+import { authApi } from '@/api/auth'
 
 export interface UserInfo {
   id: number
@@ -38,22 +38,16 @@ export const useUserStore = defineStore(
 
     // 从后端获取用户信息
     async function fetchUserInfo() {
-      try {
-        const { data } = await authControllerInfo()
-        userInfo.value = {
-          id: data.id,
-          username: data.username,
-          nickname: data.nickname,
-          avatar: data.avatar,
-          roles: data.roles,
-          permissions: data.permissions,
-        }
-        return userInfo.value
+      const data = await authApi.info()
+      userInfo.value = {
+        id: data.id,
+        username: data.username,
+        nickname: data.nickname,
+        avatar: data.avatar,
+        roles: data.roles,
+        permissions: data.permissions,
       }
-      catch (error) {
-        console.error('Failed to fetch user info:', error)
-        throw error
-      }
+      return userInfo.value
     }
 
     // 检查是否有指定角色
@@ -76,9 +70,17 @@ export const useUserStore = defineStore(
     }
 
     // 登出
-    function logout() {
-      token.value = null
-      userInfo.value = null
+    async function logout() {
+      try {
+        await authApi.logout()
+      }
+      catch {
+        // 忽略登出错误
+      }
+      finally {
+        token.value = null
+        userInfo.value = null
+      }
     }
 
     return {

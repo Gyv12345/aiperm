@@ -2,10 +2,27 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { customFetch } from '@/utils/api-mutator'
+import request from '@/utils/request'
+import type { PageResult } from '@/types'
+
+interface ConfigVO {
+  id: number
+  configKey: string
+  configValue: string
+  configType: string
+  remark: string
+  createTime: string
+}
+
+interface ConfigDTO {
+  page?: number
+  pageSize?: number
+  configKey?: string
+  configType?: string
+}
 
 // 配置列表
-const configList = ref<any[]>([])
+const configList = ref<ConfigVO[]>([])
 const loading = ref(false)
 
 // 分页
@@ -48,19 +65,17 @@ const rules = computed<FormRules>(() => ({
 async function fetchConfigList() {
   loading.value = true
   try {
-    const params = new URLSearchParams()
-    params.append('page', String(pagination.page))
-    params.append('pageSize', String(pagination.pageSize))
-    if (searchForm.configKey) params.append('configKey', searchForm.configKey)
-    if (searchForm.configType) params.append('configType', searchForm.configType)
+    const params: ConfigDTO = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    }
+    if (searchForm.configKey) params.configKey = searchForm.configKey
+    if (searchForm.configType) params.configType = searchForm.configType
 
-    const { data } = await customFetch<any>({
-      url: `/enterprise/config?${params.toString()}`,
-      method: 'GET',
-    })
-    if (data?.data) {
-      configList.value = data.data.list || []
-      pagination.total = data.data.total || 0
+    const data = await request.get<PageResult<ConfigVO>>('/enterprise/config', { params })
+    if (data) {
+      configList.value = data.records || []
+      pagination.total = data.total || 0
     }
   }
   catch (error) {
@@ -105,7 +120,7 @@ function handleAdd() {
 }
 
 // 编辑
-function handleEdit(row: any) {
+function handleEdit(row: ConfigVO) {
   resetForm()
   dialogTitle.value = '编辑系统配置'
   Object.assign(form, {
@@ -119,7 +134,7 @@ function handleEdit(row: any) {
 }
 
 // 删除
-async function handleDelete(row: any) {
+async function handleDelete(row: ConfigVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除配置「${row.configKey}」吗？`,
@@ -131,10 +146,7 @@ async function handleDelete(row: any) {
       },
     )
 
-    await customFetch<void>({
-      url: `/enterprise/config/${row.id}`,
-      method: 'DELETE',
-    })
+    await request.delete(`/enterprise/config/${row.id}`)
     ElMessage.success('删除成功')
     fetchConfigList()
   }
@@ -162,21 +174,11 @@ async function submitForm() {
     }
 
     if (form.id) {
-      await customFetch<void>({
-        url: `/enterprise/config/${form.id}`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: submitData,
-      })
+      await request.put(`/enterprise/config/${form.id}`, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await customFetch<void>({
-        url: '/enterprise/config',
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: submitData,
-      })
+      await request.post('/enterprise/config', submitData)
       ElMessage.success('新增成功')
     }
 

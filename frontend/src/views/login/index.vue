@@ -4,12 +4,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, Picture } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { LoginRequest, CaptchaVO } from '@/models'
+import { authApi, type LoginRequest, type CaptchaVO } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
-const api = getAiPermRBACAPI()
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -50,9 +48,7 @@ const rules = computed<FormRules>(() => ({
 // 获取验证码
 async function fetchCaptcha() {
   try {
-    const response = await api.captcha() as any
-    // API 返回 { data: RCaptchaVO }，验证码数据在 data.data 中
-    const captchaInfo = response.data?.data
+    const captchaInfo = await authApi.captcha()
     if (captchaInfo) {
       captchaData.value = {
         captchaKey: captchaInfo.captchaKey || '',
@@ -76,20 +72,18 @@ async function handleLogin() {
     await formRef.value.validate()
     loading.value = true
 
-    const response = await api.login(loginForm) as any
-    // API 返回 { data: RLoginVO }，登录数据在 data.data 中
-    const loginData = response.data?.data
+    const loginData = await authApi.login(loginForm)
 
     if (loginData) {
       // 保存 token
       userStore.setToken(loginData.token || '')
 
       // 保存用户信息
-      if (loginData.userInfo) {
+      if (loginData.nickname) {
         userStore.setUserInfo({
-          id: loginData.userInfo.id || 0,
-          username: loginData.userInfo.username || '',
-          nickname: loginData.userInfo.nickname || '',
+          id: 0,
+          username: loginData.username || '',
+          nickname: loginData.nickname || '',
           roles: ['admin'],
           permissions: ['*'],
         })

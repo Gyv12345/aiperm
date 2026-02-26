@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { usePermissionStore } from '@/stores/permission'
-import type { MenuVO } from '@/models'
+import type { MenuVO } from '@/api/system/menu'
 
 interface MenuItem extends MenuVO {
   children?: MenuItem[]

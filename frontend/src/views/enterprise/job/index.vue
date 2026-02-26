@@ -2,10 +2,31 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh, VideoPause, VideoPlay } from '@element-plus/icons-vue'
-import { customFetch } from '@/utils/api-mutator'
+import request from '@/utils/request'
+import type { PageResult } from '@/types'
+
+interface JobVO {
+  id: number
+  jobName: string
+  jobGroup: string
+  cronExpression: string
+  beanClass: string
+  status: number
+  remark: string
+  nextTime: string
+  createTime: string
+}
+
+interface JobDTO {
+  page?: number
+  pageSize?: number
+  jobName?: string
+  jobGroup?: string
+  status?: number
+}
 
 // 定时任务列表
-const jobList = ref<any[]>([])
+const jobList = ref<JobVO[]>([])
 const loading = ref(false)
 
 // 分页
@@ -65,20 +86,18 @@ const rules = computed<FormRules>(() => ({
 async function fetchJobList() {
   loading.value = true
   try {
-    const params = new URLSearchParams()
-    params.append('page', String(pagination.page))
-    params.append('pageSize', String(pagination.pageSize))
-    if (searchForm.jobName) params.append('jobName', searchForm.jobName)
-    if (searchForm.jobGroup) params.append('jobGroup', searchForm.jobGroup)
-    if (searchForm.status !== undefined) params.append('status', String(searchForm.status))
+    const params: JobDTO = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    }
+    if (searchForm.jobName) params.jobName = searchForm.jobName
+    if (searchForm.jobGroup) params.jobGroup = searchForm.jobGroup
+    if (searchForm.status !== undefined) params.status = searchForm.status
 
-    const { data } = await customFetch<any>({
-      url: `/enterprise/job?${params.toString()}`,
-      method: 'GET',
-    })
-    if (data?.data) {
-      jobList.value = data.data.list || []
-      pagination.total = data.data.total || 0
+    const data = await request.get<PageResult<JobVO>>('/enterprise/job', { params })
+    if (data) {
+      jobList.value = data.records || []
+      pagination.total = data.total || 0
     }
   }
   catch (error) {
@@ -126,7 +145,7 @@ function handleAdd() {
 }
 
 // 编辑
-function handleEdit(row: any) {
+function handleEdit(row: JobVO) {
   resetForm()
   dialogTitle.value = '编辑定时任务'
   Object.assign(form, {
@@ -142,7 +161,7 @@ function handleEdit(row: any) {
 }
 
 // 删除
-async function handleDelete(row: any) {
+async function handleDelete(row: JobVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除定时任务「${row.jobName}」吗？`,
@@ -154,10 +173,7 @@ async function handleDelete(row: any) {
       },
     )
 
-    await customFetch<void>({
-      url: `/enterprise/job/${row.id}`,
-      method: 'DELETE',
-    })
+    await request.delete(`/enterprise/job/${row.id}`)
     ElMessage.success('删除成功')
     fetchJobList()
   }
@@ -170,12 +186,9 @@ async function handleDelete(row: any) {
 }
 
 // 暂停任务
-async function handlePause(row: any) {
+async function handlePause(row: JobVO) {
   try {
-    await customFetch<void>({
-      url: `/enterprise/job/${row.id}/pause`,
-      method: 'PUT',
-    })
+    await request.put(`/enterprise/job/${row.id}/pause`)
     ElMessage.success('暂停成功')
     fetchJobList()
   }
@@ -186,12 +199,9 @@ async function handlePause(row: any) {
 }
 
 // 恢复任务
-async function handleResume(row: any) {
+async function handleResume(row: JobVO) {
   try {
-    await customFetch<void>({
-      url: `/enterprise/job/${row.id}/resume`,
-      method: 'PUT',
-    })
+    await request.put(`/enterprise/job/${row.id}/resume`)
     ElMessage.success('恢复成功')
     fetchJobList()
   }
@@ -219,21 +229,11 @@ async function submitForm() {
     }
 
     if (form.id) {
-      await customFetch<void>({
-        url: `/enterprise/job/${form.id}`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: submitData,
-      })
+      await request.put(`/enterprise/job/${form.id}`, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await customFetch<void>({
-        url: '/enterprise/job',
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: submitData,
-      })
+      await request.post('/enterprise/job', submitData)
       ElMessage.success('新增成功')
     }
 

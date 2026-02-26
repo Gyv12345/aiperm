@@ -2,10 +2,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh, Key } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysUser, SysRole, UserDTO, PageResultSysUser } from '@/models'
-
-const api = getAiPermRBACAPI()
+import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
+import { roleApi, type RoleVO } from '@/api/system/role'
+import type { PageResult } from '@/types'
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -15,10 +14,10 @@ const resetPasswordFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 // 表格数据
-const tableData = ref<SysUser[]>([])
+const tableData = ref<UserVO[]>([])
 
 // 角色列表（用于分配角色）
-const roleList = ref<SysRole[]>([])
+const roleList = ref<RoleVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -43,13 +42,12 @@ const formData = reactive<UserDTO>({
   username: '',
   password: '',
   nickname: '',
-  realName: '',
   email: '',
   phone: '',
   gender: 0,
   avatar: '',
   deptId: undefined,
-  postId: undefined,
+  postIds: undefined,
   status: 0,
   remark: '',
 })
@@ -84,7 +82,7 @@ const genderOptions = [
 // 状态选项
 const statusOptions = [
   { value: 0, label: '正常' },
-  { value: 1, label: '停用' },
+  { value: 1, label: 'stop' },
 ]
 
 // 表单验证规则
@@ -138,23 +136,17 @@ const resetPasswordRules = computed<FormRules>(() => ({
 async function fetchUserList() {
   loading.value = true
   try {
-    const params = {
-      dto: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        username: queryForm.username || undefined,
-        nickname: queryForm.nickname || undefined,
-        phone: queryForm.phone || undefined,
-        status: queryForm.status,
-        password: '', // 查询时不需要密码
-      } as UserDTO,
+    const params: UserDTO = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      username: queryForm.username || undefined,
+      nickname: queryForm.nickname || undefined,
+      phone: queryForm.phone || undefined,
+      status: queryForm.status,
     }
-    const { data } = await api.page(params)
-    if (data && data.data) {
-      const result = data.data as PageResultSysUser
-      tableData.value = result.list || []
-      pagination.total = result.total || 0
-    }
+    const result = await userApi.list(params) as PageResult<UserVO>
+    tableData.value = result.records || []
+    pagination.total = result.total || 0
   }
   catch (error) {
     console.error('获取用户列表失败:', error)
@@ -168,10 +160,7 @@ async function fetchUserList() {
 // 获取所有角色列表
 async function fetchRoleList() {
   try {
-    const { data } = await api.list3()
-    if (data?.data) {
-      roleList.value = data.data
-    }
+    roleList.value = await roleApi.all()
   }
   catch (error) {
     console.error('获取角色列表失败:', error)
@@ -202,13 +191,12 @@ function handleCreate() {
     username: '',
     password: '',
     nickname: '',
-    realName: '',
     email: '',
     phone: '',
     gender: 0,
     avatar: '',
     deptId: undefined,
-    postId: undefined,
+    postIds: undefined,
     status: 0,
     remark: '',
   })
@@ -216,28 +204,27 @@ function handleCreate() {
 }
 
 // 编辑用户
-function handleUpdate(row: SysUser) {
+function handleUpdate(row: UserVO) {
   dialogType.value = 'update'
   currentId.value = row.id || 0
   Object.assign(formData, {
     username: row.username || '',
     password: '',
     nickname: row.nickname || '',
-    realName: row.realName || '',
     email: row.email || '',
     phone: row.phone || '',
     gender: row.gender || 0,
     avatar: row.avatar || '',
     deptId: row.deptId,
-    postId: row.postId,
+    postIds: row.postIds,
     status: row.status || 0,
-    remark: row.remark || '',
+    remark: '',
   })
   dialogVisible.value = true
 }
 
 // 删除用户
-async function handleDelete(row: SysUser) {
+async function handleDelete(row: UserVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除用户「${row.username}」吗？`,
@@ -249,7 +236,7 @@ async function handleDelete(row: SysUser) {
       },
     )
 
-    await api._delete(row.id!)
+    await userApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchUserList()
   }
@@ -262,10 +249,10 @@ async function handleDelete(row: SysUser) {
 }
 
 // 修改用户状态
-async function handleStatusChange(row: SysUser) {
+async function handleStatusChange(row: UserVO) {
   const newStatus = row.status === 0 ? 1 : 0
   try {
-    await api.changeStatus(row.id!, { status: newStatus })
+    await userApi.changeStatus(row.id!, newStatus)
     ElMessage.success('状态修改成功')
     fetchUserList()
   }
@@ -276,7 +263,7 @@ async function handleStatusChange(row: SysUser) {
 }
 
 // 打开重置密码弹窗
-function handleResetPassword(row: SysUser) {
+function handleResetPassword(row: UserVO) {
   currentId.value = row.id || 0
   resetPasswordForm.newPassword = ''
   resetPasswordForm.confirmPassword = ''
@@ -290,11 +277,7 @@ async function submitResetPassword() {
   try {
     await resetPasswordFormRef.value.validate()
 
-    await api.resetPassword(currentId.value, {
-      username: '', // 不需要用户名
-      password: '',
-      newPassword: resetPasswordForm.newPassword,
-    })
+    await userApi.resetPassword(currentId.value, resetPasswordForm.newPassword)
     ElMessage.success('密码重置成功')
     resetPasswordDialogVisible.value = false
   }
@@ -304,17 +287,6 @@ async function submitResetPassword() {
       ElMessage.error('重置密码失败')
     }
   }
-}
-
-// 打开分配角色弹窗
-async function handleAssignRole(row: SysUser) {
-  assignRoleForm.userId = row.id || 0
-  assignRoleForm.roleIds = []
-
-  // TODO: 获取用户当前角色
-  // 目前先清空，后续需要后端提供接口
-
-  assignRoleDialogVisible.value = true
 }
 
 // 提交分配角色
@@ -342,23 +314,22 @@ async function handleSubmit() {
       username: formData.username,
       password: formData.password || undefined,
       nickname: formData.nickname || undefined,
-      realName: formData.realName || undefined,
       email: formData.email || undefined,
       phone: formData.phone || undefined,
       gender: formData.gender,
       avatar: formData.avatar || undefined,
       deptId: formData.deptId,
-      postId: formData.postId,
+      postIds: formData.postIds,
       status: formData.status,
       remark: formData.remark || undefined,
     }
 
     if (dialogType.value === 'create') {
-      await api.create(submitData)
+      await userApi.create(submitData)
       ElMessage.success('创建成功')
     }
     else {
-      await api.update(currentId.value, submitData)
+      await userApi.update(currentId.value, submitData)
       ElMessage.success('更新成功')
     }
 
@@ -389,16 +360,6 @@ function handleSizeChange(size: number) {
   pagination.pageSize = size
   pagination.page = 1
   fetchUserList()
-}
-
-// 获取状态标签类型
-function getStatusType(status: number): 'success' | 'danger' {
-  return status === 0 ? 'success' : 'danger'
-}
-
-// 获取状态文本
-function getStatusText(status: number): string {
-  return status === 0 ? '正常' : '停用'
 }
 
 // 获取性别文本
@@ -516,12 +477,13 @@ onMounted(() => {
           show-overflow-tooltip
         />
         <el-table-column
-          prop="realName"
-          label="真实姓名"
+          prop="email"
+          label="邮箱"
           min-width="100"
+          show- 所有工具调用均失败
           show-overflow-tooltip
         />
-        <el-table-column
+        <el- table-column
           prop="phone"
           label="手机号"
           width="130"
@@ -651,17 +613,6 @@ onMounted(() => {
               <el-input
                 v-model="formData.nickname"
                 placeholder="请输入昵称"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
-              label="真实姓名"
-              prop="realName"
-            >
-              <el-input
-                v-model="formData.realName"
-                placeholder="请输入真实姓名"
               />
             </el-form-item>
           </el-col>

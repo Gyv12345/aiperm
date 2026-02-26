@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysMenu, MenuDTO } from '@/models'
-
-const api = getAiPermRBACAPI()
+import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
+import { menuApi, type MenuVO, type MenuDTO } from '@/api/system/menu'
 
 // 菜单树数据
-const menuTree = ref<SysMenu[]>([])
+const menuTree = ref<MenuVO[]>([])
 const loading = ref(false)
 
 // 弹窗相关
@@ -53,7 +50,6 @@ const form = reactive<MenuDTO & { id?: number }>({
   isCache: 0,
   visible: 1,
   status: 0,
-  permission: '',
   remark: '',
 })
 
@@ -83,7 +79,7 @@ const menuOptions = computed(() => {
     { id: 0, menuName: '根菜单' },
   ]
 
-  function buildOptions(menus: SysMenu[], level = 0): void {
+  function buildOptions(menus: MenuVO[], level = 0): void {
     menus.forEach((menu) => {
       const prefix = '  '.repeat(level)
       options.push({
@@ -127,10 +123,8 @@ function selectIcon(icon: string) {
 async function fetchMenuTree() {
   loading.value = true
   try {
-    const { data } = await api.tree()
-    if (data?.data) {
-      menuTree.value = filterMenuTree(data.data)
-    }
+    const data = await menuApi.tree()
+    menuTree.value = filterMenuTree(data)
   }
   catch (error) {
     console.error('获取菜单树失败:', error)
@@ -142,7 +136,7 @@ async function fetchMenuTree() {
 }
 
 // 筛选菜单树
-function filterMenuTree(menus: SysMenu[]): SysMenu[] {
+function filterMenuTree(menus: MenuVO[]): MenuVO[] {
   if (!filterType.value) return menus
 
   return menus.filter((menu) => {
@@ -174,7 +168,6 @@ function resetForm() {
     isCache: 0,
     visible: 1,
     status: 0,
-    permission: '',
     remark: '',
   })
   selectedIcon.value = ''
@@ -189,35 +182,31 @@ function handleAdd(parentId = 0) {
 }
 
 // 打开编辑弹窗
-async function handleEdit(row: SysMenu) {
+async function handleEdit(row: MenuVO) {
   resetForm()
   dialogTitle.value = '编辑菜单'
   formLoading.value = true
   dialogVisible.value = true
 
   try {
-    const { data } = await api.getById3(row.id!)
-    if (data?.data) {
-      const menu = data.data
-      Object.assign(form, {
-        id: menu.id,
-        menuName: menu.menuName,
-        parentId: menu.parentId || 0,
-        menuType: menu.menuType,
-        sort: menu.sort,
-        path: menu.path,
-        component: menu.component,
-        perms: menu.perms,
-        icon: menu.icon,
-        isExternal: menu.isExternal,
-        isCache: menu.isCache,
-        visible: menu.visible,
-        status: menu.status,
-        permission: menu.permission,
-        remark: menu.remark,
-      })
-      selectedIcon.value = menu.icon || ''
-    }
+    const menu = await menuApi.getById(row.id!)
+    Object.assign(form, {
+      id: menu.id,
+      menuName: menu.menuName,
+      parentId: menu.parentId || 0,
+      menuType: menu.menuType,
+      sort: menu.sort,
+      path: menu.path,
+      component: menu.component,
+      perms: menu.perms,
+      icon: menu.icon,
+      isExternal: menu.isExternal,
+      isCache: menu.isCache,
+      visible: menu.visible,
+      status: menu.status,
+      remark: menu.remark,
+    })
+    selectedIcon.value = menu.icon || ''
   }
   catch (error) {
     console.error('获取菜单详情失败:', error)
@@ -230,7 +219,7 @@ async function handleEdit(row: SysMenu) {
 }
 
 // 删除菜单
-async function handleDelete(row: SysMenu) {
+async function handleDelete(row: MenuVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除菜单「${row.menuName}」吗？`,
@@ -242,7 +231,7 @@ async function handleDelete(row: SysMenu) {
       },
     )
 
-    await api.delete3(row.id!)
+    await menuApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchMenuTree()
   }
@@ -275,16 +264,15 @@ async function submitForm() {
       isCache: form.isCache,
       visible: form.visible,
       status: form.status,
-      permission: form.permission || undefined,
       remark: form.remark || undefined,
     }
 
     if (form.id) {
-      await api.update3(form.id, submitData)
+      await menuApi.update(form.id, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await api.create3(submitData)
+      await menuApi.create(submitData)
       ElMessage.success('新增成功')
     }
 
@@ -407,7 +395,7 @@ onMounted(() => {
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            {{ row.perms || row.permission || '-' }}
+            {{ row.perms || '-' }}
           </template>
         </el-table-column>
         <el-table-column

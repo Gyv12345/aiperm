@@ -41,7 +41,7 @@ const whiteList = ['/login', '/404']
 
 // 设置路由守卫
 function setupRouterGuard(router: Router) {
-  router.beforeEach(async (to, from, next) => {
+  router.beforeEach(async (to, _from, next) => {
     const userStore = useUserStore()
     const permissionStore = usePermissionStore()
     const token = userStore.token

@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { MessageVO, MessageDTO } from '@/models'
-import { getAiPermRBACAPI } from '@/api/generated'
+import { messageApi, type MessageVO, type MessageDTO } from '@/api/enterprise/message'
+import type { PageResult } from '@/types'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
-
-const api = getAiPermRBACAPI()
 
 // 列表数据
 const loading = ref(false)
@@ -49,10 +47,7 @@ const unreadBadge = computed(() => unreadCount.value > 99 ? '99+' : unreadCount.
 // 获取未读数量
 const fetchUnreadCount = async () => {
   try {
-    const { data } = await api.unreadCount()
-    if (data?.data !== undefined) {
-      unreadCount.value = data.data
-    }
+    unreadCount.value = await messageApi.unreadCount()
   } catch (error) {
     console.error('获取未读数量失败', error)
   }
@@ -62,17 +57,14 @@ const fetchUnreadCount = async () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const params: any = {
+    const params: MessageDTO = {
       page: queryParams.page,
       pageSize: queryParams.pageSize,
+      isRead: queryParams.isRead,
     }
-    if (queryParams.isRead !== undefined) params.isRead = queryParams.isRead
-
-    const { data } = await api.list4(params)
-    if (data?.data) {
-      tableData.value = data.data.list || []
-      total.value = data.data.total || 0
-    }
+    const result = await messageApi.list(params) as PageResult<MessageVO>
+    tableData.value = result.records || []
+    total.value = result.total || 0
   } catch (error) {
     console.error('获取列表失败', error)
     ElMessage.error('获取列表失败')
@@ -102,16 +94,13 @@ const handleSelectionChange = (selection: MessageVO[]) => {
 // 查看详情
 const handleView = async (row: MessageVO) => {
   try {
-    const { data } = await api.detail2(row.id!)
-    if (data?.data) {
-      detailData.value = data.data
-      detailVisible.value = true
-      // 如果是未读消息，标记为已读
-      if (row.isRead === 0) {
-        await api.markAsRead(row.id!)
-        fetchUnreadCount()
-        fetchData()
-      }
+    detailData.value = await messageApi.getById(row.id!)
+    detailVisible.value = true
+    // 如果是未读消息，标记为已读
+    if (row.isRead === 0) {
+      await messageApi.markAsRead(row.id!)
+      fetchUnreadCount()
+      fetchData()
     }
   } catch (error) {
     console.error('获取详情失败', error)
@@ -122,7 +111,7 @@ const handleView = async (row: MessageVO) => {
 // 标记单条为已读
 const handleMarkRead = async (row: MessageVO) => {
   try {
-    await api.markAsRead(row.id!)
+    await messageApi.markAsRead(row.id!)
     ElMessage.success('已标记为已读')
     fetchUnreadCount()
     fetchData()
@@ -140,7 +129,7 @@ const handleBatchRead = async () => {
   }
 
   try {
-    await api.markAsReadByIds({ ids: selectedIds.value })
+    await messageApi.markAsReadByIds(selectedIds.value)
     ElMessage.success('批量标记成功')
     selectedIds.value = []
     fetchUnreadCount()
@@ -157,7 +146,7 @@ const handleReadAll = async () => {
     await ElMessageBox.confirm('确定要将所有未读消息标记为已读吗？', '提示', {
       type: 'warning',
     })
-    await api.markAllAsRead()
+    await messageApi.markAllAsRead()
     ElMessage.success('全部标记成功')
     selectedIds.value = []
     fetchUnreadCount()
@@ -176,7 +165,7 @@ const handleDelete = async (row: MessageVO) => {
     await ElMessageBox.confirm('确定要删除该消息吗？', '提示', {
       type: 'warning',
     })
-    await api.delete8(row.id!)
+    await messageApi.delete(row.id!)
     ElMessage.success('删除成功')
     if (row.isRead === 0) {
       fetchUnreadCount()
@@ -213,7 +202,7 @@ const handleSend = async () => {
 
   sendFormLoading.value = true
   try {
-    await api.send(sendFormData)
+    await messageApi.send(sendFormData)
     ElMessage.success('发送成功')
     sendDialogVisible.value = false
     fetchData()

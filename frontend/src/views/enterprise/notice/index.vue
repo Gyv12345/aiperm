@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { NoticeVO, NoticeDTO } from '@/models'
-import { getAiPermRBACAPI } from '@/api/generated'
+import { noticeApi, type NoticeVO, type NoticeDTO } from '@/api/enterprise/notice'
+import type { PageResult } from '@/types'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
-
-const api = getAiPermRBACAPI()
 
 // 列表数据
 const loading = ref(false)
@@ -17,8 +15,8 @@ const total = ref(0)
 const queryParams = reactive({
   page: 1,
   pageSize: 10,
-  title: '',
-  type: undefined as number | undefined,
+  noticeTitle: '',
+  noticeType: undefined as number | undefined,
   status: undefined as number | undefined,
 })
 
@@ -27,9 +25,9 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const formLoading = ref(false)
 const formData = reactive<NoticeDTO>({
-  title: '',
-  content: '',
-  type: 1,
+  noticeTitle: '',
+  noticeContent: '',
+  noticeType: 1,
   status: 0,
 })
 
@@ -49,19 +47,16 @@ const statusOptions = [
 const fetchData = async () => {
   loading.value = true
   try {
-    const params: any = {
+    const params: NoticeDTO = {
       page: queryParams.page,
       pageSize: queryParams.pageSize,
+      noticeTitle: queryParams.noticeTitle || undefined,
+      noticeType: queryParams.noticeType,
+      status: queryParams.status,
     }
-    if (queryParams.title) params.title = queryParams.title
-    if (queryParams.type !== undefined) params.type = queryParams.type
-    if (queryParams.status !== undefined) params.status = queryParams.status
-
-    const { data } = await api.list3(params)
-    if (data?.data) {
-      tableData.value = data.data.list || []
-      total.value = data.data.total || 0
-    }
+    const result = await noticeApi.list(params) as PageResult<NoticeVO>
+    tableData.value = result.records || []
+    total.value = result.total || 0
   } catch (error) {
     console.error('获取列表失败', error)
     ElMessage.error('获取列表失败')
@@ -79,8 +74,8 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   queryParams.page = 1
-  queryParams.title = ''
-  queryParams.type = undefined
+  queryParams.noticeTitle = ''
+  queryParams.noticeType = undefined
   queryParams.status = undefined
   fetchData()
 }
@@ -89,9 +84,9 @@ const handleReset = () => {
 const handleAdd = () => {
   dialogTitle.value = '新增公告'
   Object.assign(formData, {
-    title: '',
-    content: '',
-    type: 1,
+    noticeTitle: '',
+    noticeContent: '',
+    noticeType: 1,
     status: 0,
   })
   dialogVisible.value = true
@@ -101,9 +96,9 @@ const handleAdd = () => {
 const handleEdit = (row: NoticeVO) => {
   dialogTitle.value = '编辑公告'
   Object.assign(formData, {
-    title: row.title,
-    content: row.content,
-    type: row.type,
+    noticeTitle: row.noticeTitle,
+    noticeContent: row.noticeContent,
+    noticeType: row.noticeType,
     status: row.status,
   })
   dialogVisible.value = true
@@ -113,7 +108,7 @@ const handleEdit = (row: NoticeVO) => {
 
 // 提交表单
 const handleSubmit = async () => {
-  if (!formData.title) {
+  if (!formData.noticeTitle) {
     ElMessage.warning('请输入标题')
     return
   }
@@ -122,11 +117,11 @@ const handleSubmit = async () => {
   try {
     if ((formData as any).id) {
       // 编辑
-      await api.update7((formData as any).id, formData)
+      await noticeApi.update((formData as any).id, formData)
       ElMessage.success('更新成功')
     } else {
       // 新增
-      await api.create7(formData)
+      await noticeApi.create(formData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
@@ -145,7 +140,7 @@ const handlePublish = async (row: NoticeVO) => {
     await ElMessageBox.confirm('确定要发布该公告吗？', '提示', {
       type: 'warning',
     })
-    await api.publish(row.id!)
+    await noticeApi.publish(row.id!)
     ElMessage.success('发布成功')
     fetchData()
   } catch (error) {
@@ -162,7 +157,7 @@ const handleWithdraw = async (row: NoticeVO) => {
     await ElMessageBox.confirm('确定要撤回该公告吗？', '提示', {
       type: 'warning',
     })
-    await api.withdraw(row.id!)
+    await noticeApi.withdraw(row.id!)
     ElMessage.success('撤回成功')
     fetchData()
   } catch (error) {
@@ -179,7 +174,7 @@ const handleDelete = async (row: NoticeVO) => {
     await ElMessageBox.confirm('确定要删除该公告吗？', '提示', {
       type: 'warning',
     })
-    await api.delete7(row.id!)
+    await noticeApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchData()
   } catch (error) {
@@ -196,11 +191,8 @@ const detailData = ref<NoticeVO | null>(null)
 
 const handleView = async (row: NoticeVO) => {
   try {
-    const { data } = await api.detail1(row.id!)
-    if (data?.data) {
-      detailData.value = data.data
-      detailVisible.value = true
-    }
+    detailData.value = await noticeApi.getById(row.id!)
+    detailVisible.value = true
   } catch (error) {
     console.error('获取详情失败', error)
     ElMessage.error('获取详情失败')
@@ -257,7 +249,7 @@ onMounted(() => {
           <el-form :inline="true" :model="queryParams">
             <el-form-item label="标题">
               <el-input
-                v-model="queryParams.title"
+                v-model="queryParams.noticeTitle"
                 placeholder="请输入标题"
                 clearable
                 @keyup.enter="handleSearch"
@@ -265,7 +257,7 @@ onMounted(() => {
             </el-form-item>
             <el-form-item label="类型">
               <el-select
-                v-model="queryParams.type"
+                v-model="queryParams.noticeType"
                 placeholder="请选择类型"
                 clearable
               >
@@ -309,11 +301,11 @@ onMounted(() => {
 
           <el-table :data="tableData" v-loading="loading" stripe>
             <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-            <el-table-column prop="type" label="类型" width="100">
+            <el-table-column prop="noticeTitle" label="标题" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="noticeType" label="类型" width="100">
               <template #default="{ row }">
-                <el-tag :type="row.type === 1 ? 'primary' : 'success'">
-                  {{ formatType(row.type) }}
+                <el-tag :type="row.noticeType === 1 ? 'primary' : 'success'">
+                  {{ formatType(row.noticeType) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -375,10 +367,10 @@ onMounted(() => {
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
       <el-form :model="formData" label-width="80px">
         <el-form-item label="标题" required>
-          <el-input v-model="formData.title" placeholder="请输入标题" maxlength="200" show-word-limit />
+          <el-input v-model="formData.noticeTitle" placeholder="请输入标题" maxlength="200" show-word-limit />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select v-model="formData.type" placeholder="请选择类型">
+          <el-select v-model="formData.noticeType" placeholder="请选择类型">
             <el-option
               v-for="item in typeOptions"
               :key="item.value"
@@ -389,7 +381,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="内容">
           <el-input
-            v-model="formData.content"
+            v-model="formData.noticeContent"
             type="textarea"
             :rows="6"
             placeholder="请输入内容"
@@ -405,14 +397,14 @@ onMounted(() => {
     <!-- 详情对话框 -->
     <el-dialog v-model="detailVisible" title="公告详情" width="600px">
       <el-descriptions :column="1" border v-if="detailData">
-        <el-descriptions-item label="标题">{{ detailData.title }}</el-descriptions-item>
-        <el-descriptions-item label="类型">{{ formatType(detailData.type) }}</el-descriptions-item>
+        <el-descriptions-item label="标题">{{ detailData.noticeTitle }}</el-descriptions-item>
+        <el-descriptions-item label="类型">{{ formatType(detailData.noticeType) }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ formatStatus(detailData.status) }}</el-descriptions-item>
         <el-descriptions-item label="发布时间">{{ formatTime(detailData.publishTime) }}</el-descriptions-item>
         <el-descriptions-item label="创建人">{{ detailData.createBy }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatTime(detailData.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="内容">
-          <div class="whitespace-pre-wrap">{{ detailData.content }}</div>
+          <div class="whitespace-pre-wrap">{{ detailData.noticeContent }}</div>
         </el-descriptions-item>
       </el-descriptions>
       <template #footer>

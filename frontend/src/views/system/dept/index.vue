@@ -2,12 +2,9 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysDept, DeptDTO } from '@/models'
+import { deptApi, type DeptVO, type DeptDTO } from '@/api/system/dept'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
-
-const api = getAiPermRBACAPI()
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -16,7 +13,7 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 
 // 部门树数据
-const deptTree = ref<SysDept[]>([])
+const deptTree = ref<DeptVO[]>([])
 
 // 对话框显示状态
 const dialogVisible = ref(false)
@@ -50,7 +47,7 @@ const deptOptions = computed(() => {
   const options: Array<{ value: number; label: string; disabled?: boolean }> = [
     { value: 0, label: '根部门' },
   ]
-  const addOptions = (depts: SysDept[], level = 0) => {
+  const addOptions = (depts: DeptVO[], level = 0) => {
     depts.forEach((dept) => {
       options.push({
         value: dept.id || 0,
@@ -90,10 +87,7 @@ const rules = computed<FormRules>(() => ({
 async function fetchDeptTree() {
   loading.value = true
   try {
-    const { data } = await api.tree1()
-    if (data && data.data) {
-      deptTree.value = data.data
-    }
+    deptTree.value = await deptApi.tree()
   }
   catch (error) {
     console.error('获取部门树失败:', error)
@@ -134,7 +128,7 @@ function handleCreate(parentId = 0) {
 }
 
 // 编辑部门
-function handleUpdate(row: SysDept) {
+function handleUpdate(row: DeptVO) {
   dialogType.value = 'update'
   currentId.value = row.id || 0
   Object.assign(formData, {
@@ -151,7 +145,7 @@ function handleUpdate(row: SysDept) {
 }
 
 // 删除部门
-async function handleDelete(row: SysDept) {
+async function handleDelete(row: DeptVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除部门「${row.deptName}」吗？`,
@@ -163,7 +157,7 @@ async function handleDelete(row: SysDept) {
       },
     )
 
-    await api.delete6(row.id!)
+    await deptApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchDeptTree()
   }
@@ -184,11 +178,11 @@ async function handleSubmit() {
     await formRef.value.validate()
 
     if (dialogType.value === 'create') {
-      await api.create6(formData)
+      await deptApi.create(formData)
       ElMessage.success('创建成功')
     }
     else {
-      await api.update6(currentId.value, formData)
+      await deptApi.update(currentId.value, formData)
       ElMessage.success('更新成功')
     }
 

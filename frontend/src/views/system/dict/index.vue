@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { DictTypeVO, DictDataVO, DictTypeDTO, DictDataDTO } from '@/models'
-
-const api = getAiPermRBACAPI()
+import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
+import { dictApi, type DictTypeVO, type DictDataVO, type DictTypeDTO, type DictDataDTO } from '@/api/system/dict'
 
 // 字典类型相关
 const dictTypeList = ref<DictTypeVO[]>([])
@@ -15,13 +12,6 @@ const selectedDictType = ref<DictTypeVO | null>(null)
 // 字典数据相关
 const dictDataList = ref<DictDataVO[]>([])
 const dictDataLoading = ref(false)
-
-// 分页
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0,
-})
 
 // 搜索条件
 const searchForm = reactive({
@@ -91,28 +81,26 @@ const dataRules = computed<FormRules>(() => ({
 async function fetchDictTypeList() {
   dictTypeLoading.value = true
   try {
-    const { data } = await api.all()
-    if (data?.data) {
-      // 根据搜索条件过滤
-      let list = data.data
-      if (searchForm.dictName) {
-        list = list.filter(item => item.dictName?.includes(searchForm.dictName))
-      }
-      if (searchForm.dictType) {
-        list = list.filter(item => item.dictType?.includes(searchForm.dictType))
-      }
-      dictTypeList.value = list
+    const data = await dictApi.typeAll()
+    // 根据搜索条件过滤
+    let list = data
+    if (searchForm.dictName) {
+      list = list.filter(item => item.dictName?.includes(searchForm.dictName))
+    }
+    if (searchForm.dictType) {
+      list = list.filter(item => item.dictType?.includes(searchForm.dictType))
+    }
+    dictTypeList.value = list
 
-      // 如果有选中的字典类型，重新获取字典数据
-      if (selectedDictType.value) {
-        const found = list.find(item => item.id === selectedDictType.value?.id)
-        if (found) {
-          selectedDictType.value = found
-        }
-        else {
-          selectedDictType.value = null
-          dictDataList.value = []
-        }
+    // 如果有选中的字典类型，重新获取字典数据
+    if (selectedDictType.value) {
+      const found = list.find(item => item.id === selectedDictType.value?.id)
+      if (found) {
+        selectedDictType.value = found
+      }
+      else {
+        selectedDictType.value = null
+        dictDataList.value = []
       }
     }
   }
@@ -140,14 +128,7 @@ async function fetchDictDataList() {
 
   dictDataLoading.value = true
   try {
-    const { data } = await api.listByDictType({
-      dto: {
-        dictType: selectedDictType.value.dictType,
-      },
-    })
-    if (data?.data) {
-      dictDataList.value = data.data
-    }
+    dictDataList.value = await dictApi.dataList(selectedDictType.value.dictType)
   }
   catch (error) {
     console.error('获取字典数据列表失败:', error)
@@ -235,7 +216,7 @@ async function handleDeleteType(row: DictTypeVO) {
       },
     )
 
-    await api.delete4(row.id!)
+    await dictApi.typeDelete(row.id!)
     ElMessage.success('删除成功')
 
     // 如果删除的是当前选中的类型，清空选中状态
@@ -302,7 +283,7 @@ async function handleDeleteData(row: DictDataVO) {
       },
     )
 
-    await api.delete5(row.id!)
+    await dictApi.dataDelete(row.id!)
     ElMessage.success('删除成功')
     fetchDictDataList()
   }
@@ -330,11 +311,11 @@ async function submitTypeForm() {
     }
 
     if (typeForm.id) {
-      await api.update4(typeForm.id, submitData)
+      await dictApi.typeUpdate(typeForm.id, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await api.create4(submitData)
+      await dictApi.typeCreate(submitData)
       ElMessage.success('新增成功')
     }
 
@@ -370,11 +351,11 @@ async function submitDataForm() {
     }
 
     if (dataForm.id) {
-      await api.update5(dataForm.id, submitData)
+      await dictApi.dataUpdate(dataForm.id, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await api.create5(submitData)
+      await dictApi.dataCreate(submitData)
       ElMessage.success('新增成功')
     }
 

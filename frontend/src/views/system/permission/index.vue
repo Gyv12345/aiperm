@@ -2,15 +2,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysMenu, MenuDTO } from '@/models'
-
-const api = getAiPermRBACAPI()
+import { menuApi, type MenuVO, type MenuDTO } from '@/api/system/menu'
 
 // 菜单树数据（用于父级选择）
-const menuTree = ref<SysMenu[]>([])
+const menuTree = ref<MenuVO[]>([])
 // 权限列表（按钮类型的菜单）
-const permissionList = ref<SysMenu[]>([])
+const permissionList = ref<MenuVO[]>([])
 const loading = ref(false)
 
 // 弹窗相关
@@ -51,7 +48,6 @@ const form = reactive<MenuDTO & { id?: number }>({
   isCache: 0,
   visible: 1,
   status: 0,
-  permission: '',
   remark: '',
 })
 
@@ -75,7 +71,7 @@ const rules = computed<FormRules>(() => ({
 const menuOptions = computed(() => {
   const options: { id: number; menuName: string; level: number }[] = []
 
-  function buildOptions(menus: SysMenu[], level = 0): void {
+  function buildOptions(menus: MenuVO[], level = 0): void {
     menus.forEach((menu) => {
       // 只显示目录(M)和菜单(C)类型
       if (menu.menuType !== 'F') {
@@ -99,12 +95,10 @@ const menuOptions = computed(() => {
 async function fetchMenuTree() {
   loading.value = true
   try {
-    const { data } = await api.tree()
-    if (data?.data) {
-      menuTree.value = data.data
-      // 提取所有按钮类型的菜单作为权限列表
-      permissionList.value = extractPermissions(data.data)
-    }
+    const data = await menuApi.tree()
+    menuTree.value = data
+    // 提取所有按钮类型的菜单作为权限列表
+    permissionList.value = extractPermissions(data)
   }
   catch (error) {
     console.error('获取菜单树失败:', error)
@@ -116,10 +110,10 @@ async function fetchMenuTree() {
 }
 
 // 提取权限列表（按钮类型的菜单）
-function extractPermissions(menus: SysMenu[]): SysMenu[] {
-  const permissions: SysMenu[] = []
+function extractPermissions(menus: MenuVO[]): MenuVO[] {
+  const permissions: MenuVO[] = []
 
-  function extract(menuList: SysMenu[]): void {
+  function extract(menuList: MenuVO[]): void {
     menuList.forEach((menu) => {
       if (menu.menuType === 'F') {
         permissions.push(menu)
@@ -141,9 +135,9 @@ const filteredPermissions = computed(() => {
   // 按权限类型筛选
   if (filterType.value) {
     list = list.filter((p) => {
-      const perm = p.perms || p.permission || ''
+      const perm = p.perms || ''
       if (filterType.value === 'menu' && perm.includes(':menu:')) return true
-      if (filterType.value === 'button' && perm.includes(':create') || perm.includes(':update') || perm.includes(':delete')) return true
+      if (filterType.value === 'button' && (perm.includes(':create') || perm.includes(':update') || perm.includes(':delete'))) return true
       if (filterType.value === 'api') return perm.startsWith('api:')
       return false
     })
@@ -156,7 +150,6 @@ const filteredPermissions = computed(() => {
       return (
         p.menuName?.toLowerCase().includes(keyword)
         || p.perms?.toLowerCase().includes(keyword)
-        || p.permission?.toLowerCase().includes(keyword)
       )
     })
   }
@@ -168,7 +161,7 @@ const filteredPermissions = computed(() => {
 function getParentMenuName(parentId: number | undefined): string {
   if (!parentId) return '根菜单'
 
-  function findMenu(menus: SysMenu[]): SysMenu | undefined {
+  function findMenu(menus: MenuVO[]): MenuVO | undefined {
     for (const menu of menus) {
       if (menu.id === parentId) return menu
       if (menu.children) {
@@ -199,7 +192,6 @@ function resetForm() {
     isCache: 0,
     visible: 1,
     status: 0,
-    permission: '',
     remark: '',
   })
 }
@@ -213,27 +205,24 @@ function handleAdd(parentId = 0) {
 }
 
 // 打开编辑弹窗
-async function handleEdit(row: SysMenu) {
+async function handleEdit(row: MenuVO) {
   resetForm()
   dialogTitle.value = '编辑权限'
   formLoading.value = true
   dialogVisible.value = true
 
   try {
-    const { data } = await api.getById3(row.id!)
-    if (data?.data) {
-      const menu = data.data
-      Object.assign(form, {
-        id: menu.id,
-        menuName: menu.menuName,
-        parentId: menu.parentId || 0,
-        menuType: 'F',
-        sort: menu.sort,
-        perms: menu.perms || menu.permission,
-        status: menu.status,
-        remark: menu.remark,
-      })
-    }
+    const menu = await menuApi.getById(row.id!)
+    Object.assign(form, {
+      id: menu.id,
+      menuName: menu.menuName,
+      parentId: menu.parentId || 0,
+      menuType: 'F',
+      sort: menu.sort,
+      perms: menu.perms,
+      status: menu.status,
+      remark: menu.remark,
+    })
   }
   catch (error) {
     console.error('获取权限详情失败:', error)
@@ -246,7 +235,7 @@ async function handleEdit(row: SysMenu) {
 }
 
 // 删除权限
-async function handleDelete(row: SysMenu) {
+async function handleDelete(row: MenuVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除权限「${row.menuName}」吗？`,
@@ -258,7 +247,7 @@ async function handleDelete(row: SysMenu) {
       },
     )
 
-    await api.delete3(row.id!)
+    await menuApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchMenuTree()
   }
@@ -289,11 +278,11 @@ async function submitForm() {
     }
 
     if (form.id) {
-      await api.update3(form.id, submitData)
+      await menuApi.update(form.id, submitData)
       ElMessage.success('修改成功')
     }
     else {
-      await api.create3(submitData)
+      await menuApi.create(submitData)
       ElMessage.success('新增成功')
     }
 
@@ -394,7 +383,7 @@ onMounted(() => {
         >
           <template #default="{ row }">
             <el-tag type="info">
-              {{ row.perms || row.permission || '-' }}
+              {{ row.perms || '-' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -417,7 +406,7 @@ onMounted(() => {
               :type="row.perms?.includes(':list') ? 'primary' : row.perms?.includes(':create') || row.perms?.includes(':update') || row.perms?.includes(':delete') ? 'warning' : 'info'"
               size="small"
             >
-              {{ row.perms?.includes(':list') ? '查询' : row.perls?.includes(':create') ? '新增' : row.perms?.includes(':update') ? '修改' : row.perms?.includes(':delete') ? '删除' : '其他' }}
+              {{ row.perms?.includes(':list') ? '查询' : row.perms?.includes(':create') ? '新增' : row.perms?.includes(':update') ? '修改' : row.perms?.includes(':delete') ? '删除' : '其他' }}
             </el-tag>
           </template>
         </el-table-column>

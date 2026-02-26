@@ -60,8 +60,7 @@ public abstract class BaseRepository<T> {
      */
     public long count() {
         String sql = "SELECT COUNT(*) FROM " + tableName + " WHERE deleted = 0";
-        Long count = db.sql(sql).query(Long.class).single();
-        return count != null ? count : 0L;
+        return db.sql(sql).query(Long.class).single();
     }
 
     /**
@@ -70,7 +69,7 @@ public abstract class BaseRepository<T> {
     public boolean existsById(Long id) {
         String sql = "SELECT COUNT(*) FROM " + tableName + " WHERE id = :id AND deleted = 0";
         Integer count = db.sql(sql).param("id", id).query(Integer.class).single();
-        return count != null && count > 0;
+        return count > 0;
     }
 
     /**

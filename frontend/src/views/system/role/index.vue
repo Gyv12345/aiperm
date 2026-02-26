@@ -2,10 +2,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysRole, RoleDTO, PageResultSysRole, SysMenu } from '@/models'
-
-const api = getAiPermRBACAPI()
+import { roleApi, type RoleVO, type RoleDTO } from '@/api/system/role'
+import { menuApi, type MenuVO } from '@/api/system/menu'
+import type { PageResult } from '@/types'
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -14,10 +13,10 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 
 // 表格数据
-const tableData = ref<SysRole[]>([])
+const tableData = ref<RoleVO[]>([])
 
 // 菜单树数据
-const menuTree = ref<SysMenu[]>([])
+const menuTree = ref<MenuVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -88,21 +87,16 @@ const rules = computed<FormRules>(() => ({
 async function fetchRoleList() {
   loading.value = true
   try {
-    const params = {
-      dto: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        roleName: queryForm.roleName || undefined,
-        roleCode: queryForm.roleCode || undefined,
-        status: queryForm.status,
-      } as RoleDTO,
+    const params: RoleDTO = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      roleName: queryForm.roleName || undefined,
+      roleCode: queryForm.roleCode || undefined,
+      status: queryForm.status,
     }
-    const { data } = await api.page1(params)
-    if (data && data.data) {
-      const result = data.data as PageResultSysRole
-      tableData.value = result.list || []
-      pagination.total = result.total || 0
-    }
+    const result = await roleApi.list(params) as PageResult<RoleVO>
+    tableData.value = result.records || []
+    pagination.total = result.total || 0
   }
   catch (error) {
     console.error('获取角色列表失败:', error)
@@ -116,10 +110,7 @@ async function fetchRoleList() {
 // 获取菜单树
 async function fetchMenuTree() {
   try {
-    const { data } = await api.tree()
-    if (data?.data) {
-      menuTree.value = data.data
-    }
+    menuTree.value = await menuApi.tree()
   }
   catch (error) {
     console.error('获取菜单树失败:', error)
@@ -156,24 +147,21 @@ function handleCreate() {
 }
 
 // 编辑角色
-async function handleUpdate(row: SysRole) {
+async function handleUpdate(row: RoleVO) {
   dialogType.value = 'update'
   currentId.value = row.id || 0
   formLoading.value = true
   dialogVisible.value = true
 
   try {
-    const { data } = await api.getById1(row.id!)
-    if (data?.data) {
-      const role = data.data
-      Object.assign(formData, {
-        roleName: role.roleName || '',
-        roleCode: role.roleCode || '',
-        sort: role.sort || 0,
-        status: role.status || 0,
-        remark: role.remark || '',
-      })
-    }
+    const role = await roleApi.getById(row.id!)
+    Object.assign(formData, {
+      roleName: role.roleName || '',
+      roleCode: role.roleCode || '',
+      sort: role.sort || 0,
+      status: role.status || 0,
+      remark: role.remark || '',
+    })
   }
   catch (error) {
     console.error('获取角色详情失败:', error)
@@ -186,9 +174,9 @@ async function handleUpdate(row: SysRole) {
 }
 
 // 删除角色
-async function handleDelete(row: SysRole) {
+async function handleDelete(row: RoleVO) {
   // 检查是否为内置角色
-  if (row.isBuiltin === 1) {
+  if ((row as any).isBuiltin === 1) {
     ElMessage.warning('内置角色不能删除')
     return
   }
@@ -204,7 +192,7 @@ async function handleDelete(row: SysRole) {
       },
     )
 
-    await api.delete1(row.id!)
+    await roleApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchRoleList()
   }
@@ -217,19 +205,16 @@ async function handleDelete(row: SysRole) {
 }
 
 // 打开分配菜单弹窗
-async function handleAssignMenu(row: SysRole) {
+async function handleAssignMenu(row: RoleVO) {
   assignMenuForm.roleId = row.id || 0
   assignMenuDialogVisible.value = true
 
   try {
     // 获取角色当前菜单
-    const { data } = await api.getRoleMenus(row.id!)
-    if (data?.data) {
-      checkedMenuIds.value = data.data
-      // 设置树形控件选中状态
-      if (menuTreeRef.value) {
-        menuTreeRef.value.setCheckedKeys(checkedMenuIds.value)
-      }
+    checkedMenuIds.value = await roleApi.getRoleMenus(row.id!)
+    // 设置树形控件选中状态
+    if (menuTreeRef.value) {
+      menuTreeRef.value.setCheckedKeys(checkedMenuIds.value)
     }
   }
   catch (error) {
@@ -246,7 +231,7 @@ async function submitAssignMenu() {
     const halfCheckedKeys = menuTreeRef.value?.getHalfCheckedKeys() || []
     const allMenuIds = [...checkedKeys, ...halfCheckedKeys].map((id: number | string) => Number(id))
 
-    await api.assignMenus(assignMenuForm.roleId, allMenuIds)
+    await roleApi.assignMenus(assignMenuForm.roleId, allMenuIds)
     ElMessage.success('分配菜单成功')
     assignMenuDialogVisible.value = false
   }
@@ -275,11 +260,11 @@ async function handleSubmit() {
     }
 
     if (dialogType.value === 'create') {
-      await api.create1(submitData)
+      await roleApi.create(submitData)
       ElMessage.success('创建成功')
     }
     else {
-      await api.update1(currentId.value, submitData)
+      await roleApi.update(currentId.value, submitData)
       ElMessage.success('更新成功')
     }
 
@@ -480,7 +465,7 @@ onMounted(() => {
               type="danger"
               link
               :icon="Delete"
-              :disabled="row.isBuiltin === 1"
+              :disabled="(row as any).isBuiltin === 1"
               @click="handleDelete(row)"
             >
               删除

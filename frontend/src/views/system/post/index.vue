@@ -2,12 +2,10 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { getAiPermRBACAPI } from '@/api/generated'
-import type { SysPost, PostDTO, PageResultSysPost } from '@/models'
+import { postApi, type PostVO, type PostDTO } from '@/api/system/post'
+import type { PageResult } from '@/types'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
-
-const api = getAiPermRBACAPI()
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -16,7 +14,7 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 
 // 表格数据
-const tableData = ref<SysPost[]>([])
+const tableData = ref<PostVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -70,19 +68,16 @@ const rules = computed<FormRules>(() => ({
 async function fetchPostList() {
   loading.value = true
   try {
-    const params = {
+    const params: PostDTO = {
       page: pagination.page,
       pageSize: pagination.pageSize,
       postName: queryForm.postName || undefined,
       postCode: queryForm.postCode || undefined,
       status: queryForm.status,
     }
-    const { data } = await api.page2(params)
-    if (data && data.data) {
-      const result = data.data as PageResultSysPost
-      tableData.value = result.records || []
-      pagination.total = result.total || 0
-    }
+    const result = await postApi.list(params) as PageResult<PostVO>
+    tableData.value = result.records || []
+    pagination.total = result.total || 0
   }
   catch (error) {
     console.error('获取岗位列表失败:', error)
@@ -123,7 +118,7 @@ function handleCreate() {
 }
 
 // 编辑岗位
-function handleUpdate(row: SysPost) {
+function handleUpdate(row: PostVO) {
   dialogType.value = 'update'
   currentId.value = row.id || 0
   Object.assign(formData, {
@@ -137,7 +132,7 @@ function handleUpdate(row: SysPost) {
 }
 
 // 删除岗位
-async function handleDelete(row: SysPost) {
+async function handleDelete(row: PostVO) {
   try {
     await ElMessageBox.confirm(
       `确定要删除岗位「${row.postName}」吗？`,
@@ -149,7 +144,7 @@ async function handleDelete(row: SysPost) {
       },
     )
 
-    await api.delete2(row.id!)
+    await postApi.delete(row.id!)
     ElMessage.success('删除成功')
     fetchPostList()
   }
@@ -170,11 +165,11 @@ async function handleSubmit() {
     await formRef.value.validate()
 
     if (dialogType.value === 'create') {
-      await api.create2(formData)
+      await postApi.create(formData)
       ElMessage.success('创建成功')
     }
     else {
-      await api.update2(currentId.value, formData)
+      await postApi.update(currentId.value, formData)
       ElMessage.success('更新成功')
     }
 
