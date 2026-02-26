@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Edit, Delete, Search, Refresh, Key } from '@element-plus/icons-vue'
 import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
 import { roleApi, type RoleVO } from '@/api/system/role'
+import { dictApi, type DictDataVO } from '@/api/system/dict'
 import type { PageResult } from '@/types'
 
 // 表单引用
@@ -18,6 +19,9 @@ const tableData = ref<UserVO[]>([])
 
 // 角色列表（用于分配角色）
 const roleList = ref<RoleVO[]>([])
+
+// 状态字典数据
+const statusDictData = ref<DictDataVO[]>([])
 
 // 分页数据
 const pagination = reactive({
@@ -48,7 +52,7 @@ const formData = reactive<UserDTO>({
   avatar: '',
   deptId: undefined,
   postIds: undefined,
-  status: 0,
+  status: 1,
   remark: '',
 })
 
@@ -79,11 +83,27 @@ const genderOptions = [
   { value: 2, label: '女' },
 ]
 
-// 状态选项
-const statusOptions = [
-  { value: 0, label: '正常' },
-  { value: 1, label: '停用' },
-]
+// 状态选项（从字典获取）
+const statusOptions = computed(() =>
+  statusDictData.value.map(item => ({
+    value: Number(item.dictValue),
+    label: item.dictLabel,
+  }))
+)
+
+// 获取状态标签
+function getStatusLabel(status: number): string {
+  const item = statusDictData.value.find(d => Number(d.dictValue) === status)
+  return item?.dictLabel || '未知'
+}
+
+// 获取状态标签类型
+function getStatusTagType(status: number): 'success' | 'danger' | 'info' {
+  const item = statusDictData.value.find(d => Number(d.dictValue) === status)
+  if (item?.listClass === 'success') return 'success'
+  if (item?.listClass === 'danger') return 'danger'
+  return status === 1 ? 'success' : 'danger'
+}
 
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
@@ -167,6 +187,16 @@ async function fetchRoleList() {
   }
 }
 
+// 获取状态字典
+async function fetchStatusDict() {
+  try {
+    statusDictData.value = await dictApi.dataList('sys_status')
+  }
+  catch (error) {
+    console.error('获取状态字典失败:', error)
+  }
+}
+
 // 搜索
 function handleSearch() {
   pagination.page = 1
@@ -197,7 +227,7 @@ function handleCreate() {
     avatar: '',
     deptId: undefined,
     postIds: undefined,
-    status: 0,
+    status: 1,  // 默认正常
     remark: '',
   })
   dialogVisible.value = true
@@ -250,15 +280,27 @@ async function handleDelete(row: UserVO) {
 
 // 修改用户状态
 async function handleStatusChange(row: UserVO) {
-  const newStatus = row.status === 0 ? 1 : 0
+  const newStatus = row.status === 1 ? 0 : 1
+  const statusText = getStatusLabel(newStatus)
   try {
+    await ElMessageBox.confirm(
+      `确定要将用户「${row.username}」状态修改为「${statusText}」吗？`,
+      '状态修改',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
     await userApi.changeStatus(row.id!, newStatus)
     ElMessage.success('状态修改成功')
     fetchUserList()
   }
-  catch (error) {
-    console.error('修改状态失败:', error)
-    ElMessage.error('修改状态失败')
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('修改状态失败:', error)
+      ElMessage.error('修改状态失败')
+    }
   }
 }
 
@@ -371,6 +413,7 @@ function getGenderText(gender: number): string {
 onMounted(() => {
   fetchUserList()
   fetchRoleList()
+  fetchStatusDict()
 })
 </script>
 
@@ -501,16 +544,16 @@ onMounted(() => {
         <el-table-column
           prop="status"
           label="状态"
-          width="100"
+          width="80"
           align="center"
         >
           <template #default="{ row }">
-            <el-switch
-              :model-value="row.status === 0"
-              active-text="正常"
-              inactive-text="停用"
-              @change="handleStatusChange(row)"
-            />
+            <el-tag
+              :type="getStatusTagType(row.status)"
+              size="small"
+            >
+              {{ getStatusLabel(row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column
@@ -520,10 +563,17 @@ onMounted(() => {
         />
         <el-table-column
           label="操作"
-          width="240"
+          width="280"
           fixed="right"
         >
           <template #default="{ row }">
+            <el-button
+              :type="row.status === 1 ? 'warning' : 'success'"
+              link
+              @click="handleStatusChange(row)"
+            >
+              {{ getStatusLabel(row.status === 1 ? 0 : 1) }}
+            </el-button>
             <el-button
               type="primary"
               link
