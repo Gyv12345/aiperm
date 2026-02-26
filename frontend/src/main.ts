@@ -9,6 +9,12 @@ import 'uno.css'
 import App from './App.vue'
 import { setupRouter } from './router'
 import permissionDirectives from './directives/permission'
+import DictTag from './components/dict/DictTag.vue'
+import DictSelect from './components/dict/DictSelect.vue'
+import DictRadio from './components/dict/DictRadio.vue'
+import TableToolbar from './components/table/TableToolbar.vue'
+import ColumnSetting from './components/table/ColumnSetting.vue'
+import SelectionBar from './components/table/SelectionBar.vue'
 
 const app = createApp(App)
 
@@ -23,6 +29,14 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(ElementPlus)
+
+// 注册字典组件
+app.component('DictTag', DictTag)
+app.component('DictSelect', DictSelect)
+app.component('DictRadio', DictRadio)
+app.component('TableToolbar', TableToolbar)
+app.component('ColumnSetting', ColumnSetting)
+app.component('SelectionBar', SelectionBar)
 
 // 注册权限指令
 app.directive('permission', permissionDirectives.permission)
