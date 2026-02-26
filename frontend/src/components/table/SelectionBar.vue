@@ -28,7 +28,7 @@ const emit = defineEmits<{
       v-if="props.count > 0"
       class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
     >
-      <div class="flex items-center gap-3 px-5 py-3 bg-white rounded-xl shadow-2xl border border-gray-100">
+      <div class="flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl" style="background-color: var(--el-bg-color); border: 1px solid var(--el-border-color);">
         <!-- 已选数量 -->
         <span class="text-sm text-gray-600 whitespace-nowrap">
           已选 <span class="font-semibold text-primary">{{ props.count }}</span> 项
@@ -60,7 +60,7 @@ const emit = defineEmits<{
 <style scoped>
 .selection-bar-enter-active,
 .selection-bar-leave-active {
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .selection-bar-enter-from,
