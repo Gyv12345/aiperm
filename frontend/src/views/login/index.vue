@@ -212,7 +212,7 @@ async function handleLogin() {
         userStore.setUserInfo({
           id: loginData.userInfo.id || 0,
           username: loginData.userInfo.username || '',
-          nickname: loginForm.userInfo.nickname || '',
+          nickname: loginData.userInfo.nickname || '',
           roles: ['admin'],
           permissions: ['*'],
         })
