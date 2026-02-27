@@ -219,7 +219,10 @@ onMounted(() => {
     <el-card>
       <!-- 搜索区域 -->
       <div class="mb-4">
-        <el-form :inline="true" :model="searchForm">
+        <el-form
+          :inline="true"
+          :model="searchForm"
+        >
           <el-form-item label="配置键">
             <el-input
               v-model="searchForm.configKey"
@@ -239,10 +242,17 @@ onMounted(() => {
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :icon="Search" @click="handleSearch">
+            <el-button
+              type="primary"
+              :icon="Search"
+              @click="handleSearch"
+            >
               搜索
             </el-button>
-            <el-button :icon="Refresh" @click="handleResetSearch">
+            <el-button
+              :icon="Refresh"
+              @click="handleResetSearch"
+            >
               重置
             </el-button>
           </el-form-item>
@@ -251,32 +261,91 @@ onMounted(() => {
 
       <!-- 工具栏 -->
       <div class="mb-4">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">
+        <el-button
+          type="primary"
+          :icon="Plus"
+          @click="handleAdd"
+        >
           新增
         </el-button>
       </div>
 
       <!-- 表格 -->
-      <el-table v-loading="loading" :data="configList" stripe>
-        <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="configKey" label="配置键" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="configValue" label="配置值" min-width="200" show-overflow-tooltip>
+      <el-table
+        v-loading="loading"
+        :data="configList"
+        stripe
+      >
+        <el-table-column
+          type="index"
+          label="序号"
+          width="60"
+          align="center"
+        />
+        <el-table-column
+          prop="configKey"
+          label="配置键"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="configValue"
+          label="配置值"
+          min-width="200"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
-            <el-tooltip v-if="row.configValue && row.configValue.length > 50" :content="row.configValue" placement="top">
+            <el-tooltip
+              v-if="row.configValue && row.configValue.length > 50"
+              :content="row.configValue"
+              placement="top"
+            >
               <span>{{ row.configValue.substring(0, 50) + '...' }}</span>
             </el-tooltip>
             <span v-else>{{ row.configValue }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="configType" label="配置类型" min-width="100" show-overflow-tooltip />
-        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
-        <el-table-column label="操作" width="150" align="center" fixed="right">
+        <el-table-column
+          prop="configType"
+          label="配置类型"
+          min-width="100"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="remark"
+          label="备注"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          width="180"
+          align="center"
+        />
+        <el-table-column
+          label="操作"
+          width="150"
+          align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="Edit" @click="handleEdit(row)">
+            <el-button
+              type="primary"
+              link
+              size="small"
+              :icon="Edit"
+              @click="handleEdit(row)"
+            >
               编辑
             </el-button>
-            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row)">
+            <el-button
+              type="danger"
+              link
+              size="small"
+              :icon="Delete"
+              @click="handleDelete(row)"
+            >
               删除
             </el-button>
           </template>
@@ -311,8 +380,15 @@ onMounted(() => {
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="配置键" prop="configKey">
-          <el-input v-model="form.configKey" placeholder="请输入配置键" :disabled="!!form.id" />
+        <el-form-item
+          label="配置键"
+          prop="configKey"
+        >
+          <el-input
+            v-model="form.configKey"
+            placeholder="请输入配置键"
+            :disabled="!!form.id"
+          />
         </el-form-item>
         <el-form-item label="配置值">
           <el-input
@@ -323,17 +399,29 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item label="配置类型">
-          <el-input v-model="form.configType" placeholder="请输入配置类型，如：system、email等" />
+          <el-input
+            v-model="form.configType"
+            placeholder="请输入配置类型，如：system、email等"
+          />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">
           取消
         </el-button>
-        <el-button type="primary" :loading="formLoading" @click="submitForm">
+        <el-button
+          type="primary"
+          :loading="formLoading"
+          @click="submitForm"
+        >
           确定
         </el-button>
       </template>

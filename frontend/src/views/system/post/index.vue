@@ -219,168 +219,168 @@ onMounted(() => {
 <template>
   <div class="post-content">
     <!-- 搜索区域 -->
-        <el-card class="mb-4">
-          <el-form
-            :inline="true"
-            :model="queryForm"
+    <el-card class="mb-4">
+      <el-form
+        :inline="true"
+        :model="queryForm"
+      >
+        <el-form-item label="岗位名称">
+          <el-input
+            v-model="queryForm.postName"
+            placeholder="请输入岗位名称"
+            clearable
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="岗位编码">
+          <el-input
+            v-model="queryForm.postCode"
+            placeholder="请输入岗位编码"
+            clearable
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            v-model="queryForm.status"
+            placeholder="请选择状态"
+            clearable
           >
-            <el-form-item label="岗位名称">
-              <el-input
-                v-model="queryForm.postName"
-                placeholder="请输入岗位名称"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="岗位编码">
-              <el-input
-                v-model="queryForm.postCode"
-                placeholder="请输入岗位编码"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select
-                v-model="queryForm.status"
-                placeholder="请选择状态"
-                clearable
-              >
-                <el-option
-                  label="正常"
-                  :value="0"
-                />
-                <el-option
-                  label="停用"
-                  :value="1"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                :icon="Search"
-                @click="handleSearch"
-              >
-                搜索
-              </el-button>
-              <el-button
-                :icon="Refresh"
-                @click="handleReset"
-              >
-                重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
+            <el-option
+              label="正常"
+              :value="0"
+            />
+            <el-option
+              label="停用"
+              :value="1"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :icon="Search"
+            @click="handleSearch"
+          >
+            搜索
+          </el-button>
+          <el-button
+            :icon="Refresh"
+            @click="handleReset"
+          >
+            重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-        <!-- 表格区域 -->
-        <el-card>
-          <template #header>
-            <div class="flex justify-between items-center">
-              <span class="font-semibold">岗位列表</span>
-              <el-button
-                type="primary"
-                :icon="Plus"
-                @click="handleCreate"
-              >
-                新增岗位
-              </el-button>
-            </div>
+    <!-- 表格区域 -->
+    <el-card>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span class="font-semibold">岗位列表</span>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
+            新增岗位
+          </el-button>
+        </div>
+      </template>
+
+      <el-table
+        v-loading="loading"
+        :data="tableData"
+        border
+      >
+        <el-table-column
+          prop="id"
+          label="岗位ID"
+          width="100"
+          align="center"
+        />
+        <el-table-column
+          prop="postName"
+          label="岗位名称"
+          min-width="150"
+        />
+        <el-table-column
+          prop="postCode"
+          label="岗位编码"
+          min-width="150"
+        />
+        <el-table-column
+          prop="sort"
+          label="排序"
+          width="80"
+          align="center"
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+            >
+              {{ getStatusText(row.status) }}
+            </el-tag>
           </template>
-
-          <el-table
-            v-loading="loading"
-            :data="tableData"
-            border
-          >
-            <el-table-column
-              prop="id"
-              label="岗位ID"
-              width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="postName"
-              label="岗位名称"
-              min-width="150"
-            />
-            <el-table-column
-              prop="postCode"
-              label="岗位编码"
-              min-width="150"
-            />
-            <el-table-column
-              prop="sort"
-              label="排序"
-              width="80"
-              align="center"
-            />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="100"
-              align="center"
+        </el-table-column>
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          width="180"
+        />
+        <el-table-column
+          prop="remark"
+          label="备注"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="操作"
+          width="150"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              :icon="Edit"
+              @click="handleUpdate(row)"
             >
-              <template #default="{ row }">
-                <el-tag
-                  :type="getStatusType(row.status)"
-                  size="small"
-                >
-                  {{ getStatusText(row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
-            />
-            <el-table-column
-              prop="remark"
-              label="备注"
-              min-width="150"
-              show-overflow-tooltip
-            />
-            <el-table-column
-              label="操作"
-              width="150"
-              fixed="right"
+              编辑
+            </el-button>
+            <el-button
+              type="danger"
+              link
+              :icon="Delete"
+              @click="handleDelete(row)"
             >
-              <template #default="{ row }">
-                <el-button
-                  type="primary"
-                  link
-                  :icon="Edit"
-                  @click="handleUpdate(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  type="danger"
-                  link
-                  :icon="Delete"
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-          <!-- 分页 -->
-          <div class="mt-4 flex justify-end">
-            <el-pagination
-              v-model:current-page="pagination.page"
-              v-model:page-size="pagination.pageSize"
-              :page-sizes="[10, 20, 50, 100]"
-              :total="pagination.total"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handlePageChange"
-            />
-          </div>
-        </el-card>
+      <!-- 分页 -->
+      <div class="mt-4 flex justify-end">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
+    </el-card>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog

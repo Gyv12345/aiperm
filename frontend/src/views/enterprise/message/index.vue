@@ -245,115 +245,194 @@ onMounted(() => {
 <template>
   <div class="message-content">
     <!-- 搜索区域 -->
-        <el-card class="mb-4">
-          <el-form :inline="true" :model="queryParams">
-            <el-form-item label="阅读状态">
-              <el-select
-                v-model="queryParams.isRead"
-                placeholder="请选择状态"
-                clearable
-              >
-                <el-option
-                  v-for="item in readStatusOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleSearch">搜索</el-button>
-              <el-button @click="handleReset">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
+    <el-card class="mb-4">
+      <el-form
+        :inline="true"
+        :model="queryParams"
+      >
+        <el-form-item label="阅读状态">
+          <el-select
+            v-model="queryParams.isRead"
+            placeholder="请选择状态"
+            clearable
+          >
+            <el-option
+              v-for="item in readStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            @click="handleSearch"
+          >
+            搜索
+          </el-button>
+          <el-button @click="handleReset">
+            重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-        <!-- 表格区域 -->
-        <el-card>
-          <template #header>
-            <div class="flex justify-between items-center">
-              <span class="font-semibold">消息列表</span>
-              <div class="flex gap-2">
-                <el-button
-                  type="success"
-                  :disabled="selectedIds.length === 0"
-                  @click="handleBatchRead"
-                >批量已读</el-button>
-                <el-button
-                  type="warning"
-                  :disabled="unreadCount === 0"
-                  @click="handleReadAll"
-                >全部已读</el-button>
-                <el-button type="primary" @click="handleOpenSend">发送消息</el-button>
-              </div>
+    <!-- 表格区域 -->
+    <el-card>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span class="font-semibold">消息列表</span>
+          <div class="flex gap-2">
+            <el-button
+              type="success"
+              :disabled="selectedIds.length === 0"
+              @click="handleBatchRead"
+            >
+              批量已读
+            </el-button>
+            <el-button
+              type="warning"
+              :disabled="unreadCount === 0"
+              @click="handleReadAll"
+            >
+              全部已读
+            </el-button>
+            <el-button
+              type="primary"
+              @click="handleOpenSend"
+            >
+              发送消息
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <el-table
+        v-loading="loading"
+        :data="tableData"
+        stripe
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column
+          type="selection"
+          width="50"
+        />
+        <el-table-column
+          prop="id"
+          label="ID"
+          width="80"
+        />
+        <el-table-column
+          prop="title"
+          label="标题"
+          min-width="200"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            <div class="flex items-center gap-2">
+              <el-badge
+                v-if="row.isRead === 0"
+                is-dot
+                type="danger"
+              />
+              <span :class="{ 'font-bold': row.isRead === 0 }">{{ row.title }}</span>
             </div>
           </template>
+        </el-table-column>
+        <el-table-column
+          prop="senderName"
+          label="发送人"
+          width="120"
+        />
+        <el-table-column
+          prop="isRead"
+          label="状态"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.isRead === 1 ? 'success' : 'danger'">
+              {{ formatReadStatus(row.isRead) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="readTime"
+          label="阅读时间"
+          width="180"
+        >
+          <template #default="{ row }">
+            {{ formatTime(row.readTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="createTime"
+          label="发送时间"
+          width="180"
+        >
+          <template #default="{ row }">
+            {{ formatTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              @click="handleView(row)"
+            >
+              查看
+            </el-button>
+            <el-button
+              v-if="row.isRead === 0"
+              type="success"
+              link
+              @click="handleMarkRead(row)"
+            >
+              标记已读
+            </el-button>
+            <el-button
+              type="danger"
+              link
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-          <el-table
-            :data="tableData"
-            v-loading="loading"
-            stripe
-            @selection-change="handleSelectionChange"
-          >
-            <el-table-column type="selection" width="50" />
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip>
-              <template #default="{ row }">
-                <div class="flex items-center gap-2">
-                  <el-badge v-if="row.isRead === 0" is-dot type="danger" />
-                  <span :class="{ 'font-bold': row.isRead === 0 }">{{ row.title }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="senderName" label="发送人" width="120" />
-            <el-table-column prop="isRead" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.isRead === 1 ? 'success' : 'danger'">
-                  {{ formatReadStatus(row.isRead) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="readTime" label="阅读时间" width="180">
-              <template #default="{ row }">
-                {{ formatTime(row.readTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="发送时间" width="180">
-              <template #default="{ row }">
-                {{ formatTime(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
-              <template #default="{ row }">
-                <el-button type="primary" link @click="handleView(row)">查看</el-button>
-                <el-button
-                  v-if="row.isRead === 0"
-                  type="success"
-                  link
-                  @click="handleMarkRead(row)"
-                >标记已读</el-button>
-                <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="mt-4 flex justify-end">
-            <el-pagination
-              v-model:current-page="queryParams.page"
-              v-model:page-size="queryParams.pageSize"
-              :page-sizes="[10, 20, 50, 100]"
-              :total="total"
-              layout="total, sizes, prev, pager, next, jumper"
-              @current-change="handlePageChange"
-              @size-change="handleSizeChange"
-            />
-          </div>
-        </el-card>
+      <div class="mt-4 flex justify-end">
+        <el-pagination
+          v-model:current-page="queryParams.page"
+          v-model:page-size="queryParams.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </el-card>
 
     <!-- 发送消息对话框 -->
-    <el-dialog v-model="sendDialogVisible" title="发送消息" width="500px">
-      <el-form :model="sendFormData" label-width="80px">
-        <el-form-item label="接收人ID" required>
+    <el-dialog
+      v-model="sendDialogVisible"
+      title="发送消息"
+      width="500px"
+    >
+      <el-form
+        :model="sendFormData"
+        label-width="80px"
+      >
+        <el-form-item
+          label="接收人ID"
+          required
+        >
           <el-input-number
             v-model="sendFormData.receiverId"
             :min="1"
@@ -361,7 +440,10 @@ onMounted(() => {
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="标题" required>
+        <el-form-item
+          label="标题"
+          required
+        >
           <el-input
             v-model="sendFormData.title"
             placeholder="请输入消息标题"
@@ -379,29 +461,57 @@ onMounted(() => {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="sendDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="sendFormLoading" @click="handleSend">发送</el-button>
+        <el-button @click="sendDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="sendFormLoading"
+          @click="handleSend"
+        >
+          发送
+        </el-button>
       </template>
     </el-dialog>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailVisible" title="消息详情" width="500px">
-      <el-descriptions :column="1" border v-if="detailData">
-        <el-descriptions-item label="标题">{{ detailData.title }}</el-descriptions-item>
-        <el-descriptions-item label="发送人">{{ detailData.senderName }}</el-descriptions-item>
+    <el-dialog
+      v-model="detailVisible"
+      title="消息详情"
+      width="500px"
+    >
+      <el-descriptions
+        v-if="detailData"
+        :column="1"
+        border
+      >
+        <el-descriptions-item label="标题">
+          {{ detailData.title }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发送人">
+          {{ detailData.senderName }}
+        </el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="detailData.isRead === 1 ? 'success' : 'danger'">
             {{ formatReadStatus(detailData.isRead) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="发送时间">{{ formatTime(detailData.createTime) }}</el-descriptions-item>
-        <el-descriptions-item label="阅读时间">{{ formatTime(detailData.readTime) }}</el-descriptions-item>
+        <el-descriptions-item label="发送时间">
+          {{ formatTime(detailData.createTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="阅读时间">
+          {{ formatTime(detailData.readTime) }}
+        </el-descriptions-item>
         <el-descriptions-item label="内容">
-          <div class="whitespace-pre-wrap">{{ detailData.content }}</div>
+          <div class="whitespace-pre-wrap">
+            {{ detailData.content }}
+          </div>
         </el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button @click="detailVisible = false">
+          关闭
+        </el-button>
       </template>
     </el-dialog>
   </div>

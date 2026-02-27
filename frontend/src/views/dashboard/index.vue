@@ -135,7 +135,9 @@ const navigateTo = (route: string) => {
             </p>
           </div>
           <div class="flex items-center gap-2 text-sm text-slate-400">
-            <el-icon class="text-lg"><Clock /></el-icon>
+            <el-icon class="text-lg">
+              <Clock />
+            </el-icon>
             <span>{{ new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</span>
           </div>
         </div>
@@ -206,10 +208,14 @@ const navigateTo = (route: string) => {
         >
           <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
             <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <el-icon class="text-blue-500"><Compass /></el-icon>
+              <el-icon class="text-blue-500">
+                <Compass />
+              </el-icon>
               快速开始
             </h2>
-            <p class="text-sm text-slate-500 mt-0.5">常用功能快捷入口</p>
+            <p class="text-sm text-slate-500 mt-0.5">
+              常用功能快捷入口
+            </p>
           </div>
           <div class="p-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -251,10 +257,14 @@ const navigateTo = (route: string) => {
         >
           <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
             <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <el-icon class="text-violet-500"><Monitor /></el-icon>
+              <el-icon class="text-violet-500">
+                <Monitor />
+              </el-icon>
               系统信息
             </h2>
-            <p class="text-sm text-slate-500 mt-0.5">当前运行环境</p>
+            <p class="text-sm text-slate-500 mt-0.5">
+              当前运行环境
+            </p>
           </div>
           <div class="p-5 space-y-3">
             <div
@@ -268,8 +278,12 @@ const navigateTo = (route: string) => {
                 </el-icon>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-xs text-slate-400">{{ info.label }}</p>
-                <p class="font-medium text-slate-700">{{ info.value }}</p>
+                <p class="text-xs text-slate-400">
+                  {{ info.label }}
+                </p>
+                <p class="font-medium text-slate-700">
+                  {{ info.value }}
+                </p>
               </div>
             </div>
           </div>
@@ -285,10 +299,14 @@ const navigateTo = (route: string) => {
         <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
           <div>
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <el-icon class="text-blue-400"><Cpu /></el-icon>
+              <el-icon class="text-blue-400">
+                <Cpu />
+              </el-icon>
               技术栈
             </h2>
-            <p class="text-sm text-slate-400 mt-0.5">采用现代化的前端技术构建</p>
+            <p class="text-sm text-slate-400 mt-0.5">
+              采用现代化的前端技术构建
+            </p>
           </div>
         </div>
         <div class="flex flex-wrap gap-2">

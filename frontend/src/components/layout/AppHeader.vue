@@ -89,7 +89,10 @@ function goToProfile() {
               <el-icon><User /></el-icon>
               <span class="ml-2">个人中心</span>
             </el-dropdown-item>
-            <el-dropdown-item divided @click="handleLogout">
+            <el-dropdown-item
+              divided
+              @click="handleLogout"
+            >
               <el-icon><SwitchButton /></el-icon>
               <span class="ml-2">退出登录</span>
             </el-dropdown-item>

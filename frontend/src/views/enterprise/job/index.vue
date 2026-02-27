@@ -274,7 +274,10 @@ onMounted(() => {
     <el-card>
       <!-- 搜索区域 -->
       <div class="mb-4">
-        <el-form :inline="true" :model="searchForm">
+        <el-form
+          :inline="true"
+          :model="searchForm"
+        >
           <el-form-item label="任务名称">
             <el-input
               v-model="searchForm.jobName"
@@ -309,10 +312,17 @@ onMounted(() => {
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :icon="Search" @click="handleSearch">
+            <el-button
+              type="primary"
+              :icon="Search"
+              @click="handleSearch"
+            >
               搜索
             </el-button>
-            <el-button :icon="Refresh" @click="handleResetSearch">
+            <el-button
+              :icon="Refresh"
+              @click="handleResetSearch"
+            >
               重置
             </el-button>
           </el-form-item>
@@ -321,29 +331,86 @@ onMounted(() => {
 
       <!-- 工具栏 -->
       <div class="mb-4">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">
+        <el-button
+          type="primary"
+          :icon="Plus"
+          @click="handleAdd"
+        >
           新增
         </el-button>
       </div>
 
       <!-- 表格 -->
-      <el-table v-loading="loading" :data="jobList" stripe>
-        <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="jobName" label="任务名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="jobGroup" label="任务分组" min-width="100" show-overflow-tooltip />
-        <el-table-column prop="cronExpression" label="Cron表达式" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="beanClass" label="执行类" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="80" align="center">
+      <el-table
+        v-loading="loading"
+        :data="jobList"
+        stripe
+      >
+        <el-table-column
+          type="index"
+          label="序号"
+          width="60"
+          align="center"
+        />
+        <el-table-column
+          prop="jobName"
+          label="任务名称"
+          min-width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="jobGroup"
+          label="任务分组"
+          min-width="100"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="cronExpression"
+          label="Cron表达式"
+          min-width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="beanClass"
+          label="执行类"
+          min-width="180"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="row.status === 1 ? 'success' : 'danger'"
+              size="small"
+            >
               {{ statusOptions.find(o => o.value === row.status)?.label || '未知' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column
+          prop="remark"
+          label="备注"
+          min-width="150"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="操作"
+          width="200"
+          align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link size="small" :icon="Edit" @click="handleEdit(row)">
+            <el-button
+              type="primary"
+              link
+              size="small"
+              :icon="Edit"
+              @click="handleEdit(row)"
+            >
               编辑
             </el-button>
             <el-button
@@ -366,7 +433,13 @@ onMounted(() => {
             >
               恢复
             </el-button>
-            <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(row)">
+            <el-button
+              type="danger"
+              link
+              size="small"
+              :icon="Delete"
+              @click="handleDelete(row)"
+            >
               删除
             </el-button>
           </template>
@@ -401,34 +474,71 @@ onMounted(() => {
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="任务名称" prop="jobName">
-          <el-input v-model="form.jobName" placeholder="请输入任务名称" />
+        <el-form-item
+          label="任务名称"
+          prop="jobName"
+        >
+          <el-input
+            v-model="form.jobName"
+            placeholder="请输入任务名称"
+          />
         </el-form-item>
-        <el-form-item label="任务分组" prop="jobGroup">
-          <el-input v-model="form.jobGroup" placeholder="请输入任务分组" />
+        <el-form-item
+          label="任务分组"
+          prop="jobGroup"
+        >
+          <el-input
+            v-model="form.jobGroup"
+            placeholder="请输入任务分组"
+          />
         </el-form-item>
-        <el-form-item label="Cron表达式" prop="cronExpression">
-          <el-input v-model="form.cronExpression" placeholder="请输入Cron表达式，如：0 0/5 * * * ?" />
+        <el-form-item
+          label="Cron表达式"
+          prop="cronExpression"
+        >
+          <el-input
+            v-model="form.cronExpression"
+            placeholder="请输入Cron表达式，如：0 0/5 * * * ?"
+          />
         </el-form-item>
-        <el-form-item label="执行类" prop="beanClass">
-          <el-input v-model="form.beanClass" placeholder="请输入执行类的完整类名" />
+        <el-form-item
+          label="执行类"
+          prop="beanClass"
+        >
+          <el-input
+            v-model="form.beanClass"
+            placeholder="请输入执行类的完整类名"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="item in statusOptions" :key="item.value" :value="item.value">
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :value="item.value"
+            >
               {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">
           取消
         </el-button>
-        <el-button type="primary" :loading="formLoading" @click="submitForm">
+        <el-button
+          type="primary"
+          :loading="formLoading"
+          @click="submitForm"
+        >
           确定
         </el-button>
       </template>

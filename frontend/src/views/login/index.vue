@@ -122,7 +122,11 @@ onMounted(() => {
     <div class="login-brand">
       <div class="brand-content">
         <div class="brand-logo">
-          <img src="/logo.png" alt="爱编程" class="logo-img">
+          <img
+            src="/logo.png"
+            alt="爱编程"
+            class="logo-img"
+          >
         </div>
         <h1 class="brand-title">
           AIPerm 权限管理系统
@@ -132,20 +136,42 @@ onMounted(() => {
         </p>
         <div class="brand-features">
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span>安全可靠</span>
           </div>
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
             <span>高效便捷</span>
           </div>
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
               <path d="M12 6v6l4 2" />
             </svg>
             <span>实时响应</span>
@@ -165,7 +191,11 @@ onMounted(() => {
       <div class="login-form-container">
         <!-- 移动端 Logo -->
         <div class="mobile-logo">
-          <img src="/logo.png" alt="爱编程" class="logo-img-mobile">
+          <img
+            src="/logo.png"
+            alt="爱编程"
+            class="logo-img-mobile"
+          >
         </div>
 
         <div class="login-header">
@@ -225,7 +255,10 @@ onMounted(() => {
                   alt="验证码"
                   class="captcha-img"
                 >
-                <div v-else class="captcha-loading">
+                <div
+                  v-else
+                  class="captcha-loading"
+                >
                   点击刷新
                 </div>
               </div>

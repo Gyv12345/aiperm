@@ -219,155 +219,155 @@ onMounted(() => {
 <template>
   <div class="dept-content">
     <!-- 搜索区域 -->
-        <el-card class="mb-4">
-          <el-form
-            :inline="true"
-            :model="queryForm"
+    <el-card class="mb-4">
+      <el-form
+        :inline="true"
+        :model="queryForm"
+      >
+        <el-form-item label="部门名称">
+          <el-input
+            v-model="queryForm.deptName"
+            placeholder="请输入部门名称"
+            clearable
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            v-model="queryForm.status"
+            placeholder="请选择状态"
+            clearable
           >
-            <el-form-item label="部门名称">
-              <el-input
-                v-model="queryForm.deptName"
-                placeholder="请输入部门名称"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select
-                v-model="queryForm.status"
-                placeholder="请选择状态"
-                clearable
-              >
-                <el-option
-                  label="正常"
-                  :value="0"
-                />
-                <el-option
-                  label="停用"
-                  :value="1"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                :icon="Search"
-                @click="handleSearch"
-              >
-                搜索
-              </el-button>
-              <el-button
-                :icon="Refresh"
-                @click="handleReset"
-              >
-                重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
+            <el-option
+              label="正常"
+              :value="0"
+            />
+            <el-option
+              label="停用"
+              :value="1"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :icon="Search"
+            @click="handleSearch"
+          >
+            搜索
+          </el-button>
+          <el-button
+            :icon="Refresh"
+            @click="handleReset"
+          >
+            重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-        <!-- 表格区域 -->
-        <el-card>
-          <template #header>
-            <div class="flex justify-between items-center">
-              <span class="font-semibold">部门列表</span>
-              <el-button
-                type="primary"
-                :icon="Plus"
-                @click="handleCreate()"
-              >
-                新增部门
-              </el-button>
-            </div>
+    <!-- 表格区域 -->
+    <el-card>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span class="font-semibold">部门列表</span>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate()"
+          >
+            新增部门
+          </el-button>
+        </div>
+      </template>
+
+      <el-table
+        v-loading="loading"
+        :data="deptTree"
+        row-key="id"
+        border
+        default-expand-all
+      >
+        <el-table-column
+          prop="deptName"
+          label="部门名称"
+          min-width="200"
+        />
+        <el-table-column
+          prop="leader"
+          label="负责人"
+          width="120"
+        />
+        <el-table-column
+          prop="phone"
+          label="联系电话"
+          width="140"
+        />
+        <el-table-column
+          prop="email"
+          label="邮箱"
+          min-width="180"
+        />
+        <el-table-column
+          prop="sort"
+          label="排序"
+          width="80"
+          align="center"
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+            >
+              {{ getStatusText(row.status) }}
+            </el-tag>
           </template>
-
-          <el-table
-            v-loading="loading"
-            :data="deptTree"
-            row-key="id"
-            border
-            default-expand-all
-          >
-            <el-table-column
-              prop="deptName"
-              label="部门名称"
-              min-width="200"
-            />
-            <el-table-column
-              prop="leader"
-              label="负责人"
-              width="120"
-            />
-            <el-table-column
-              prop="phone"
-              label="联系电话"
-              width="140"
-            />
-            <el-table-column
-              prop="email"
-              label="邮箱"
-              min-width="180"
-            />
-            <el-table-column
-              prop="sort"
-              label="排序"
-              width="80"
-              align="center"
-            />
-            <el-table-column
-              prop="status"
-              label="状态"
-              width="100"
-              align="center"
+        </el-table-column>
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          width="180"
+        />
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              :icon="Plus"
+              @click="handleCreate(row.id)"
             >
-              <template #default="{ row }">
-                <el-tag
-                  :type="getStatusType(row.status)"
-                  size="small"
-                >
-                  {{ getStatusText(row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="createTime"
-              label="创建时间"
-              width="180"
-            />
-            <el-table-column
-              label="操作"
-              width="200"
-              fixed="right"
+              新增
+            </el-button>
+            <el-button
+              type="primary"
+              link
+              :icon="Edit"
+              @click="handleUpdate(row)"
             >
-              <template #default="{ row }">
-                <el-button
-                  type="primary"
-                  link
-                  :icon="Plus"
-                  @click="handleCreate(row.id)"
-                >
-                  新增
-                </el-button>
-                <el-button
-                  type="primary"
-                  link
-                  :icon="Edit"
-                  @click="handleUpdate(row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  type="danger"
-                  link
-                  :icon="Delete"
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
+              编辑
+            </el-button>
+            <el-button
+              type="danger"
+              link
+              :icon="Delete"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
