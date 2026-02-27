@@ -10,22 +10,23 @@
 | 层级 | 技术栈 |
 |------|--------|
 | 后端 | Spring Boot 3.5.11 + Java 21 + Sa-Token + MySQL + Redis |
-| 前端 | Vue 3 + TypeScript + Vite 7 + Element Plus + Pinia + Orval |
+| 前端 | Vue 3 + TypeScript + Vite 7 + Element Plus + Pinia |
 
 ## Quick Navigation
 
 | 模块 | 说明 |
 |------|------|
+| [开发流程](.claude/rules/development-workflow.md) | **功能模块开发 5 阶段流程** |
 | [Backend Guidelines](backend/CLAUDE.md) | 后端开发规范、分层架构、权限注解、API 开发流程 |
 | [Frontend Guidelines](frontend/CLAUDE.md) | 前端开发规范、组件结构、API 生成、状态管理 |
 
 ## 核心原则
 
-1. **API 优先**：前端禁止手写 API，必须使用 Orval 生成
-2. **权限控制**：所有接口必须加 `@SaCheckLogin`，写操作加 `@SaCheckPermission`
-3. **操作日志**：每个写操作必须加 `@Log` 注解
-4. **类型安全**：前后端全程类型安全，拒绝 `any`
-5. **模块化**：按业务领域划分模块，遵循标准分层
+1. **开发流程**：需求分析 → 数据库 → 后端 → 前端 → 测试联调
+2. **API 生成**：前端禁止手写 API，必须使用 `aiperm-api-generator` 技能生成
+3. **权限控制**：所有接口必须加 `@SaCheckLogin`，写操作加 `@SaCheckPermission`
+4. **操作日志**：每个写操作必须加 `@Log` 注解
+5. **类型安全**：前后端全程类型安全，拒绝 `any`
 6. **前后端规范一致**：接口字段名必须与后端完全一致
 
 ## ⚠️ 前后端接口规范（重要！）
@@ -78,8 +79,15 @@ cd backend && ./gradlew test             # 运行测试
 
 # 前端
 cd frontend && pnpm install              # 安装依赖
-cd frontend && pnpm run generate:api     # 生成 API 客户端（重要！）
 cd frontend && pnpm run dev              # 启动开发服务器
+```
+
+## 前端 API 生成
+
+**禁止手写 API！** 使用 `aiperm-api-generator` 技能：
+
+```
+/aiperm-api-generator
 ```
 
 ## 服务端点
@@ -110,25 +118,29 @@ cd frontend && pnpm run dev              # 启动开发服务器
 
 ## 开发检查清单
 
-### 新增 API 时
-
-- [ ] 后端 Controller 加 `@SaCheckLogin`
-- [ ] 写操作加 `@Log` + `@SaCheckPermission`
-- [ ] 运行 `pnpm run generate:api` 生成前端 API
-- [ ] 前端使用生成的 API 函数
-
 ### 新增业务模块时
 
 - [ ] 创建 Flyway 迁移脚本 `Vx.x.x__xxx.sql`
 - [ ] Entity 继承 `BaseEntity`
-- [ ] Service 接口继承 `IService`
-- [ ] 参照 `modules/system/entity/SysDictType.java` 作为模板
+- [ ] Repository 继承 `BaseRepository`
+- [ ] DTO 使用 `@JsonView` 分组验证
+- [ ] Controller 加 `@SaCheckLogin`，写操作加 `@Log` + `@SaCheckPermission`
+- [ ] 使用 `aiperm-api-generator` 技能生成前端 API
+- [ ] 参照 `modules/system/dict/` 作为模板
+
+### 新增 API 时
+
+- [ ] 后端 Controller 加 `@SaCheckLogin`
+- [ ] 写操作加 `@Log` + `@SaCheckPermission`
+- [ ] 使用 `aiperm-api-generator` 技能生成前端 API
+- [ ] 前端使用生成的 API 函数
 
 ## 常见问题
 
 | 问题 | 解决方案 |
 |------|----------|
-| 前端 API 类型不匹配 | `cd frontend && pnpm run generate:api` |
+| 前端 API 类型不匹配 | 使用 `/aiperm-api-generator` 技能重新生成 |
 | 无法连接数据库 | 检查 MySQL 服务、数据库 `aiperm` 是否存在 |
 | Redis 连接失败 | 检查 Redis 服务是否启动 |
 | Sa-Token 登录失效 | 检查 Redis 连接、Token 是否过期 |
+| 分页数据为空 | 检查是否使用 `result.list`（不是 `records`）|

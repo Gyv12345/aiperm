@@ -1,101 +1,213 @@
 ## 常见开发场景
 
-### 1. CRUD功能开发
+### 1. 完整 CRUD 功能开发
+
+#### Controller
+
 ```java
-@Slf4j
+@Tag(name = "xxx管理")
 @RestController
-@RequestMapping("/api/system/user")
+@RequestMapping("/system/xxx")
+@SaCheckLogin
 @RequiredArgsConstructor
-@Tag(name = "用户管理", description = "用户相关接口")
-@Validated
-public class SysUserController {
+public class SysXxxController {
 
-    private final ISysUserService sysUserService;
+    private final XxxService xxxService;
 
-    @GetMapping("/page")
-    @Operation(summary = "分页查询用户列表")
-    @SaCheckPermission("system:user:list")
-    public R<PageResult<SysUser>> page(
-            @RequestParam(defaultValue = "1") Long pageNum,
-            @RequestParam(defaultValue = "10") Long pageSize) {
-        PageResult<SysUser> result = sysUserService.page(pageNum, pageSize);
-        return R.ok(result);
+    @Operation(summary = "分页查询")
+    @SaCheckPermission("system:xxx:list")
+    @Log(title = "xxx管理", operType = OperType.QUERY)
+    @GetMapping
+    public R<PageResult<XxxVO>> list(@Validated({Default.class, Views.Query.class}) XxxDTO dto) {
+        return R.ok(xxxService.queryPage(dto));
     }
 
+    @Operation(summary = "查询详情")
+    @SaCheckPermission("system:xxx:list")
     @GetMapping("/{id}")
-    @Operation(summary = "根据ID查询用户")
-    @SaCheckPermission("system:user:query")
-    public R<SysUser> getById(@PathVariable Long id) {
-        SysUser user = sysUserService.getById(id);
-        return R.ok(user);
+    public R<XxxVO> detail(@PathVariable Long id) {
+        return R.ok(xxxService.findById(id));
     }
 
+    @Operation(summary = "创建")
+    @SaCheckPermission("system:xxx:create")
+    @Log(title = "xxx管理", operType = OperType.CREATE)
     @PostMapping
-    @Operation(summary = "创建用户")
-    @SaCheckPermission("system:user:add")
-    public R<Void> create(@Valid @RequestBody SysUser user) {
-        boolean success = sysUserService.create(user);
-        return success ? R.ok() : R.fail();
+    public R<Long> create(@RequestBody @Validated({Default.class, Views.Create.class}) XxxDTO dto) {
+        return R.ok(xxxService.create(dto));
     }
 
-    @PutMapping
-    @Operation(summary = "更新用户")
-    @SaCheckPermission("system:user:edit")
-    public R<Void> update(@Valid @RequestBody SysUser user) {
-        boolean success = sysUserService.update(user);
-        return success ? R.ok() : R.fail();
+    @Operation(summary = "更新")
+    @SaCheckPermission("system:xxx:update")
+    @Log(title = "xxx管理", operType = OperType.UPDATE)
+    @PutMapping("/{id}")
+    public R<Void> update(@PathVariable Long id,
+                          @RequestBody @Validated({Default.class, Views.Update.class}) XxxDTO dto) {
+        xxxService.update(id, dto);
+        return R.ok();
     }
 
+    @Operation(summary = "删除")
+    @SaCheckPermission("system:xxx:delete")
+    @Log(title = "xxx管理", operType = OperType.DELETE)
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除用户")
-    @SaCheckPermission("system:user:remove")
     public R<Void> delete(@PathVariable Long id) {
-        boolean success = sysUserService.delete(id);
-        return success ? R.ok() : R.fail();
+        xxxService.delete(id);
+        return R.ok();
     }
 }
 ```
 
-### 2. 业务状态管理
+#### Service
+
 ```java
-// 状态枚举
-public enum UserStatus {
-    PENDING(0, "待处理"),
-    ACTIVE(2, "进行中"),
-    COMPLETED(3, "已完成");
+@Service
+@RequiredArgsConstructor
+public class XxxService {
 
-    private final Integer code;
-    private final String description;
+    private final XxxRepository xxxRepo;
 
-    UserStatus(Integer code, String description) {
-        this.code = code;
-        this.description = description;
+    public PageResult<XxxVO> queryPage(XxxDTO dto) {
+        PageResult<SysXxx> result = xxxRepo.queryPage(
+                dto.getName(), dto.getStatus(), dto.getPage(), dto.getPageSize()
+        );
+        return result.map(this::toVO);
     }
 
-    // 状态变更服务
-    public void changeStatus(Long userId, UserStatus status) {
-        // 状态变更逻辑和业务规则验证
+    public XxxVO findById(Long id) {
+        return xxxRepo.findById(id)
+                .map(this::toVO)
+                .orElseThrow(() -> new BusinessException("数据不存在"));
+    }
+
+    @Transactional
+    public Long create(XxxDTO dto) {
+        SysXxx entity = new SysXxx();
+        entity.setName(dto.getName());
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+        entity.setRemark(dto.getRemark());
+        entity.setCreateBy(getCurrentUsername());
+        xxxRepo.insert(entity);
+        return entity.getId();
+    }
+
+    @Transactional
+    public void update(Long id, XxxDTO dto) {
+        SysXxx entity = xxxRepo.findById(id)
+                .orElseThrow(() -> new BusinessException("数据不存在"));
+        entity.setName(dto.getName());
+        entity.setStatus(dto.getStatus());
+        entity.setRemark(dto.getRemark());
+        entity.setUpdateBy(getCurrentUsername());
+        xxxRepo.update(entity);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!xxxRepo.existsById(id)) {
+            throw new BusinessException("数据不存在");
+        }
+        xxxRepo.deleteById(id);
+    }
+
+    private XxxVO toVO(SysXxx entity) {
+        XxxVO vo = new XxxVO();
+        vo.setId(entity.getId());
+        vo.setName(entity.getName());
+        vo.setStatus(entity.getStatus());
+        vo.setRemark(entity.getRemark());
+        vo.setCreateTime(entity.getCreateTime());
+        return vo;
+    }
+
+    private String getCurrentUsername() {
+        try {
+            return StpUtil.getLoginIdAsString();
+        } catch (Exception e) {
+            return "system";
+        }
     }
 }
 ```
 
-### 3. 分页查询
+#### Repository
+
 ```java
-@GetMapping("/page")
-public R<PageResult<SysUser>> page(
-    @RequestParam(defaultValue = "1") Long pageNum,
-    @RequestParam(defaultValue = "10") Long pageSize,
-    @RequestParam(required = false) String username,
-    @RequestParam(required = false) Integer status) {
-    // 构建查询条件
-    LambdaQueryWrapper<SysUser> wrapper = Wrappers.<SysUser>lambdaQuery()
-        .like(StringUtils.isNotBlank(username), SysUser::getUsername, username)
-        .eq(status != null, SysUser::getStatus, status);
+@Repository
+public class XxxRepository extends BaseRepository<SysXxx> {
 
-    // 分页查询
-    Page<SysUser> page = new Page<>(pageNum, pageSize);
-    sysUserMapper.selectPage(wrapper, page);
+    public XxxRepository(JdbcClient db) {
+        super(db, "sys_xxx", SysXxx.class);
+    }
 
-    return PageResult.of(page);
+    public void insert(SysXxx entity) {
+        String sql = """
+            INSERT INTO sys_xxx (name, status, remark, deleted, version, create_time, create_by)
+            VALUES (:name, :status, :remark, 0, 0, :createTime, :createBy)
+            """;
+        db.sql(sql)
+                .param("name", entity.getName())
+                .param("status", entity.getStatus())
+                .param("remark", entity.getRemark())
+                .param("createTime", LocalDateTime.now())
+                .param("createBy", entity.getCreateBy())
+                .update();
+    }
+
+    public int update(SysXxx entity) {
+        String sql = """
+            UPDATE sys_xxx
+            SET name = :name, status = :status, remark = :remark,
+                update_time = :updateTime, update_by = :updateBy
+            WHERE id = :id AND deleted = 0
+            """;
+        return db.sql(sql)
+                .param("name", entity.getName())
+                .param("status", entity.getStatus())
+                .param("remark", entity.getRemark())
+                .param("updateTime", LocalDateTime.now())
+                .param("updateBy", entity.getUpdateBy())
+                .param("id", entity.getId())
+                .update();
+    }
+
+    public PageResult<SysXxx> queryPage(String name, Integer status, int pageNum, int pageSize) {
+        SqlBuilder sb = new SqlBuilder();
+        sb.likeIf(name != null && !name.isBlank(), "name", name)
+          .whereIf(status != null, "status = ?", status);
+        return queryPage(sb.getWhereClause(), sb.getParams(), pageNum, pageSize);
+    }
 }
 ```
+
+### 2. SqlBuilder 使用说明
+
+```java
+SqlBuilder sb = new SqlBuilder();
+
+// LIKE 模糊查询（条件满足时添加）
+sb.likeIf(name != null && !name.isBlank(), "name", name);
+
+// 精确条件（条件满足时添加）
+sb.whereIf(status != null, "status = ?", status);
+
+// IN 条件
+sb.inIf(ids != null && !ids.isEmpty(), "id", ids);
+
+// 获取 WHERE 子句（带 AND 前缀）
+String whereClause = sb.getWhereClause();
+
+// 获取参数列表
+List<Object> params = sb.getParams();
+```
+
+### 3. BaseRepository 提供的方法
+
+| 方法 | 说明 |
+|------|------|
+| `findById(Long id)` | 根据 ID 查询 |
+| `findAll()` | 查询所有 |
+| `deleteById(Long id)` | 软删除 |
+| `count()` | 统计总数 |
+| `existsById(Long id)` | 检查是否存在 |
+| `queryPage(...)` | 通用分页查询 |

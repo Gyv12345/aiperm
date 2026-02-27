@@ -2,32 +2,18 @@
 
 ### Hutool 工具类
 
-#### ObjectUtil - 对象判空
-```java
-import cn.hutool.core.util.ObjectUtil;
-
-// 判断对象是否为空
-boolean isEmpty = ObjectUtil.isEmpty(obj);
-
-// 判断对象是否不为空
-boolean isNotEmpty = ObjectUtil.isNotEmpty(obj);
-
-// 获取默认值
-String value = ObjectUtil.defaultIfNull(str, "default");
-```
-
 #### StrUtil - 字符串处理
 ```java
 import cn.hutool.core.util.StrUtil;
 
-// 判断字符串是否为空
-boolean isEmpty = StrUtil.isEmpty(str);
+// 判断字符串是否为空白
+boolean isBlank = StrUtil.isBlank(str);
+
+// 判断字符串是否不为空白
+boolean isNotBlank = StrUtil.isNotBlank(str);
 
 // 去除前后空格
 String trimmed = StrUtil.trim(str);
-
-// 字符串格式化
-String formatted = StrUtil.format("Hello {}", "World");
 ```
 
 #### CollUtil - 集合操作
@@ -37,30 +23,19 @@ import cn.hutool.core.collection.CollUtil;
 // 判断集合是否为空
 boolean isEmpty = CollUtil.isEmpty(list);
 
-// 创建集合
-List<String> list = CollUtil.newArrayList("a", "b", "c");
+// 判断集合是否不为空
+boolean isNotEmpty = CollUtil.isNotEmpty(list);
 ```
 
-#### DateUtil - 日期时间处理
+#### BCrypt - 密码加密
 ```java
-import cn.hutool.core.date.DateUtil;
+import cn.hutool.crypto.digest.BCrypt;
 
-// 获取当前时间
-Date now = DateUtil.date();
+// 加密密码
+String hashedPassword = BCrypt.hashpw(password);
 
-// 日期格式化
-String formatted = DateUtil.format(now, "yyyy-MM-dd HH:mm:ss");
-```
-
-#### BeanUtil - 对象复制转换
-```java
-import cn.hutool.core.bean.BeanUtil;
-
-// 对象复制
-DestType dest = BeanUtil.copyProperties(source, DestType.class);
-
-// List 复制
-List<DestType> destList = BeanUtil.copyToList(sourceList, DestType.class);
+// 验证密码
+boolean isValid = BCrypt.checkpw(password, hashedPassword);
 ```
 
 ### Sa-Token 工具类
@@ -77,123 +52,79 @@ String username = StpUtil.getLoginIdAsString();
 
 // 获取 Token
 String token = StpUtil.getTokenValue();
-```
 
-### Redis 工具类
+// 检查是否登录
+boolean isLogin = StpUtil.isLogin();
 
-aiperm 使用 Spring Data Redis 和 RedisTemplate。
+// 登录
+StpUtil.login(userId);
 
-```java
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public class RedisUtils {
-
-    private final RedisTemplate<String, Object> redisTemplate;
-
-    // 设置缓存
-    public void set(String key, Object value) {
-        redisTemplate.opsForValue(key, value);
-    }
-
-    // 获取缓存
-    public <T> T get(String key) {
-        return (T) redisTemplate.opsForValue(key);
-    }
-}
+// 登出
+StpUtil.logout();
 ```
 
 ### 异常处理
 
 #### BusinessException - 业务异常
 ```java
-package com.devlovecode.aiperm.common.exception;
+import com.devlovecode.aiperm.common.exception.BusinessException;
 
-import lombok.Getter;
+// 抛出业务异常
+throw new BusinessException("数据不存在");
 
-/**
- * 业务异常类
- */
-@Getter
-public class BusinessException extends RuntimeException {
-
-    /**
-     * 错误码
-     */
-    private final Integer code;
-
-    /**
-     * 错误消息
-     */
-    private final String message;
-
-    public BusinessException(Integer code, String message) {
-        this.code = code;
-        this.message = message;
-    }
-
-    public BusinessException(ErrorCode errorCode) {
-        this.code = errorCode.getCode();
-        this.message = errorCode.getMessage();
-    }
-}
+// 带错误码的异常
+throw new BusinessException(ErrorCode.NOT_FOUND);
 ```
 
-#### ErrorCode - 错误码枚举
+### SqlBuilder - SQL 条件构建器
+
 ```java
-package com.devlovecode.aiperm.common.enums;
+import com.devlovecode.aiperm.common.repository.SqlBuilder;
 
-import lombok.Getter;
+SqlBuilder sb = new SqlBuilder();
 
-/**
- * 错误码枚举
- */
-@Getter
-public enum ErrorCode {
+// LIKE 模糊查询（条件满足时添加）
+sb.likeIf(name != null && !name.isBlank(), "name", name);
 
-    /**
-     * 成功
-     */
-    SUCCESS(200, "操作成功"),
+// 精确条件（条件满足时添加）
+sb.whereIf(status != null, "status = ?", status);
 
-    /**
-     * 失败
-     */
-    FAIL(500, "操作失败"),
+// IN 条件
+sb.inIf(ids != null && !ids.isEmpty(), "id", ids);
 
-    /**
-     * 未授权
-     */
-    UNAuthorized(401, "未授权")
+// 获取 WHERE 子句（带 AND 前缀）
+String whereClause = sb.getWhereClause();
 
-    /**
-     * 禁止访问
-     */
-    Forbidden(403, "禁止访问"),
-
-    /**
-     * 资源不存在
-     */
-    NotFound(404, "资源不存在");
-
-    /**
-     * 参数错误
-            */
-    BadRequestError(400, "请求参数错误");
-}
+// 获取参数列表
+List<Object> params = sb.getParams();
 ```
 
-#### 全局异常处理器
+### R - 统一响应封装
 
 ```java
-@Slf4j
-@RestControllerAdvice
-public class GlobalExceptionHandler {
+import com.devlovecode.aiperm.common.domain.R;
 
-    @ExceptionHandler(BusinessException.class)
-    public R<Void> handleBusinessException(BusinessException e) {
-        return R.fail(e.getCode(), e.getMessage());
-    }
-}
+// 成功响应
+R.ok()              // 无数据
+R.ok(data)          // 带数据
+
+// 失败响应
+R.fail()            // 无消息
+R.fail("错误消息")   // 带消息
+R.fail(code, "错误消息")  // 带错误码
+```
+
+### PageResult - 分页结果封装
+
+```java
+import com.devlovecode.aiperm.common.domain.PageResult;
+
+// 构建分页结果
+PageResult<XxxVO> result = PageResult.of(total, list, pageNum, pageSize);
+
+// 空分页结果
+PageResult<XxxVO> empty = PageResult.empty(pageNum, pageSize);
+
+// 类型转换
+PageResult<XxxVO> voResult = entityResult.map(this::toVO);
 ```
