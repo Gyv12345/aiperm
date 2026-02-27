@@ -95,6 +95,15 @@ logging:
     org.springframework.jdbc.core.JdbcTemplate: debug
     org.springframework.jdbc.core.StatementCreatorUtils: trace
 
+# MCP Server 配置
+spring.ai.mcp.server:
+  enabled: true
+  name: aiperm-mcp-server
+  version: 1.0.0
+  type: SYNC
+  sse-endpoint: /mcp/sse
+  sse-message-endpoint: /mcp/message
+
 # OSS 文件存储配置
 oss:
   storage-type: local
