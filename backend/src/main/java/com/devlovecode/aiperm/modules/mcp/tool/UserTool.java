@@ -2,8 +2,8 @@ package com.devlovecode.aiperm.modules.mcp.tool;
 
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
-import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.service.UserService;
+import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -39,7 +39,7 @@ public class UserTool extends BaseMcpTool {
             dto.setPage(page != null ? page : 1);
             dto.setPageSize(pageSize != null ? pageSize : 10);
 
-            PageResult<SysUser> result = userService.queryPage(dto);
+            PageResult<UserVO> result = userService.queryPage(dto);
             return toToonPage(result.getTotal(), result.getPageNum(), result.getPageSize(), toMapList(result.getList()));
         } catch (Exception e) {
             return error("查询失败: " + e.getMessage());
@@ -173,26 +173,27 @@ public class UserTool extends BaseMcpTool {
         }
     }
 
-    private List<Map<String, Object>> toMapList(List<SysUser> users) {
+    private List<Map<String, Object>> toMapList(List<UserVO> users) {
         List<Map<String, Object>> list = new ArrayList<>();
-        for (SysUser user : users) {
+        for (UserVO user : users) {
             list.add(toMap(user));
         }
         return list;
     }
 
-    private Map<String, Object> toMap(SysUser user) {
+    private Map<String, Object> toMap(UserVO user) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", user.getId());
         map.put("username", user.getUsername());
         map.put("nickname", user.getNickname());
-        map.put("realName", user.getRealName());
         map.put("email", user.getEmail());
         map.put("phone", user.getPhone());
         map.put("gender", user.getGender());
         map.put("avatar", user.getAvatar());
         map.put("deptId", user.getDeptId());
-        map.put("postId", user.getPostId());
+        map.put("deptName", user.getDeptName());
+        map.put("postNames", user.getPostNames());
+        map.put("roleNames", user.getRoleNames());
         map.put("status", user.getStatus());
         map.put("remark", user.getRemark());
         map.put("createTime", user.getCreateTime());

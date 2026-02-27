@@ -5,10 +5,18 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
+import com.devlovecode.aiperm.modules.system.entity.SysDept;
+import com.devlovecode.aiperm.modules.system.entity.SysPost;
+import com.devlovecode.aiperm.modules.system.entity.SysRole;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
+import com.devlovecode.aiperm.modules.system.repository.DeptRepository;
+import com.devlovecode.aiperm.modules.system.repository.PostRepository;
+import com.devlovecode.aiperm.modules.system.repository.RoleRepository;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,20 +25,76 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepo;
+    private final DeptRepository deptRepo;
+    private final PostRepository postRepo;
+    private final RoleRepository roleRepo;
 
     /**
      * 分页查询
      */
-    public PageResult<SysUser> queryPage(UserDTO dto) {
-        return userRepo.queryPage(dto.getUsername(), dto.getPhone(), dto.getDeptId(), dto.getStatus(), dto.getPage(), dto.getPageSize());
+    public PageResult<UserVO> queryPage(UserDTO dto) {
+        PageResult<SysUser> result = userRepo.queryPage(
+                dto.getUsername(), dto.getPhone(), dto.getDeptId(), dto.getStatus(),
+                dto.getPage(), dto.getPageSize()
+        );
+        return result.map(this::toVO);
     }
 
     /**
      * 查询详情
      */
-    public SysUser findById(Long id) {
-        return userRepo.findById(id)
+    public UserVO findById(Long id) {
+        SysUser user = userRepo.findById(id)
                 .orElseThrow(() -> new BusinessException("用户不存在"));
+        return toVO(user);
+    }
+
+    /**
+     * 转换为VO，填充关联数据
+     */
+    private UserVO toVO(SysUser entity) {
+        UserVO vo = new UserVO();
+        vo.setId(entity.getId());
+        vo.setUsername(entity.getUsername());
+        vo.setNickname(entity.getNickname());
+        vo.setEmail(entity.getEmail());
+        vo.setPhone(entity.getPhone());
+        vo.setGender(entity.getGender());
+        vo.setAvatar(entity.getAvatar());
+        vo.setDeptId(entity.getDeptId());
+        vo.setStatus(entity.getStatus());
+        vo.setRemark(entity.getRemark());
+        vo.setCreateTime(entity.getCreateTime());
+        vo.setUpdateTime(entity.getUpdateTime());
+
+        // 填充部门名称
+        if (entity.getDeptId() != null) {
+            deptRepo.findById(entity.getDeptId())
+                    .ifPresent(dept -> vo.setDeptName(dept.getDeptName()));
+        }
+
+        // 填充岗位信息（单岗位）
+        if (entity.getPostId() != null) {
+            postRepo.findById(entity.getPostId())
+                    .ifPresent(post -> {
+                        vo.setPostIds(List.of(post.getId()));
+                        vo.setPostNames(post.getPostName());
+                    });
+        }
+
+        // 填充角色信息（需要从用户角色关联表查询）
+        List<Long> roleIds = userRepo.findRoleIdsByUserId(entity.getId());
+        if (roleIds != null && !roleIds.isEmpty()) {
+            vo.setRoleIds(roleIds);
+            List<String> roleNames = new ArrayList<>();
+            for (Long roleId : roleIds) {
+                roleRepo.findById(roleId)
+                        .ifPresent(role -> roleNames.add(role.getRoleName()));
+            }
+            vo.setRoleNames(String.join(", ", roleNames));
+        }
+
+        return vo;
     }
 
     /**

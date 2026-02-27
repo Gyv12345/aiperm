@@ -57,4 +57,8 @@ export const configApi = {
   /** 删除系统配置 */
   delete: (id: number) =>
     request.delete<void>(`/enterprise/config/${id}`),
+
+  /** 批量删除系统配置 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/enterprise/config/batch', { data: ids }),
 }

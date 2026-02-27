@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh, Key } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Search, Refresh, Key, User, MoreFilled, Female, Male, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
 import { roleApi, type RoleVO } from '@/api/system/role'
 import { deptApi, type DeptVO } from '@/api/system/dept'
+import { postApi, type PostVO } from '@/api/system/post'
 import type { PageResult, TableColumn } from '@/types'
 import { useDict } from '@/composables/useDict'
 
@@ -12,18 +13,22 @@ import { useDict } from '@/composables/useDict'
 const dictData = useDict('sys_status')
 const sys_status = dictData.sys_status!
 
+// 搜索区域折叠状态
+const searchCollapsed = ref(false)
+
 // 表格列配置
 const columns = ref<TableColumn[]>([
   { key: 'id',         label: '用户ID',   visible: true, fixed: 'left' },
   { key: 'username',   label: '用户名',   visible: true },
   { key: 'nickname',   label: '昵称',     visible: true },
+  { key: 'deptName',   label: '部门',     visible: true },
+  { key: 'postNames',  label: '岗位',     visible: true },
+  { key: 'roleNames',  label: '角色',     visible: true },
   { key: 'email',      label: '邮箱',     visible: true },
   { key: 'phone',      label: '手机号',   visible: true },
   { key: 'gender',     label: '性别',     visible: true },
   { key: 'createTime', label: '创建时间', visible: true },
 ])
-
-const visibleColumns = computed(() => columns.value.filter(c => c.visible))
 
 // 表格引用（用于 clearSelection）
 const tableRef = ref()
@@ -77,6 +82,9 @@ const tableData = ref<UserVO[]>([])
 
 // 角色列表（用于分配角色）
 const roleList = ref<RoleVO[]>([])
+
+// 岗位列表（用于选择岗位）
+const postList = ref<PostVO[]>([])
 
 // 部门树（用于选择部门）
 const deptTree = ref<DeptVO[]>([])
@@ -134,13 +142,6 @@ const queryForm = reactive({
   phone: '',
   status: undefined as number | undefined,
 })
-
-// 性别选项
-const genderOptions = [
-  { value: 0, label: '未知' },
-  { value: 1, label: '男' },
-  { value: 2, label: '女' },
-]
 
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
@@ -221,6 +222,16 @@ async function fetchRoleList() {
   }
   catch (error) {
     console.error('获取角色列表失败:', error)
+  }
+}
+
+// 获取所有岗位列表
+async function fetchPostList() {
+  try {
+    postList.value = await postApi.all()
+  }
+  catch (error) {
+    console.error('获取岗位列表失败:', error)
   }
 }
 
@@ -314,6 +325,21 @@ async function handleDelete(row: UserVO) {
       console.error('删除用户失败:', error)
       ElMessage.error('删除用户失败')
     }
+  }
+}
+
+// 处理下拉菜单命令
+function handleCommand(command: string, row: UserVO) {
+  switch (command) {
+    case 'status':
+      handleStatusChange(row)
+      break
+    case 'resetPwd':
+      handleResetPassword(row)
+      break
+    case 'delete':
+      handleDelete(row)
+      break
   }
 }
 
@@ -443,78 +469,98 @@ function handleSizeChange(size: number) {
   fetchUserList()
 }
 
-// 获取性别文本
-function getGenderText(gender: number): string {
-  return genderOptions.find(o => o.value === gender)?.label || '未知'
-}
-
 // 页面加载
 onMounted(() => {
   fetchUserList()
   fetchRoleList()
+  fetchPostList()
   fetchDeptTree()
 })
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="user-page p-4">
     <!-- 搜索区域 -->
-    <el-card class="mb-4">
-      <el-form
-        :inline="true"
-        :model="queryForm"
-      >
-        <el-form-item label="用户名">
-          <el-input
-            v-model="queryForm.username"
-            placeholder="请输入用户名"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="昵称">
-          <el-input
-            v-model="queryForm.nickname"
-            placeholder="请输入昵称"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="手机号">
-          <el-input
-            v-model="queryForm.phone"
-            placeholder="请输入手机号"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <DictSelect
-            v-model="queryForm.status"
-            dict-type="sys_status"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            :icon="Search"
-            @click="handleSearch"
+    <el-card class="search-card mb-4 overflow-hidden transition-all duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-base font-medium text-gray-700 dark:text-gray-200">搜索条件</span>
+        <el-button
+          text
+          type="primary"
+          class="collapse-btn"
+          @click="searchCollapsed = !searchCollapsed"
+        >
+          {{ searchCollapsed ? '展开' : '收起' }}
+          <el-icon class="ml-1 transition-transform duration-300" :class="{ 'rotate-180': searchCollapsed }">
+            <ArrowUp />
+          </el-icon>
+        </el-button>
+      </div>
+      <el-collapse-transition>
+        <div v-show="!searchCollapsed">
+          <el-form
+            :inline="true"
+            :model="queryForm"
+            class="search-form"
           >
-            搜索
-          </el-button>
-          <el-button
-            :icon="Refresh"
-            @click="handleReset"
-          >
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
+            <el-form-item label="用户名">
+              <el-input
+                v-model="queryForm.username"
+                placeholder="请输入用户名"
+                clearable
+                class="w-48"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="昵称">
+              <el-input
+                v-model="queryForm.nickname"
+                placeholder="请输入昵称"
+                clearable
+                class="w-48"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="手机号">
+              <el-input
+                v-model="queryForm.phone"
+                placeholder="请输入手机号"
+                clearable
+                class="w-48"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <DictSelect
+                v-model="queryForm.status"
+                dict-type="sys_status"
+                clearable
+                placeholder="请选择状态"
+                class="w-36"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                type="primary"
+                :icon="Search"
+                @click="handleSearch"
+              >
+                搜索
+              </el-button>
+              <el-button
+                :icon="Refresh"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-collapse-transition>
     </el-card>
 
     <!-- 表格区域 -->
-    <el-card>
+    <el-card class="table-card">
       <!-- 工具栏 -->
       <TableToolbar>
         <template #actions>
@@ -540,7 +586,8 @@ onMounted(() => {
         ref="tableRef"
         v-loading="loading"
         :data="tableData"
-        border
+        class="user-table"
+        header-cell-class-name="table-header-cell"
         @selection-change="handleSelectionChange"
       >
         <!-- 多选列 -->
@@ -550,299 +597,406 @@ onMounted(() => {
           fixed="left"
         />
 
-        <!-- 动态普通数据列 -->
-        <template
-          v-for="col in visibleColumns"
-          :key="col.key"
-        >
-          <el-table-column
-            v-if="col.key === 'id'"
-            prop="id"
-            :label="col.label"
-            width="80"
-            align="center"
-            fixed="left"
-          />
-          <el-table-column
-            v-else-if="col.key === 'username'"
-            prop="username"
-            :label="col.label"
-            min-width="120"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            v-else-if="col.key === 'nickname'"
-            prop="nickname"
-            :label="col.label"
-            min-width="100"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            v-else-if="col.key === 'email'"
-            prop="email"
-            :label="col.label"
-            min-width="100"
-            show-overflow-tooltip
-          />
-          <el-table-column
-            v-else-if="col.key === 'phone'"
-            prop="phone"
-            :label="col.label"
-            width="130"
-          />
-          <el-table-column
-            v-else-if="col.key === 'gender'"
-            prop="gender"
-            :label="col.label"
-            width="80"
-            align="center"
-          >
-            <template #default="{ row }">
-              {{ getGenderText(row.gender) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            v-else-if="col.key === 'createTime'"
-            prop="createTime"
-            :label="col.label"
-            width="180"
-          />
-        </template>
-
-        <!-- 状态列（手写，自定义渲染 DictTag） -->
+        <!-- 用户ID -->
         <el-table-column
-          prop="status"
-          label="状态"
+          v-if="columns.find(c => c.key === 'id')?.visible"
+          prop="id"
+          label="ID"
+          width="80"
+          align="center"
+          fixed="left"
+        />
+
+        <!-- 用户信息（头像+用户名+昵称） -->
+        <el-table-column
+          label="用户信息"
+          min-width="200"
+        >
+          <template #default="{ row }">
+            <div class="user-info-cell flex items-center">
+              <el-avatar
+                :size="40"
+                :src="row.avatar"
+                class="user-avatar"
+              >
+                <el-icon :size="20"><User /></el-icon>
+              </el-avatar>
+              <div class="user-detail ml-3">
+                <div class="username-row flex items-center">
+                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ row.username }}</span>
+                  <el-tag
+                    v-if="row.status === 1"
+                    type="success"
+                    size="small"
+                    class="ml-2"
+                    effect="light"
+                  >
+                    正常
+                  </el-tag>
+                  <el-tag
+                    v-else
+                    type="danger"
+                    size="small"
+                    class="ml-2"
+                    effect="light"
+                  >
+                    停用
+                  </el-tag>
+                </div>
+                <div class="nickname text-sm text-gray-500 dark:text-gray-400">
+                  {{ row.nickname || '-' }}
+                </div>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+
+        <!-- 部门 -->
+        <el-table-column
+          v-if="columns.find(c => c.key === 'deptName')?.visible"
+          prop="deptName"
+          label="部门"
+          min-width="120"
+          show-overflow-tooltip
+        />
+
+        <!-- 角色 -->
+        <el-table-column
+          v-if="columns.find(c => c.key === 'roleNames')?.visible"
+          label="角色"
+          min-width="140"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            <span v-if="row.roleNames" class="role-text">
+              {{ row.roleNames }}
+            </span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 联系方式 -->
+        <el-table-column
+          label="联系方式"
+          min-width="180"
+        >
+          <template #default="{ row }">
+            <div class="contact-info">
+              <div v-if="row.phone" class="flex items-center text-sm mb-1">
+                <span class="text-gray-500 dark:text-gray-400">{{ row.phone }}</span>
+              </div>
+              <div v-if="row.email" class="flex items-center text-sm">
+                <span class="text-gray-500 dark:text-gray-400">{{ row.email }}</span>
+              </div>
+              <span v-if="!row.phone && !row.email" class="text-gray-400">-</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <!-- 性别 -->
+        <el-table-column
+          v-if="columns.find(c => c.key === 'gender')?.visible"
+          label="性别"
           width="80"
           align="center"
         >
           <template #default="{ row }">
-            <DictTag
-              :options="sys_status"
-              :value="row.status"
-            />
+            <el-icon v-if="row.gender === 1" class="text-blue-500" :size="18">
+              <Male />
+            </el-icon>
+            <el-icon v-else-if="row.gender === 2" class="text-pink-500" :size="18">
+              <Female />
+            </el-icon>
+            <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
 
-        <!-- 操作列（手写） -->
+        <!-- 创建时间 -->
         <el-table-column
-          label="操作"
-          width="280"
-          fixed="right"
+          v-if="columns.find(c => c.key === 'createTime')?.visible"
+          prop="createTime"
+          label="创建时间"
+          width="170"
         >
           <template #default="{ row }">
-            <el-button
-              :type="row.status === 1 ? 'warning' : 'success'"
-              link
-              @click="handleStatusChange(row)"
-            >
-              {{ row.status === 1 ? '停用' : '启用' }}
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              :icon="Edit"
-              @click="handleUpdate(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              type="warning"
-              link
-              :icon="Key"
-              @click="handleResetPassword(row)"
-            >
-              重置密码
-            </el-button>
-            <el-button
-              type="danger"
-              link
-              :icon="Delete"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
+            <span class="text-gray-600 dark:text-gray-300">{{ row.createTime }}</span>
+          </template>
+        </el-table-column>
+
+        <!-- 操作列 -->
+        <el-table-column
+          label="操作"
+          width="160"
+          fixed="right"
+          align="center"
+        >
+          <template #default="{ row }">
+            <div class="action-buttons flex items-center justify-center">
+              <el-button
+                type="primary"
+                link
+                size="small"
+                :icon="Edit"
+                @click="handleUpdate(row)"
+              >
+                编辑
+              </el-button>
+              <el-dropdown
+                trigger="click"
+                @command="(cmd: string) => handleCommand(cmd, row)"
+              >
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                >
+                  更多
+                  <el-icon class="ml-1"><MoreFilled /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                  <el-dropdown-item :command="'status'">
+                    {{ row.status === 1 ? '停用' : '启用' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="'resetPwd'">
+                    <el-icon><Key /></el-icon>
+                    <span class="ml-1">重置密码</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    :command="'delete'"
+                    divided
+                    class="text-red-500"
+                  >
+                    <el-icon><Delete /></el-icon>
+                    <span class="ml-1">删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <div class="mt-4 flex justify-end">
+      <div class="pagination-wrapper mt-4 flex justify-end">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
           :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
+          background
           @size-change="handleSizeChange"
           @current-change="handlePageChange"
         />
       </div>
     </el-card>
 
-    <!-- 多选操作条 -->
-    <SelectionBar
-      :count="selectedRows.length"
-      @clear="tableRef?.clearSelection()"
-    >
-      <el-button
-        type="danger"
-        size="small"
-        :icon="Delete"
-        @click="handleBatchDelete"
-      >
-        批量删除
-      </el-button>
-    </SelectionBar>
-
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogType === 'create' ? '新增用户' : '编辑用户'"
-      width="600px"
+      width="640px"
+      class="user-dialog"
+      :close-on-click-modal="false"
       @close="handleDialogClose"
     >
       <el-form
         ref="formRef"
         :model="formData"
         :rules="rules"
-        label-width="100px"
+        label-width="80px"
+        class="user-form"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item
-              label="用户名"
-              prop="username"
-            >
-              <el-input
-                v-model="formData.username"
-                placeholder="请输入用户名"
-                :disabled="dialogType === 'update'"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
-              label="密码"
-              prop="password"
-            >
-              <el-input
-                v-model="formData.password"
-                type="password"
-                placeholder="请输入密码"
-                show-password
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
-              label="昵称"
-              prop="nickname"
-            >
-              <el-input
-                v-model="formData.nickname"
-                placeholder="请输入昵称"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
-              label="邮箱"
-              prop="email"
-            >
-              <el-input
-                v-model="formData.email"
-                placeholder="请输入邮箱"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
-              label="手机号"
-              prop="phone"
-            >
-              <el-input
-                v-model="formData.phone"
-                placeholder="请输入手机号"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="性别">
-              <el-select
-                v-model="formData.gender"
-                placeholder="请选择性别"
-                style="width: 100%"
+        <div class="form-section mb-6">
+          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+            基本信息
+          </div>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item
+                label="用户名"
+                prop="username"
               >
-                <el-option
-                  v-for="item in genderOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
+                <el-input
+                  v-model="formData.username"
+                  placeholder="请输入用户名"
+                  :disabled="dialogType === 'update'"
                 />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="部门">
-              <el-tree-select
-                v-model="formData.deptId"
-                :data="deptTree"
-                :props="{ label: 'deptName', value: 'id', children: 'children' }"
-                placeholder="请选择部门"
-                clearable
-                check-strictly
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="角色">
-              <el-select
-                v-model="formData.roleIds"
-                multiple
-                placeholder="请选择角色"
-                style="width: 100%"
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item
+                label="密码"
+                prop="password"
               >
-                <el-option
-                  v-for="role in roleList"
-                  :key="role.id"
-                  :label="role.roleName"
-                  :value="role.id!"
+                <el-input
+                  v-model="formData.password"
+                  type="password"
+                  :placeholder="dialogType === 'create' ? '请输入密码' : '留空则不修改'"
+                  show-password
                 />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态">
-              <DictRadio
-                v-model="formData.status"
-                dict-type="sys_status"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="备注">
-              <el-input
-                v-model="formData.remark"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入备注"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item
+                label="昵称"
+                prop="nickname"
+              >
+                <el-input
+                  v-model="formData.nickname"
+                  placeholder="请输入昵称"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="性别">
+                <el-radio-group v-model="formData.gender">
+                  <el-radio :value="1">
+                    <el-icon class="text-blue-500 align-middle"><Male /></el-icon>
+                    <span class="ml-1">男</span>
+                  </el-radio>
+                  <el-radio :value="2">
+                    <el-icon class="text-pink-500 align-middle"><Female /></el-icon>
+                    <span class="ml-1">女</span>
+                  </el-radio>
+                  <el-radio :value="0">
+                    未知
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="form-section mb-6">
+          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+            联系方式
+          </div>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item
+                label="手机号"
+                prop="phone"
+              >
+                <el-input
+                  v-model="formData.phone"
+                  placeholder="请输入手机号"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item
+                label="邮箱"
+                prop="email"
+              >
+                <el-input
+                  v-model="formData.email"
+                  placeholder="请输入邮箱"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="form-section mb-6">
+          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+            组织架构
+          </div>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="部门">
+                <el-tree-select
+                  v-model="formData.deptId"
+                  :data="deptTree"
+                  :props="{ label: 'deptName', value: 'id', children: 'children' }"
+                  placeholder="请选择部门"
+                  clearable
+                  check-strictly
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="岗位">
+                <el-select
+                  v-model="formData.postIds"
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="请选择岗位"
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="post in postList"
+                    :key="post.id"
+                    :label="post.postName"
+                    :value="post.id!"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="24">
+              <el-form-item label="角色">
+                <el-select
+                  v-model="formData.roleIds"
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="请选择角色"
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="role in roleList"
+                    :key="role.id"
+                    :label="role.roleName"
+                    :value="role.id!"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <div class="form-section">
+          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+            其他设置
+          </div>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="状态">
+                <el-radio-group v-model="formData.status">
+                  <el-radio :value="0">正常</el-radio>
+                  <el-radio :value="1">停用</el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+            <el-col :span="24">
+              <el-form-item label="备注">
+                <el-input
+                  v-model="formData.remark"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="请输入备注"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
+        <div class="dialog-footer flex justify-end gap-2">
+          <el-button @click="dialogVisible = false">
+            取消
+          </el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmit"
+          >
+            {{ dialogType === 'create' ? '创建' : '保存' }}
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -850,13 +1004,15 @@ onMounted(() => {
     <el-dialog
       v-model="resetPasswordDialogVisible"
       title="重置密码"
-      width="400px"
+      width="420px"
+      class="reset-password-dialog"
+      :close-on-click-modal="false"
     >
       <el-form
         ref="resetPasswordFormRef"
         :model="resetPasswordForm"
         :rules="resetPasswordRules"
-        label-width="100px"
+        label-width="80px"
       >
         <el-form-item
           label="新密码"
@@ -882,15 +1038,17 @@ onMounted(() => {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="resetPasswordDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="submitResetPassword"
-        >
-          确定
-        </el-button>
+        <div class="dialog-footer flex justify-end gap-2">
+          <el-button @click="resetPasswordDialogVisible = false">
+            取消
+          </el-button>
+          <el-button
+            type="primary"
+            @click="submitResetPassword"
+          >
+            确认重置
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -899,12 +1057,15 @@ onMounted(() => {
       v-model="assignRoleDialogVisible"
       title="分配角色"
       width="500px"
+      :close-on-click-modal="false"
     >
       <el-form label-width="80px">
         <el-form-item label="选择角色">
           <el-select
             v-model="assignRoleForm.roleIds"
             multiple
+            collapse-tags
+            collapse-tags-tooltip
             placeholder="请选择角色"
             style="width: 100%"
           >
@@ -918,16 +1079,179 @@ onMounted(() => {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="assignRoleDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          @click="submitAssignRole"
-        >
-          确定
-        </el-button>
+        <div class="dialog-footer flex justify-end gap-2">
+          <el-button @click="assignRoleDialogVisible = false">
+            取消
+          </el-button>
+          <el-button
+            type="primary"
+            @click="submitAssignRole"
+          >
+            确定
+          </el-button>
+        </div>
       </template>
     </el-dialog>
+
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
   </div>
 </template>
+
+<style scoped>
+.user-page {
+  min-height: calc(100vh - 120px);
+}
+
+/* 搜索卡片 */
+.search-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-card :deep(.el-card__body) {
+  padding: 16px 20px;
+}
+
+.collapse-btn {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.search-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.search-form :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+/* 表格卡片 */
+.table-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 表格样式 */
+.user-table :deep(.el-table__header-wrapper) {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table-header-cell {
+  background-color: var(--color-bg-page) !important;
+  font-weight: 600;
+}
+
+/* 用户信息单元格 */
+.user-info-cell {
+  padding: 8px 0;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-shrink: 0;
+}
+
+.user-detail {
+  min-width: 0;
+}
+
+.username-row {
+  line-height: 1.4;
+}
+
+.nickname {
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* 角色文本 */
+.role-text {
+  color: var(--el-color-primary);
+  font-size: 13px;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  gap: 4px;
+}
+
+.action-buttons :deep(.el-button + .el-button) {
+  margin-left: 4px;
+}
+
+/* 联系方式 */
+.contact-info {
+  line-height: 1.6;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  padding: 16px 0 0;
+}
+
+/* 对话框 */
+.user-dialog :deep(.el-dialog__header) {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.user-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
+
+.user-form :deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+.form-section:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 深色模式适配 */
+:root.dark .search-card,
+:root.dark .table-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root.dark .section-title {
+  border-color: #374151;
+}
+
+:root.dark .user-dialog :deep(.el-dialog__header) {
+  border-color: #374151;
+}
+
+/* 过渡动画 */
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .search-form :deep(.el-form-item) {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .user-form :deep(.el-col) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+</style>

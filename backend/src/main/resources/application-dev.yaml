@@ -1,0 +1,22 @@
+# 开发环境配置
+# 使用方式：设置环境变量 SPRING_PROFILES_ACTIVE=dev 或在 IDE 中激活 dev profile
+
+spring:
+  # 数据源配置 - 开发环境使用阿里云 RDS
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: root
+    password: ''
+
+  # Redis配置 - 开发环境
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+
+# Sa-Token配置
+sa-token:
+  jwt-secret-key: change_me

@@ -4,13 +4,77 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import { roleApi, type RoleVO, type RoleDTO } from '@/api/system/role'
 import { menuApi, type MenuVO } from '@/api/system/menu'
-import type { PageResult } from '@/types'
+import type { PageResult, TableColumn } from '@/types'
+import { useDict } from '@/composables/useDict'
+
+// 字典
+const dictData = useDict('sys_status')
+const sys_status = dictData.sys_status!
+
+// 表格列配置
+const columns = ref<TableColumn[]>([
+  { key: 'id', label: '角色ID', visible: true, fixed: 'left' },
+  { key: 'roleName', label: '角色名称', visible: true },
+  { key: 'roleCode', label: '角色编码', visible: true },
+  { key: 'sort', label: '排序', visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+  { key: 'remark', label: '备注', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+
+// 表格引用（用于 clearSelection）
+const tableRef = ref()
+
+// 多选
+const selectedRows = ref<RoleVO[]>([])
+function handleSelectionChange(rows: RoleVO[]) {
+  selectedRows.value = rows
+}
+
+// 批量删除
+async function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的角色')
+    return
+  }
+  // 检查是否有内置角色
+  const builtinRoles = selectedRows.value.filter(r => (r as any).isBuiltin === 1)
+  if (builtinRoles.length > 0) {
+    ElMessage.warning('内置角色不能删除')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRows.value.length} 个角色吗？`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    const ids = selectedRows.value.map(row => row.id!)
+    await roleApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    tableRef.value?.clearSelection()
+    fetchRoleList()
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
 
 // 表单引用
 const formRef = ref<FormInstance>()
 
 // 加载状态
 const loading = ref(false)
+const formLoading = ref(false)
 
 // 表格数据
 const tableData = ref<RoleVO[]>([])
@@ -60,12 +124,6 @@ const queryForm = reactive({
   roleCode: '',
   status: undefined as number | undefined,
 })
-
-// 状态选项
-const statusOptions = [
-  { value: 0, label: '正常' },
-  { value: 1, label: '停用' },
-]
 
 // 表单验证规则
 const rules = computed<FormRules>(() => ({
@@ -241,9 +299,6 @@ async function submitAssignMenu() {
   }
 }
 
-// 表单加载状态
-const formLoading = ref(false)
-
 // 提交表单
 async function handleSubmit() {
   if (!formRef.value) return
@@ -297,16 +352,6 @@ function handleSizeChange(size: number) {
   fetchRoleList()
 }
 
-// 获取状态标签类型
-function getStatusType(status: number): 'success' | 'danger' {
-  return status === 0 ? 'success' : 'danger'
-}
-
-// 获取状态文本
-function getStatusText(status: number): string {
-  return status === 0 ? '正常' : '停用'
-}
-
 // 页面加载
 onMounted(() => {
   fetchRoleList()
@@ -339,18 +384,11 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="queryForm.status"
-            placeholder="请选择状态"
+            dict-type="sys_status"
             clearable
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -372,9 +410,9 @@ onMounted(() => {
 
     <!-- 表格区域 -->
     <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">角色列表</span>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
           <el-button
             type="primary"
             :icon="Plus"
@@ -382,64 +420,96 @@ onMounted(() => {
           >
             新增角色
           </el-button>
-        </div>
-      </template>
+        </template>
+        <template #tools>
+          <el-button
+            :icon="Refresh"
+            circle
+            @click="fetchRoleList"
+          />
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
 
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="tableData"
         border
+        @selection-change="handleSelectionChange"
       >
+        <!-- 多选列 -->
         <el-table-column
-          prop="id"
-          label="角色ID"
-          width="80"
-          align="center"
+          type="selection"
+          width="55"
+          fixed="left"
         />
-        <el-table-column
-          prop="roleName"
-          label="角色名称"
-          min-width="150"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="roleCode"
-          label="角色编码"
-          min-width="150"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="sort"
-          label="排序"
-          width="80"
-          align="center"
-        />
+
+        <!-- 动态普通数据列 -->
+        <template
+          v-for="col in visibleColumns"
+          :key="col.key"
+        >
+          <el-table-column
+            v-if="col.key === 'id'"
+            prop="id"
+            :label="col.label"
+            width="80"
+            align="center"
+            fixed="left"
+          />
+          <el-table-column
+            v-else-if="col.key === 'roleName'"
+            prop="roleName"
+            :label="col.label"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'roleCode'"
+            prop="roleCode"
+            :label="col.label"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'sort'"
+            prop="sort"
+            :label="col.label"
+            width="80"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="col.key === 'createTime'"
+            prop="createTime"
+            :label="col.label"
+            width="180"
+          />
+          <el-table-column
+            v-else-if="col.key === 'remark'"
+            prop="remark"
+            :label="col.label"
+            min-width="150"
+            show-overflow-tooltip
+          />
+        </template>
+
+        <!-- 状态列 -->
         <el-table-column
           prop="status"
           label="状态"
-          width="100"
+          width="80"
           align="center"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="getStatusType(row.status)"
-              size="small"
-            >
-              {{ getStatusText(row.status) }}
-            </el-tag>
+            <DictTag
+              :options="sys_status"
+              :value="row.status"
+            />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        />
-        <el-table-column
-          prop="remark"
-          label="备注"
-          min-width="150"
-          show-overflow-tooltip
-        />
+
+        <!-- 操作列 -->
         <el-table-column
           label="操作"
           width="240"
@@ -488,6 +558,21 @@ onMounted(() => {
       </div>
     </el-card>
 
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
+
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -535,15 +620,10 @@ onMounted(() => {
           label="状态"
           prop="status"
         >
-          <el-radio-group v-model="formData.status">
-            <el-radio
-              v-for="item in statusOptions"
-              :key="item.value"
-              :value="item.value"
-            >
-              {{ item.label }}
-            </el-radio>
-          </el-radio-group>
+          <DictRadio
+            v-model="formData.status"
+            dict-type="sys_status"
+          />
         </el-form-item>
         <el-form-item
           label="备注"

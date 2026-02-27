@@ -5,6 +5,7 @@
   --color-bg-header: #ffffff;
   --color-bg-sidebar: #1f2937;
   --color-bg-card: #ffffff;
+  --color-bg-hover: #f3f4f6;
 
   --color-text-primary: #1f293b;
   --color-text-secondary: #4b5563;
@@ -27,6 +28,7 @@
   --color-bg-header: #1f2937;
   --color-bg-sidebar: #111827;
   --color-bg-card: #1f2937;
+  --color-bg-hover: #374151;
 
   --color-text-primary: #f9fafb;
   --color-text-secondary: #d1d5db;

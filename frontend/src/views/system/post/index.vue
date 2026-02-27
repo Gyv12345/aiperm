@@ -1,9 +1,66 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import { postApi, type PostVO, type PostDTO } from '@/api/system/post'
-import type { PageResult } from '@/types'
+import type { PageResult, TableColumn } from '@/types'
+import { useDict } from '@/composables/useDict'
+
+// 字典
+const dictData = useDict('sys_status')
+const sys_status = dictData.sys_status!
+
+// 表格列配置
+const columns = ref<TableColumn[]>([
+  { key: 'id', label: '岗位ID', visible: true, fixed: 'left' },
+  { key: 'postName', label: '岗位名称', visible: true },
+  { key: 'postCode', label: '岗位编码', visible: true },
+  { key: 'sort', label: '排序', visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+  { key: 'remark', label: '备注', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+
+// 表格引用（用于 clearSelection）
+const tableRef = ref()
+
+// 多选
+const selectedRows = ref<PostVO[]>([])
+function handleSelectionChange(rows: PostVO[]) {
+  selectedRows.value = rows
+}
+
+// 批量删除
+async function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的岗位')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRows.value.length} 个岗位吗？`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    const ids = selectedRows.value.map(row => row.id!)
+    await postApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    tableRef.value?.clearSelection()
+    fetchPostList()
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -146,38 +203,45 @@ async function handleDelete(row: PostVO) {
     ElMessage.success('删除成功')
     fetchPostList()
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (error !== 'cancel') {
       console.error('删除岗位失败:', error)
-      ElMessage.error(error?.response?.data?.message || '删除失败')
+      ElMessage.error('删除岗位失败')
     }
   }
 }
 
 // 提交表单
 async function handleSubmit() {
-  if (!formRef.value)
-    return
+  if (!formRef.value) return
 
   try {
     await formRef.value.validate()
 
+    const submitData: PostDTO = {
+      postName: formData.postName,
+      postCode: formData.postCode,
+      sort: formData.sort,
+      status: formData.status,
+      remark: formData.remark || undefined,
+    }
+
     if (dialogType.value === 'create') {
-      await postApi.create(formData)
+      await postApi.create(submitData)
       ElMessage.success('创建成功')
     }
     else {
-      await postApi.update(currentId.value, formData)
+      await postApi.update(currentId.value, submitData)
       ElMessage.success('更新成功')
     }
 
     dialogVisible.value = false
     fetchPostList()
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (error !== false) {
       console.error('保存岗位失败:', error)
-      ElMessage.error(error?.response?.data?.message || '保存失败')
+      ElMessage.error('保存岗位失败')
     }
   }
 }
@@ -200,16 +264,6 @@ function handleSizeChange(size: number) {
   fetchPostList()
 }
 
-// 获取状态标签类型
-function getStatusType(status: number): 'success' | 'danger' {
-  return status === 0 ? 'success' : 'danger'
-}
-
-// 获取状态文本
-function getStatusText(status: number): string {
-  return status === 0 ? '正常' : '停用'
-}
-
 // 页面加载
 onMounted(() => {
   fetchPostList()
@@ -217,7 +271,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="post-content">
+  <div class="p-4">
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
@@ -241,20 +295,11 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="queryForm.status"
-            placeholder="请选择状态"
+            dict-type="sys_status"
             clearable
-          >
-            <el-option
-              label="正常"
-              :value="0"
-            />
-            <el-option
-              label="停用"
-              :value="1"
-            />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -276,9 +321,9 @@ onMounted(() => {
 
     <!-- 表格区域 -->
     <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">岗位列表</span>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
           <el-button
             type="primary"
             :icon="Plus"
@@ -286,62 +331,96 @@ onMounted(() => {
           >
             新增岗位
           </el-button>
-        </div>
-      </template>
+        </template>
+        <template #tools>
+          <el-button
+            :icon="Refresh"
+            circle
+            @click="fetchPostList"
+          />
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
 
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="tableData"
         border
+        @selection-change="handleSelectionChange"
       >
+        <!-- 多选列 -->
         <el-table-column
-          prop="id"
-          label="岗位ID"
-          width="100"
-          align="center"
+          type="selection"
+          width="55"
+          fixed="left"
         />
-        <el-table-column
-          prop="postName"
-          label="岗位名称"
-          min-width="150"
-        />
-        <el-table-column
-          prop="postCode"
-          label="岗位编码"
-          min-width="150"
-        />
-        <el-table-column
-          prop="sort"
-          label="排序"
-          width="80"
-          align="center"
-        />
+
+        <!-- 动态普通数据列 -->
+        <template
+          v-for="col in visibleColumns"
+          :key="col.key"
+        >
+          <el-table-column
+            v-if="col.key === 'id'"
+            prop="id"
+            :label="col.label"
+            width="80"
+            align="center"
+            fixed="left"
+          />
+          <el-table-column
+            v-else-if="col.key === 'postName'"
+            prop="postName"
+            :label="col.label"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'postCode'"
+            prop="postCode"
+            :label="col.label"
+            min-width="120"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'sort'"
+            prop="sort"
+            :label="col.label"
+            width="80"
+            align="center"
+          />
+          <el-table-column
+            v-else-if="col.key === 'createTime'"
+            prop="createTime"
+            :label="col.label"
+            width="180"
+          />
+          <el-table-column
+            v-else-if="col.key === 'remark'"
+            prop="remark"
+            :label="col.label"
+            min-width="150"
+            show-overflow-tooltip
+          />
+        </template>
+
+        <!-- 状态列 -->
         <el-table-column
           prop="status"
           label="状态"
-          width="100"
+          width="80"
           align="center"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="getStatusType(row.status)"
-              size="small"
-            >
-              {{ getStatusText(row.status) }}
-            </el-tag>
+            <DictTag
+              :options="sys_status"
+              :value="row.status"
+            />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        />
-        <el-table-column
-          prop="remark"
-          label="备注"
-          min-width="150"
-          show-overflow-tooltip
-        />
+
+        <!-- 操作列 -->
         <el-table-column
           label="操作"
           width="150"
@@ -381,6 +460,21 @@ onMounted(() => {
         />
       </div>
     </el-card>
+
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -428,14 +522,10 @@ onMounted(() => {
           label="状态"
           prop="status"
         >
-          <el-radio-group v-model="formData.status">
-            <el-radio :value="0">
-              正常
-            </el-radio>
-            <el-radio :value="1">
-              停用
-            </el-radio>
-          </el-radio-group>
+          <DictRadio
+            v-model="formData.status"
+            dict-type="sys_status"
+          />
         </el-form-item>
         <el-form-item
           label="备注"
@@ -463,9 +553,3 @@ onMounted(() => {
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-.post-content {
-  /* content only */
-}
-</style>

@@ -67,4 +67,8 @@ export const noticeApi = {
   /** 删除公告 */
   delete: (id: number) =>
     request.delete<void>(`/enterprise/notice/${id}`),
+
+  /** 批量删除公告 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/enterprise/notice/batch', { data: ids }),
 }

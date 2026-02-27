@@ -1,18 +1,41 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
 import { noticeApi, type NoticeVO, type NoticeDTO } from '@/api/enterprise/notice'
-import type { PageResult } from '@/types'
+import type { PageResult, TableColumn } from '@/types'
 
-// 列表数据
+// 表格列配置
+const columns = ref<TableColumn[]>([
+  { key: 'id', label: 'ID', visible: true, fixed: 'left' },
+  { key: 'noticeTitle', label: '标题', visible: true },
+  { key: 'noticeType', label: '类型', visible: true },
+  { key: 'publishTime', label: '发布时间', visible: true },
+  { key: 'createBy', label: '创建人', visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+
+// 表格引用
+const tableRef = ref()
+
+// 加载状态
 const loading = ref(false)
-const tableData = ref<NoticeVO[]>([])
-const total = ref(0)
+const formLoading = ref(false)
 
-// 查询参数
-const queryParams = reactive({
+// 表格数据
+const tableData = ref<NoticeVO[]>([])
+
+// 分页数据
+const pagination = reactive({
   page: 1,
   pageSize: 10,
+  total: 0,
+})
+
+// 查询表单
+const queryForm = reactive({
   noticeTitle: '',
   noticeType: undefined as number | undefined,
   status: undefined as number | undefined,
@@ -21,7 +44,9 @@ const queryParams = reactive({
 // 对话框
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
-const formLoading = ref(false)
+const currentId = ref<number>(0)
+
+// 表单数据
 const formData = reactive<NoticeDTO>({
   noticeTitle: '',
   noticeContent: '',
@@ -41,46 +66,86 @@ const statusOptions = [
   { label: '已发布', value: 1 },
 ]
 
-// 获取列表
-const fetchData = async () => {
+// 多选
+const selectedRows = ref<NoticeVO[]>([])
+function handleSelectionChange(rows: NoticeVO[]) {
+  selectedRows.value = rows
+}
+
+// 批量删除
+async function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的公告')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRows.value.length} 条公告吗？`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    const ids = selectedRows.value.map(row => row.id!)
+    await noticeApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    tableRef.value?.clearSelection()
+    fetchNoticeList()
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
+
+// 获取公告列表
+async function fetchNoticeList() {
   loading.value = true
   try {
     const params: NoticeDTO = {
-      page: queryParams.page,
-      pageSize: queryParams.pageSize,
-      noticeTitle: queryParams.noticeTitle || undefined,
-      noticeType: queryParams.noticeType,
-      status: queryParams.status,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      noticeTitle: queryForm.noticeTitle || undefined,
+      noticeType: queryForm.noticeType,
+      status: queryForm.status,
     }
     const result = await noticeApi.list(params) as PageResult<NoticeVO>
     tableData.value = result.list || []
-    total.value = result.total || 0
-  } catch (error) {
-    console.error('获取列表失败', error)
-    ElMessage.error('获取列表失败')
-  } finally {
+    pagination.total = result.total || 0
+  }
+  catch (error) {
+    console.error('获取公告列表失败:', error)
+    ElMessage.error('获取公告列表失败')
+  }
+  finally {
     loading.value = false
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  queryParams.page = 1
-  fetchData()
+function handleSearch() {
+  pagination.page = 1
+  fetchNoticeList()
 }
 
 // 重置
-const handleReset = () => {
-  queryParams.page = 1
-  queryParams.noticeTitle = ''
-  queryParams.noticeType = undefined
-  queryParams.status = undefined
-  fetchData()
+function handleReset() {
+  queryForm.noticeTitle = ''
+  queryForm.noticeType = undefined
+  queryForm.status = undefined
+  pagination.page = 1
+  fetchNoticeList()
 }
 
 // 新增
-const handleAdd = () => {
+function handleAdd() {
   dialogTitle.value = '新增公告'
+  currentId.value = 0
   Object.assign(formData, {
     noticeTitle: '',
     noticeContent: '',
@@ -91,8 +156,9 @@ const handleAdd = () => {
 }
 
 // 编辑
-const handleEdit = (row: NoticeVO) => {
+function handleEdit(row: NoticeVO) {
   dialogTitle.value = '编辑公告'
+  currentId.value = row.id || 0
   Object.assign(formData, {
     noticeTitle: row.noticeTitle,
     noticeContent: row.noticeContent,
@@ -100,12 +166,10 @@ const handleEdit = (row: NoticeVO) => {
     status: row.status,
   })
   dialogVisible.value = true
-  // 存储编辑的 ID
-  ;(formData as any).id = row.id
 }
 
 // 提交表单
-const handleSubmit = async () => {
+async function handleSubmit() {
   if (!formData.noticeTitle) {
     ElMessage.warning('请输入标题')
     return
@@ -113,71 +177,75 @@ const handleSubmit = async () => {
 
   formLoading.value = true
   try {
-    if ((formData as any).id) {
-      // 编辑
-      await noticeApi.update((formData as any).id, formData)
+    if (currentId.value) {
+      await noticeApi.update(currentId.value, formData)
       ElMessage.success('更新成功')
-    } else {
-      // 新增
+    }
+    else {
       await noticeApi.create(formData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error('保存失败', error)
+    fetchNoticeList()
+  }
+  catch (error) {
+    console.error('保存失败:', error)
     ElMessage.error('保存失败')
-  } finally {
+  }
+  finally {
     formLoading.value = false
   }
 }
 
 // 发布
-const handlePublish = async (row: NoticeVO) => {
+async function handlePublish(row: NoticeVO) {
   try {
     await ElMessageBox.confirm('确定要发布该公告吗？', '提示', {
       type: 'warning',
     })
     await noticeApi.publish(row.id!)
     ElMessage.success('发布成功')
-    fetchData()
-  } catch (error) {
+    fetchNoticeList()
+  }
+  catch (error) {
     if (error !== 'cancel') {
-      console.error('发布失败', error)
+      console.error('发布失败:', error)
       ElMessage.error('发布失败')
     }
   }
 }
 
 // 撤回
-const handleWithdraw = async (row: NoticeVO) => {
+async function handleWithdraw(row: NoticeVO) {
   try {
     await ElMessageBox.confirm('确定要撤回该公告吗？', '提示', {
       type: 'warning',
     })
     await noticeApi.withdraw(row.id!)
     ElMessage.success('撤回成功')
-    fetchData()
-  } catch (error) {
+    fetchNoticeList()
+  }
+  catch (error) {
     if (error !== 'cancel') {
-      console.error('撤回失败', error)
+      console.error('撤回失败:', error)
       ElMessage.error('撤回失败')
     }
   }
 }
 
 // 删除
-const handleDelete = async (row: NoticeVO) => {
+async function handleDelete(row: NoticeVO) {
   try {
     await ElMessageBox.confirm('确定要删除该公告吗？', '提示', {
       type: 'warning',
     })
     await noticeApi.delete(row.id!)
     ElMessage.success('删除成功')
-    fetchData()
-  } catch (error) {
+    fetchNoticeList()
+  }
+  catch (error) {
     if (error !== 'cancel') {
-      console.error('删除失败', error)
+      console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
   }
@@ -187,62 +255,64 @@ const handleDelete = async (row: NoticeVO) => {
 const detailVisible = ref(false)
 const detailData = ref<NoticeVO | null>(null)
 
-const handleView = async (row: NoticeVO) => {
+async function handleView(row: NoticeVO) {
   try {
     detailData.value = await noticeApi.getById(row.id!)
     detailVisible.value = true
-  } catch (error) {
-    console.error('获取详情失败', error)
+  }
+  catch (error) {
+    console.error('获取详情失败:', error)
     ElMessage.error('获取详情失败')
   }
 }
 
 // 分页
-const handlePageChange = (page: number) => {
-  queryParams.page = page
-  fetchData()
+function handlePageChange(page: number) {
+  pagination.page = page
+  fetchNoticeList()
 }
 
-const handleSizeChange = (size: number) => {
-  queryParams.pageSize = size
-  queryParams.page = 1
-  fetchData()
+function handleSizeChange(size: number) {
+  pagination.pageSize = size
+  pagination.page = 1
+  fetchNoticeList()
 }
 
 // 格式化类型
-const formatType = (type?: number) => {
-  const option = typeOptions.find((item) => item.value === type)
+function formatType(type?: number) {
+  const option = typeOptions.find(item => item.value === type)
   return option?.label || '-'
 }
 
 // 格式化状态
-const formatStatus = (status?: number) => {
-  const option = statusOptions.find((item) => item.value === status)
+function formatStatus(status?: number) {
+  const option = statusOptions.find(item => item.value === status)
   return option?.label || '-'
 }
 
 // 格式化时间
-const formatTime = (time?: string) => {
+function formatTime(time?: string) {
   if (!time) return '-'
   return time.replace('T', ' ').substring(0, 19)
 }
 
+// 页面加载
 onMounted(() => {
-  fetchData()
+  fetchNoticeList()
 })
 </script>
 
 <template>
-  <div class="notice-content">
+  <div class="p-4">
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
         :inline="true"
-        :model="queryParams"
+        :model="queryForm"
       >
         <el-form-item label="标题">
           <el-input
-            v-model="queryParams.noticeTitle"
+            v-model="queryForm.noticeTitle"
             placeholder="请输入标题"
             clearable
             @keyup.enter="handleSearch"
@@ -250,7 +320,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="类型">
           <el-select
-            v-model="queryParams.noticeType"
+            v-model="queryForm.noticeType"
             placeholder="请选择类型"
             clearable
           >
@@ -264,7 +334,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="状态">
           <el-select
-            v-model="queryParams.status"
+            v-model="queryForm.status"
             placeholder="请选择状态"
             clearable
           >
@@ -279,11 +349,15 @@ onMounted(() => {
         <el-form-item>
           <el-button
             type="primary"
+            :icon="Search"
             @click="handleSearch"
           >
             搜索
           </el-button>
-          <el-button @click="handleReset">
+          <el-button
+            :icon="Refresh"
+            @click="handleReset"
+          >
             重置
           </el-button>
         </el-form-item>
@@ -292,49 +366,108 @@ onMounted(() => {
 
     <!-- 表格区域 -->
     <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">公告列表</span>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
           <el-button
             type="primary"
+            :icon="Plus"
             @click="handleAdd"
           >
             新增公告
           </el-button>
-        </div>
-      </template>
+        </template>
+        <template #tools>
+          <el-button
+            :icon="Refresh"
+            circle
+            @click="fetchNoticeList"
+          />
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
 
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="tableData"
-        stripe
+        border
+        @selection-change="handleSelectionChange"
       >
+        <!-- 多选列 -->
         <el-table-column
-          prop="id"
-          label="ID"
-          width="80"
+          type="selection"
+          width="55"
+          fixed="left"
         />
-        <el-table-column
-          prop="noticeTitle"
-          label="标题"
-          min-width="200"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="noticeType"
-          label="类型"
-          width="100"
+
+        <!-- 动态普通数据列 -->
+        <template
+          v-for="col in visibleColumns"
+          :key="col.key"
         >
-          <template #default="{ row }">
-            <el-tag :type="row.noticeType === 1 ? 'primary' : 'success'">
-              {{ formatType(row.noticeType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
+          <el-table-column
+            v-if="col.key === 'id'"
+            prop="id"
+            :label="col.label"
+            width="80"
+            align="center"
+            fixed="left"
+          />
+          <el-table-column
+            v-else-if="col.key === 'noticeTitle'"
+            prop="noticeTitle"
+            :label="col.label"
+            min-width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-else-if="col.key === 'noticeType'"
+            prop="noticeType"
+            :label="col.label"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag :type="row.noticeType === 1 ? 'primary' : 'success'">
+                {{ formatType(row.noticeType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="col.key === 'publishTime'"
+            prop="publishTime"
+            :label="col.label"
+            width="180"
+          >
+            <template #default="{ row }">
+              {{ formatTime(row.publishTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="col.key === 'createBy'"
+            prop="createBy"
+            :label="col.label"
+            width="120"
+          />
+          <el-table-column
+            v-else-if="col.key === 'createTime'"
+            prop="createTime"
+            :label="col.label"
+            width="180"
+          >
+            <template #default="{ row }">
+              {{ formatTime(row.createTime) }}
+            </template>
+          </el-table-column>
+        </template>
+
+        <!-- 状态列 -->
         <el-table-column
           prop="status"
           label="状态"
-          width="100"
+          width="80"
+          align="center"
         >
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">
@@ -342,29 +475,8 @@ onMounted(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="publishTime"
-          label="发布时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.publishTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="createBy"
-          label="创建人"
-          width="120"
-        />
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
-          </template>
-        </el-table-column>
+
+        <!-- 操作列 -->
         <el-table-column
           label="操作"
           width="280"
@@ -381,6 +493,7 @@ onMounted(() => {
             <el-button
               type="primary"
               link
+              :icon="Edit"
               @click="handleEdit(row)"
             >
               编辑
@@ -404,6 +517,7 @@ onMounted(() => {
             <el-button
               type="danger"
               link
+              :icon="Delete"
               @click="handleDelete(row)"
             >
               删除
@@ -412,18 +526,34 @@ onMounted(() => {
         </el-table-column>
       </el-table>
 
+      <!-- 分页 -->
       <div class="mt-4 flex justify-end">
         <el-pagination
-          v-model:current-page="queryParams.page"
-          v-model:page-size="queryParams.pageSize"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="total"
+          :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handlePageChange"
           @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
+
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
@@ -432,6 +562,7 @@ onMounted(() => {
       width="600px"
     >
       <el-form
+        v-loading="formLoading"
         :model="formData"
         label-width="80px"
       >
@@ -474,7 +605,6 @@ onMounted(() => {
         </el-button>
         <el-button
           type="primary"
-          :loading="formLoading"
           @click="handleSubmit"
         >
           确定
@@ -525,9 +655,3 @@ onMounted(() => {
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-.notice-content {
-  /* content only */
-}
-</style>

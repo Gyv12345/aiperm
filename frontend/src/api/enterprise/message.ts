@@ -67,4 +67,8 @@ export const messageApi = {
   /** 删除消息 */
   delete: (id: number) =>
     request.delete<void>(`/enterprise/message/${id}`),
+
+  /** 批量删除消息 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/enterprise/message/batch', { data: ids }),
 }

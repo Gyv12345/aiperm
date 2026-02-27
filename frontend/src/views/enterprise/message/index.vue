@@ -1,19 +1,42 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, Delete, Plus } from '@element-plus/icons-vue'
 import { messageApi, type MessageVO, type MessageDTO } from '@/api/enterprise/message'
-import type { PageResult } from '@/types'
+import type { PageResult, TableColumn } from '@/types'
 
-// 列表数据
+// 表格列配置
+const columns = ref<TableColumn[]>([
+  { key: 'id', label: 'ID', visible: true, fixed: 'left' },
+  { key: 'title', label: '标题', visible: true },
+  { key: 'senderName', label: '发送人', visible: true },
+  { key: 'readTime', label: '阅读时间', visible: true },
+  { key: 'createTime', label: '发送时间', visible: true },
+])
+
+const visibleColumns = computed(() => columns.value.filter(c => c.visible))
+
+// 表格引用
+const tableRef = ref()
+
+// 加载状态
 const loading = ref(false)
+
+// 表格数据
 const tableData = ref<MessageVO[]>([])
-const total = ref(0)
+
+// 未读数量
 const unreadCount = ref(0)
 
-// 查询参数
-const queryParams = reactive({
+// 分页数据
+const pagination = reactive({
   page: 1,
   pageSize: 10,
+  total: 0,
+})
+
+// 查询表单
+const queryForm = reactive({
   isRead: undefined as number | undefined,
 })
 
@@ -23,10 +46,86 @@ const readStatusOptions = [
   { label: '已读', value: 1 },
 ]
 
-// 选中的消息
-const selectedIds = ref<number[]>([])
+// 多选
+const selectedRows = ref<MessageVO[]>([])
+function handleSelectionChange(rows: MessageVO[]) {
+  selectedRows.value = rows
+}
 
-// 对话框
+// 批量删除
+async function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要删除的消息')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRows.value.length} 条消息吗？`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    const ids = selectedRows.value.map(row => row.id!)
+    await messageApi.deleteBatch(ids)
+    ElMessage.success('批量删除成功')
+    tableRef.value?.clearSelection()
+    fetchUnreadCount()
+    fetchMessageList()
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
+
+// 批量标记为已读
+async function handleBatchRead() {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要标记的消息')
+    return
+  }
+
+  try {
+    const ids = selectedRows.value.map(row => row.id!)
+    await messageApi.markAsReadByIds(ids)
+    ElMessage.success('批量标记成功')
+    tableRef.value?.clearSelection()
+    fetchUnreadCount()
+    fetchMessageList()
+  }
+  catch (error) {
+    console.error('批量标记失败:', error)
+    ElMessage.error('批量标记失败')
+  }
+}
+
+// 全部标记为已读
+async function handleReadAll() {
+  try {
+    await ElMessageBox.confirm('确定要将所有未读消息标记为已读吗？', '提示', {
+      type: 'warning',
+    })
+    await messageApi.markAllAsRead()
+    ElMessage.success('全部标记成功')
+    tableRef.value?.clearSelection()
+    fetchUnreadCount()
+    fetchMessageList()
+  }
+  catch (error) {
+    if (error !== 'cancel') {
+      console.error('全部标记失败:', error)
+      ElMessage.error('全部标记失败')
+    }
+  }
+}
+
+// 发送消息对话框
 const sendDialogVisible = ref(false)
 const sendFormLoading = ref(false)
 const sendFormData = reactive<MessageDTO>({
@@ -39,58 +138,53 @@ const sendFormData = reactive<MessageDTO>({
 const detailVisible = ref(false)
 const detailData = ref<MessageVO | null>(null)
 
-// 计算未读消息数量
-const unreadBadge = computed(() => unreadCount.value > 99 ? '99+' : unreadCount.value)
-
 // 获取未读数量
-const fetchUnreadCount = async () => {
+async function fetchUnreadCount() {
   try {
     unreadCount.value = await messageApi.unreadCount()
-  } catch (error) {
-    console.error('获取未读数量失败', error)
+  }
+  catch (error) {
+    console.error('获取未读数量失败:', error)
   }
 }
 
-// 获取列表
-const fetchData = async () => {
+// 获取消息列表
+async function fetchMessageList() {
   loading.value = true
   try {
     const params: MessageDTO = {
-      page: queryParams.page,
-      pageSize: queryParams.pageSize,
-      isRead: queryParams.isRead,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      isRead: queryForm.isRead,
     }
     const result = await messageApi.list(params) as PageResult<MessageVO>
     tableData.value = result.list || []
-    total.value = result.total || 0
-  } catch (error) {
-    console.error('获取列表失败', error)
-    ElMessage.error('获取列表失败')
-  } finally {
+    pagination.total = result.total || 0
+  }
+  catch (error) {
+    console.error('获取消息列表失败:', error)
+    ElMessage.error('获取消息列表失败')
+  }
+  finally {
     loading.value = false
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  queryParams.page = 1
-  fetchData()
+function handleSearch() {
+  pagination.page = 1
+  fetchMessageList()
 }
 
 // 重置
-const handleReset = () => {
-  queryParams.page = 1
-  queryParams.isRead = undefined
-  fetchData()
-}
-
-// 选择变化
-const handleSelectionChange = (selection: MessageVO[]) => {
-  selectedIds.value = selection.map((item) => item.id!)
+function handleReset() {
+  queryForm.isRead = undefined
+  pagination.page = 1
+  fetchMessageList()
 }
 
 // 查看详情
-const handleView = async (row: MessageVO) => {
+async function handleView(row: MessageVO) {
   try {
     detailData.value = await messageApi.getById(row.id!)
     detailVisible.value = true
@@ -98,67 +192,31 @@ const handleView = async (row: MessageVO) => {
     if (row.isRead === 0) {
       await messageApi.markAsRead(row.id!)
       fetchUnreadCount()
-      fetchData()
+      fetchMessageList()
     }
-  } catch (error) {
-    console.error('获取详情失败', error)
+  }
+  catch (error) {
+    console.error('获取详情失败:', error)
     ElMessage.error('获取详情失败')
   }
 }
 
 // 标记单条为已读
-const handleMarkRead = async (row: MessageVO) => {
+async function handleMarkRead(row: MessageVO) {
   try {
     await messageApi.markAsRead(row.id!)
     ElMessage.success('已标记为已读')
     fetchUnreadCount()
-    fetchData()
-  } catch (error) {
-    console.error('操作失败', error)
+    fetchMessageList()
+  }
+  catch (error) {
+    console.error('操作失败:', error)
     ElMessage.error('操作失败')
   }
 }
 
-// 批量标记为已读
-const handleBatchRead = async () => {
-  if (selectedIds.value.length === 0) {
-    ElMessage.warning('请选择要标记的消息')
-    return
-  }
-
-  try {
-    await messageApi.markAsReadByIds(selectedIds.value)
-    ElMessage.success('批量标记成功')
-    selectedIds.value = []
-    fetchUnreadCount()
-    fetchData()
-  } catch (error) {
-    console.error('批量标记失败', error)
-    ElMessage.error('批量标记失败')
-  }
-}
-
-// 全部标记为已读
-const handleReadAll = async () => {
-  try {
-    await ElMessageBox.confirm('确定要将所有未读消息标记为已读吗？', '提示', {
-      type: 'warning',
-    })
-    await messageApi.markAllAsRead()
-    ElMessage.success('全部标记成功')
-    selectedIds.value = []
-    fetchUnreadCount()
-    fetchData()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('全部标记失败', error)
-      ElMessage.error('全部标记失败')
-    }
-  }
-}
-
 // 删除消息
-const handleDelete = async (row: MessageVO) => {
+async function handleDelete(row: MessageVO) {
   try {
     await ElMessageBox.confirm('确定要删除该消息吗？', '提示', {
       type: 'warning',
@@ -168,17 +226,18 @@ const handleDelete = async (row: MessageVO) => {
     if (row.isRead === 0) {
       fetchUnreadCount()
     }
-    fetchData()
-  } catch (error) {
+    fetchMessageList()
+  }
+  catch (error) {
     if (error !== 'cancel') {
-      console.error('删除失败', error)
+      console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
   }
 }
 
 // 打开发送对话框
-const handleOpenSend = () => {
+function handleOpenSend() {
   Object.assign(sendFormData, {
     receiverId: 0,
     title: '',
@@ -188,7 +247,7 @@ const handleOpenSend = () => {
 }
 
 // 发送消息
-const handleSend = async () => {
+async function handleSend() {
   if (!sendFormData.receiverId) {
     ElMessage.warning('请输入接收人ID')
     return
@@ -203,56 +262,59 @@ const handleSend = async () => {
     await messageApi.send(sendFormData)
     ElMessage.success('发送成功')
     sendDialogVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error('发送失败', error)
+    fetchMessageList()
+  }
+  catch (error) {
+    console.error('发送失败:', error)
     ElMessage.error('发送失败')
-  } finally {
+  }
+  finally {
     sendFormLoading.value = false
   }
 }
 
 // 分页
-const handlePageChange = (page: number) => {
-  queryParams.page = page
-  fetchData()
+function handlePageChange(page: number) {
+  pagination.page = page
+  fetchMessageList()
 }
 
-const handleSizeChange = (size: number) => {
-  queryParams.pageSize = size
-  queryParams.page = 1
-  fetchData()
+function handleSizeChange(size: number) {
+  pagination.pageSize = size
+  pagination.page = 1
+  fetchMessageList()
 }
 
 // 格式化已读状态
-const formatReadStatus = (isRead?: number) => {
-  const option = readStatusOptions.find((item) => item.value === isRead)
+function formatReadStatus(isRead?: number) {
+  const option = readStatusOptions.find(item => item.value === isRead)
   return option?.label || '-'
 }
 
 // 格式化时间
-const formatTime = (time?: string) => {
+function formatTime(time?: string) {
   if (!time) return '-'
   return time.replace('T', ' ').substring(0, 19)
 }
 
+// 页面加载
 onMounted(() => {
-  fetchData()
+  fetchMessageList()
   fetchUnreadCount()
 })
 </script>
 
 <template>
-  <div class="message-content">
+  <div class="p-4">
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
         :inline="true"
-        :model="queryParams"
+        :model="queryForm"
       >
         <el-form-item label="阅读状态">
           <el-select
-            v-model="queryParams.isRead"
+            v-model="queryForm.isRead"
             placeholder="请选择状态"
             clearable
           >
@@ -267,11 +329,15 @@ onMounted(() => {
         <el-form-item>
           <el-button
             type="primary"
+            :icon="Search"
             @click="handleSearch"
           >
             搜索
           </el-button>
-          <el-button @click="handleReset">
+          <el-button
+            :icon="Refresh"
+            @click="handleReset"
+          >
             重置
           </el-button>
         </el-form-item>
@@ -280,75 +346,120 @@ onMounted(() => {
 
     <!-- 表格区域 -->
     <el-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">消息列表</span>
-          <div class="flex gap-2">
-            <el-button
-              type="success"
-              :disabled="selectedIds.length === 0"
-              @click="handleBatchRead"
-            >
-              批量已读
-            </el-button>
-            <el-button
-              type="warning"
-              :disabled="unreadCount === 0"
-              @click="handleReadAll"
-            >
-              全部已读
-            </el-button>
-            <el-button
-              type="primary"
-              @click="handleOpenSend"
-            >
-              发送消息
-            </el-button>
-          </div>
-        </div>
-      </template>
+      <!-- 工具栏 -->
+      <TableToolbar>
+        <template #actions>
+          <el-button
+            type="success"
+            :disabled="selectedRows.length === 0"
+            @click="handleBatchRead"
+          >
+            批量已读
+          </el-button>
+          <el-button
+            type="warning"
+            :disabled="unreadCount === 0"
+            @click="handleReadAll"
+          >
+            全部已读
+          </el-button>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="handleOpenSend"
+          >
+            发送消息
+          </el-button>
+        </template>
+        <template #tools>
+          <el-button
+            :icon="Refresh"
+            circle
+            @click="fetchMessageList"
+          />
+          <ColumnSetting v-model="columns" />
+        </template>
+      </TableToolbar>
 
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="tableData"
-        stripe
+        border
         @selection-change="handleSelectionChange"
       >
+        <!-- 多选列 -->
         <el-table-column
           type="selection"
-          width="50"
+          width="55"
+          fixed="left"
         />
-        <el-table-column
-          prop="id"
-          label="ID"
-          width="80"
-        />
-        <el-table-column
-          prop="title"
-          label="标题"
-          min-width="200"
-          show-overflow-tooltip
+
+        <!-- 动态普通数据列 -->
+        <template
+          v-for="col in visibleColumns"
+          :key="col.key"
         >
-          <template #default="{ row }">
-            <div class="flex items-center gap-2">
-              <el-badge
-                v-if="row.isRead === 0"
-                is-dot
-                type="danger"
-              />
-              <span :class="{ 'font-bold': row.isRead === 0 }">{{ row.title }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="senderName"
-          label="发送人"
-          width="120"
-        />
+          <el-table-column
+            v-if="col.key === 'id'"
+            prop="id"
+            :label="col.label"
+            width="80"
+            align="center"
+            fixed="left"
+          />
+          <el-table-column
+            v-else-if="col.key === 'title'"
+            prop="title"
+            :label="col.label"
+            min-width="200"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <div class="flex items-center gap-2">
+                <el-badge
+                  v-if="row.isRead === 0"
+                  is-dot
+                  type="danger"
+                />
+                <span :class="{ 'font-bold': row.isRead === 0 }">{{ row.title }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="col.key === 'senderName'"
+            prop="senderName"
+            :label="col.label"
+            width="120"
+          />
+          <el-table-column
+            v-else-if="col.key === 'readTime'"
+            prop="readTime"
+            :label="col.label"
+            width="180"
+          >
+            <template #default="{ row }">
+              {{ formatTime(row.readTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-else-if="col.key === 'createTime'"
+            prop="createTime"
+            :label="col.label"
+            width="180"
+          >
+            <template #default="{ row }">
+              {{ formatTime(row.createTime) }}
+            </template>
+          </el-table-column>
+        </template>
+
+        <!-- 状态列 -->
         <el-table-column
           prop="isRead"
           label="状态"
-          width="100"
+          width="80"
+          align="center"
         >
           <template #default="{ row }">
             <el-tag :type="row.isRead === 1 ? 'success' : 'danger'">
@@ -356,24 +467,8 @@ onMounted(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="readTime"
-          label="阅读时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.readTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="发送时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
-          </template>
-        </el-table-column>
+
+        <!-- 操作列 -->
         <el-table-column
           label="操作"
           width="200"
@@ -398,6 +493,7 @@ onMounted(() => {
             <el-button
               type="danger"
               link
+              :icon="Delete"
               @click="handleDelete(row)"
             >
               删除
@@ -406,18 +502,41 @@ onMounted(() => {
         </el-table-column>
       </el-table>
 
+      <!-- 分页 -->
       <div class="mt-4 flex justify-end">
         <el-pagination
-          v-model:current-page="queryParams.page"
-          v-model:page-size="queryParams.pageSize"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="total"
+          :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handlePageChange"
           @size-change="handleSizeChange"
+          @current-change="handlePageChange"
         />
       </div>
     </el-card>
+
+    <!-- 多选操作条 -->
+    <SelectionBar
+      :count="selectedRows.length"
+      @clear="tableRef?.clearSelection()"
+    >
+      <el-button
+        type="success"
+        size="small"
+        @click="handleBatchRead"
+      >
+        批量已读
+      </el-button>
+      <el-button
+        type="danger"
+        size="small"
+        :icon="Delete"
+        @click="handleBatchDelete"
+      >
+        批量删除
+      </el-button>
+    </SelectionBar>
 
     <!-- 发送消息对话框 -->
     <el-dialog
@@ -516,9 +635,3 @@ onMounted(() => {
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-.message-content {
-  /* content only */
-}
-</style>

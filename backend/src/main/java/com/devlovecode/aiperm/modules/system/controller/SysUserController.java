@@ -10,6 +10,7 @@ import com.devlovecode.aiperm.common.enums.OperType;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.service.UserService;
+import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.groups.Default;
@@ -31,14 +32,14 @@ public class SysUserController {
     @SaCheckPermission("system:user:list")
     @Log(title = "用户管理", operType = OperType.QUERY)
     @GetMapping
-    public R<PageResult<SysUser>> page(@Validated({Default.class, Views.Query.class}) UserDTO dto) {
+    public R<PageResult<UserVO>> page(@Validated({Default.class, Views.Query.class}) UserDTO dto) {
         return R.ok(userService.queryPage(dto));
     }
 
     @Operation(summary = "根据ID查询用户")
     @SaCheckPermission("system:user:list")
     @GetMapping("/{id}")
-    public R<SysUser> getById(@PathVariable Long id) {
+    public R<UserVO> getById(@PathVariable Long id) {
         return R.ok(userService.findById(id));
     }
 

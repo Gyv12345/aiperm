@@ -42,6 +42,18 @@ public class UserVO {
     @Schema(description = "部门名称", example = "技术部")
     private String deptName;
 
+    @Schema(description = "岗位ID列表", example = "[1, 2]")
+    private List<Long> postIds;
+
+    @Schema(description = "岗位名称", example = "经理, 开发")
+    private String postNames;
+
+    @Schema(description = "角色ID列表", example = "[1, 2]")
+    private List<Long> roleIds;
+
+    @Schema(description = "角色名称", example = "管理员, 普通用户")
+    private String roleNames;
+
     @Schema(description = "角色列表")
     private List<RoleVO> roles;
 

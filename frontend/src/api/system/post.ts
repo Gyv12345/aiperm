@@ -57,4 +57,8 @@ export const postApi = {
   /** 删除岗位 */
   delete: (id: number) =>
     request.delete<void>(`/system/post/${id}`),
+
+  /** 批量删除岗位 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/system/post/batch', { data: ids }),
 }

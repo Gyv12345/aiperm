@@ -1,48 +1,56 @@
 <script setup lang="ts">
 import { shallowRef, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { dashboardApi } from '@/api/dashboard'
 
 const router = useRouter()
 
-// 统计数据（使用 shallowRef 优化性能）
+// 统计数据（从后端获取）
 const stats = shallowRef([
   {
     title: '用户总数',
-    value: 128,
+    value: 0,
     icon: 'User',
     gradient: 'from-blue-500 to-blue-600',
     bgLight: 'bg-blue-50',
-    trend: '+12%',
-    trendUp: true
+    trend: '总计',
+    trendUp: true,
+    key: 'userCount'
   },
   {
     title: '角色数量',
-    value: 8,
+    value: 0,
     icon: 'UserFilled',
     gradient: 'from-emerald-500 to-emerald-600',
     bgLight: 'bg-emerald-50',
-    trend: '+2',
-    trendUp: true
+    trend: '总计',
+    trendUp: true,
+    key: 'roleCount'
   },
   {
-    title: '权限数量',
-    value: 56,
-    icon: 'Lock',
+    title: '菜单数量',
+    value: 0,
+    icon: 'Menu',
     gradient: 'from-orange-500 to-orange-600',
     bgLight: 'bg-orange-50',
-    trend: '+8',
-    trendUp: true
+    trend: '总计',
+    trendUp: true,
+    key: 'menuCount'
   },
   {
     title: '在线用户',
-    value: 23,
+    value: 0,
     icon: 'Connection',
     gradient: 'from-violet-500 to-violet-600',
     bgLight: 'bg-violet-50',
     trend: '实时',
-    trendUp: true
+    trendUp: true,
+    key: 'onlineCount'
   },
 ])
+
+// 加载状态
+const loading = ref(false)
 
 // 快捷操作
 const quickActions = shallowRef([
@@ -97,7 +105,26 @@ const techStack = shallowRef([
 // 动画状态
 const isLoaded = ref(false)
 
+// 获取统计数据
+const fetchStats = async () => {
+  loading.value = true
+  try {
+    const data = await dashboardApi.getStats()
+    // 更新统计数据
+    stats.value = stats.value.map(stat => ({
+      ...stat,
+      value: data[stat.key as keyof typeof data] || 0
+    }))
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
+  // 获取统计数据
+  fetchStats()
   // 延迟触发动画
   setTimeout(() => {
     isLoaded.value = true

@@ -27,6 +27,63 @@ export const constantRoutes: RouteRecordRaw[] = [
       title: '404',
     },
   },
+  {
+    path: '/',
+    name: 'Root',
+    component: () => import('@/components/layout/MainLayout.vue'),
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: {
+          title: '首页',
+          icon: 'HomeFilled',
+          requiresAuth: true,
+        },
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        redirect: '/profile/info',
+        meta: {
+          title: '个人中心',
+          icon: 'User',
+          requiresAuth: true,
+        },
+        children: [
+          {
+            path: 'info',
+            name: 'ProfileInfo',
+            component: () => import('@/views/profile/Info.vue'),
+            meta: {
+              title: '基本信息',
+              requiresAuth: true,
+            },
+          },
+          {
+            path: 'password',
+            name: 'ProfilePassword',
+            component: () => import('@/views/profile/Password.vue'),
+            meta: {
+              title: '修改密码',
+              requiresAuth: true,
+            },
+          },
+          {
+            path: 'logs',
+            name: 'ProfileLogs',
+            component: () => import('@/views/profile/Logs.vue'),
+            meta: {
+              title: '登录日志',
+              requiresAuth: true,
+            },
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 // 创建路由实例
@@ -83,9 +140,9 @@ function setupRouterGuard(router: Router) {
       // 3. 生成路由
       const routes = permissionStore.generateRoutes()
 
-      // 4. 动态添加路由
+      // 4. 动态添加路由（添加为 Root 路由的子路由）
       routes.forEach((route) => {
-        router.addRoute(route)
+        router.addRoute('Root', route)
       })
 
       // 5. 添加 404 兜底路由（必须最后添加）

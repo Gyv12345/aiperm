@@ -51,19 +51,8 @@ export const usePermissionStore = defineStore('permission', () => {
 
     extractRoutes(menus.value)
 
-    // 获取第一个子菜单的路径作为默认重定向
-    const firstRoutePath = dynamicRoutes.length > 0 ? dynamicRoutes[0].path : '/404'
-
-    // 根路由
-    const rootRoute: RouteRecordRaw = {
-      path: '/',
-      name: 'Root',
-      component: () => import('@/components/layout/MainLayout.vue'),
-      redirect: firstRoutePath,
-      children: dynamicRoutes,
-    }
-
-    routes.value = [rootRoute]
+    // 直接返回动态路由，不再创建根路由（根路由已在 constantRoutes 中定义）
+    routes.value = dynamicRoutes
     isRoutesLoaded.value = true
 
     return routes.value

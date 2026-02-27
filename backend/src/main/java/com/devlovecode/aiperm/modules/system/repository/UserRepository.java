@@ -164,4 +164,12 @@ public class UserRepository extends BaseRepository<SysUser> {
         String username = db.sql(sql).param("id", id).query(String.class).single();
         return "admin".equals(username);
     }
+
+    /**
+     * 查询用户的角色ID列表
+     */
+    public List<Long> findRoleIdsByUserId(Long userId) {
+        String sql = "SELECT role_id FROM sys_user_role WHERE user_id = :userId AND deleted = 0";
+        return db.sql(sql).param("userId", userId).query(Long.class).list();
+    }
 }

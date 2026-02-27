@@ -62,6 +62,10 @@ export const roleApi = {
   delete: (id: number) =>
     request.delete<void>(`/system/role/${id}`),
 
+  /** 批量删除角色 */
+  deleteBatch: (ids: number[]) =>
+    request.delete<void>('/system/role/batch', { data: ids }),
+
   /** 分配角色菜单 */
   assignMenus: (id: number, menuIds: number[]) =>
     request.post<void>(`/system/role/${id}/menus`, menuIds),

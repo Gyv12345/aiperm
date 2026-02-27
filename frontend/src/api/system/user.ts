@@ -20,7 +20,9 @@ export interface UserVO {
   deptId: number
   deptName: string
   postIds: number[]
+  postNames: string
   roleIds: number[]
+  roleNames: string
   createTime: string
   createBy: string
   updateTime: string

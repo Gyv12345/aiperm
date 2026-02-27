@@ -10,13 +10,51 @@ interface MenuItem extends MenuVO {
   children?: MenuItem[]
 }
 
+interface StaticMenuItem {
+  id: string
+  menuName: string
+  path: string
+  icon: string
+  menuType: string
+  children?: StaticMenuItem[]
+}
+
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const permissionStore = usePermissionStore()
 
-// 从 PermissionStore 获取菜单
-const menuItems = computed(() => permissionStore.menus)
+// 静态菜单项（首页和个人中心）
+const staticMenus: StaticMenuItem[] = [
+  {
+    id: 'dashboard',
+    menuName: '首页',
+    path: '/dashboard',
+    icon: 'HomeFilled',
+    menuType: '2',
+  },
+  {
+    id: 'profile',
+    menuName: '个人中心',
+    path: '/profile',
+    icon: 'User',
+    menuType: '1',
+    children: [
+      { id: 'profile-info', menuName: '基本信息', path: '/profile/info', icon: 'UserFilled', menuType: '2' },
+      { id: 'profile-password', menuName: '修改密码', path: '/profile/password', icon: 'Lock', menuType: '2' },
+      { id: 'profile-logs', menuName: '登录日志', path: '/profile/logs', icon: 'Document', menuType: '2' },
+    ],
+  },
+]
+
+// 从 PermissionStore 获取动态菜单
+const dynamicMenus = computed(() => permissionStore.menus)
+
+// 合并静态菜单和动态菜单
+const menuItems = computed(() => {
+  // 将静态菜单和动态菜单合并
+  return [...staticMenus, ...dynamicMenus.value] as MenuItem[]
+})
 
 // 侧边栏折叠状态
 const collapsed = computed(() => appStore.sidebarCollapsed)
@@ -35,6 +73,17 @@ watch(
     const parentMenu = findParentMenuByPath(menuItems.value, path)
     if (parentMenu) {
       openedMenu.value = `menu-${parentMenu.id}`
+    }
+    // 检查静态菜单
+    for (const menu of staticMenus) {
+      if (menu.children) {
+        for (const child of menu.children) {
+          if (child.path === path) {
+            openedMenu.value = `menu-${menu.id}`
+            return
+          }
+        }
+      }
     }
   },
   { immediate: true }
@@ -91,7 +140,14 @@ function findParent(menus: MenuItem[], parentId: number | null): MenuItem | null
 
 // 选择菜单
 function handleSelect(index: string) {
-  // index 格式为 "menu-{id}"，需要找到对应菜单并跳转
+  // 处理静态菜单
+  if (index.startsWith('static-')) {
+    const path = index.replace('static-', '')
+    router.push(path)
+    return
+  }
+
+  // 处理动态菜单
   const menu = findMenuById(menuItems.value, parseInt(index.replace('menu-', '')))
   if (menu && menu.menuType === '2') {
     const path = buildMenuPath(menu)
@@ -106,8 +162,22 @@ function handleMenuOpen(index: string) {
 
 // 获取当前激活菜单的索引
 function getActiveMenuIndex(): string {
-  // 根据当前路由找到对应的菜单项
-  const menu = findMenuByPath(menuItems.value, route.path)
+  // 检查静态菜单
+  for (const menu of staticMenus) {
+    if (menu.path === route.path) {
+      return `static-${menu.path}`
+    }
+    if (menu.children) {
+      for (const child of menu.children) {
+        if (child.path === route.path) {
+          return `static-${child.path}`
+        }
+      }
+    }
+  }
+
+  // 检查动态菜单
+  const menu = findMenuByPath(dynamicMenus.value as MenuItem[], route.path)
   return menu ? `menu-${menu.id}` : route.path
 }
 
@@ -186,8 +256,45 @@ function getIconComponent(iconName: string | null | undefined) {
       @select="handleSelect"
       @open="handleMenuOpen"
     >
+      <!-- 静态菜单：首页 -->
+      <el-menu-item index="static-/dashboard">
+        <el-icon>
+          <HomeFilled />
+        </el-icon>
+        <span>首页</span>
+      </el-menu-item>
+
+      <!-- 静态菜单：个人中心 -->
+      <el-sub-menu index="menu-profile">
+        <template #title>
+          <el-icon>
+            <User />
+          </el-icon>
+          <span>个人中心</span>
+        </template>
+        <el-menu-item index="static-/profile/info">
+          <el-icon>
+            <UserFilled />
+          </el-icon>
+          <span>基本信息</span>
+        </el-menu-item>
+        <el-menu-item index="static-/profile/password">
+          <el-icon>
+            <Lock />
+          </el-icon>
+          <span>修改密码</span>
+        </el-menu-item>
+        <el-menu-item index="static-/profile/logs">
+          <el-icon>
+            <Document />
+          </el-icon>
+          <span>登录日志</span>
+        </el-menu-item>
+      </el-sub-menu>
+
+      <!-- 动态菜单 -->
       <template
-        v-for="menu in menuItems"
+        v-for="menu in dynamicMenus"
         :key="menu.id"
       >
         <!-- 目录类型：有子菜单 -->
