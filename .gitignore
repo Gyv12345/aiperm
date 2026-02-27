@@ -70,3 +70,6 @@ application-prod.yaml
 .env.local
 .env.*.local
 backend/.env
+
+# Playwright CLI 缓存
+.playwright-cli/
