@@ -43,6 +43,7 @@ ext {
     set('fastExcelVersion', '1.3.0')
     set('springDocVersion', '2.8.3')
     set('springAiVersion', '1.1.2')
+    set('sms4jVersion', '3.3.3')
 }
 
 dependencies {
@@ -90,6 +91,12 @@ dependencies {
     implementation('com.aliyun.oss:aliyun-sdk-oss:3.18.1') {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
+
+    // 邮件发送
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // sms4j 短信发送（支持阿里云、腾讯云等）
+    implementation "org.dromara.sms4j:sms4j-spring-boot-starter:${sms4jVersion}"
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
