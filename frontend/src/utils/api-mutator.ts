@@ -116,6 +116,13 @@ axiosInstance.interceptors.response.use(
         console.error('服务器错误:', data)
         break
 
+      case 423:
+        // 需要2FA验证，触发全局事件
+        window.dispatchEvent(new CustomEvent('mfa-required', {
+          detail: { message }
+        }))
+        break
+
       default:
         ElMessage.error(message)
     }
