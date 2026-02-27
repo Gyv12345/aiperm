@@ -6,15 +6,22 @@ import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.modules.auth.dto.UnifiedLoginDTO;
 import com.devlovecode.aiperm.modules.auth.dto.request.LoginRequest;
+import com.devlovecode.aiperm.modules.auth.enums.LoginType;
+import com.devlovecode.aiperm.modules.auth.strategy.LoginStrategy;
+import com.devlovecode.aiperm.modules.auth.strategy.LoginStrategyFactory;
 import com.devlovecode.aiperm.modules.auth.vo.CaptchaVO;
+import com.devlovecode.aiperm.modules.auth.vo.LoginConfigVO;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.auth.vo.MenuVO;
 import com.devlovecode.aiperm.modules.auth.vo.UserInfoVO;
+import com.devlovecode.aiperm.modules.enterprise.repository.ConfigRepository;
 import com.devlovecode.aiperm.modules.system.entity.SysMenu;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.MenuRepository;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -36,7 +43,9 @@ public class AuthService {
 
     private final UserRepository userRepo;
     private final MenuRepository menuRepo;
+    private final ConfigRepository configRepo;
     private final StringRedisTemplate redisTemplate;
+    private final LoginStrategyFactory loginStrategyFactory;
 
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final long CAPTCHA_EXPIRE = 5; // 验证码过期时间（分钟）
@@ -100,6 +109,84 @@ public class AuthService {
                 .token(StpUtil.getTokenValue())
                 .userInfo(buildUserInfo(user))
                 .build();
+    }
+
+    /**
+     * 统一登录（支持多种登录方式）
+     */
+    public LoginVO unifiedLogin(UnifiedLoginDTO dto, HttpServletRequest request) {
+        String ip = getClientIp(request);
+
+        // 密码登录需要验证图形验证码
+        if (LoginType.PASSWORD.getCode().equalsIgnoreCase(dto.getLoginType())) {
+            validateCaptcha(dto.getImageCaptchaKey(), dto.getImageCaptcha());
+        }
+
+        // 获取对应的登录策略
+        LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
+        return strategy.login(dto.getIdentifier(), dto.getCredential(), ip);
+    }
+
+    /**
+     * 获取登录配置（控制前端显示哪些登录方式）
+     */
+    public LoginConfigVO getLoginConfig() {
+        boolean smsEnabled = getBooleanConfig("login.sms.enabled", false);
+        boolean emailEnabled = getBooleanConfig("login.email.enabled", false);
+
+        // OAuth 配置
+        List<LoginConfigVO.OAuthConfig> oauthConfigs = new ArrayList<>();
+        if (getBooleanConfig("oauth.wework.enabled", false)) {
+            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+                    .platform("WEWORK")
+                    .displayName("企业微信")
+                    .icon("/icons/wework.svg")
+                    .enabled(true)
+                    .build());
+        }
+        if (getBooleanConfig("oauth.dingtalk.enabled", false)) {
+            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+                    .platform("DINGTALK")
+                    .displayName("钉钉")
+                    .icon("/icons/dingtalk.svg")
+                    .enabled(true)
+                    .build());
+        }
+        if (getBooleanConfig("oauth.feishu.enabled", false)) {
+            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+                    .platform("FEISHU")
+                    .displayName("飞书")
+                    .icon("/icons/feishu.svg")
+                    .enabled(true)
+                    .build());
+        }
+
+        return LoginConfigVO.builder()
+                .passwordEnabled(true)  // 密码登录始终可用
+                .smsEnabled(smsEnabled)
+                .emailEnabled(emailEnabled)
+                .oauthConfigs(oauthConfigs)
+                .build();
+    }
+
+    private boolean getBooleanConfig(String key, boolean defaultValue) {
+        return configRepo.findByConfigKey(key)
+                .map(c -> "1".equals(c.getConfigValue()))
+                .orElse(defaultValue);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 
     /**

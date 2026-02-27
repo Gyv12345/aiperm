@@ -2,14 +2,17 @@ package com.devlovecode.aiperm.modules.auth.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.modules.auth.dto.UnifiedLoginDTO;
 import com.devlovecode.aiperm.modules.auth.dto.request.LoginRequest;
 import com.devlovecode.aiperm.modules.auth.service.AuthService;
 import com.devlovecode.aiperm.modules.auth.vo.CaptchaVO;
+import com.devlovecode.aiperm.modules.auth.vo.LoginConfigVO;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.auth.vo.MenuVO;
 import com.devlovecode.aiperm.modules.auth.vo.UserInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -35,10 +38,22 @@ public class AuthController {
         return R.ok(authService.generateCaptcha());
     }
 
-    @Operation(summary = "登录")
+    @Operation(summary = "登录（传统方式，保持兼容）")
     @PostMapping("/login")
     public R<LoginVO> login(@RequestBody @Valid LoginRequest request) {
         return R.ok(authService.login(request));
+    }
+
+    @Operation(summary = "统一登录（支持多种登录方式）")
+    @PostMapping("/unified-login")
+    public R<LoginVO> unifiedLogin(@RequestBody @Valid UnifiedLoginDTO dto, HttpServletRequest request) {
+        return R.ok(authService.unifiedLogin(dto, request));
+    }
+
+    @Operation(summary = "获取登录配置（控制前端显示哪些登录方式）")
+    @GetMapping("/login-config")
+    public R<LoginConfigVO> loginConfig() {
+        return R.ok(authService.getLoginConfig());
     }
 
     @Operation(summary = "登出")
