@@ -86,6 +86,22 @@ public class UserRepository extends BaseRepository<SysUser> {
     }
 
     /**
+     * 根据手机号查询
+     */
+    public Optional<SysUser> findByPhone(String phone) {
+        String sql = "SELECT * FROM sys_user WHERE phone = :phone AND deleted = 0";
+        return db.sql(sql).param("phone", phone).query(SysUser.class).optional();
+    }
+
+    /**
+     * 根据邮箱查询
+     */
+    public Optional<SysUser> findByEmail(String email) {
+        String sql = "SELECT * FROM sys_user WHERE email = :email AND deleted = 0";
+        return db.sql(sql).param("email", email).query(SysUser.class).optional();
+    }
+
+    /**
      * 检查用户名是否存在
      */
     public boolean existsByUsername(String username) {
