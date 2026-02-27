@@ -46,41 +46,12 @@ export const constantRoutes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'Profile',
-        redirect: '/profile/info',
+        component: () => import('@/views/profile/index.vue'),
         meta: {
           title: '个人中心',
           icon: 'User',
           requiresAuth: true,
         },
-        children: [
-          {
-            path: 'info',
-            name: 'ProfileInfo',
-            component: () => import('@/views/profile/Info.vue'),
-            meta: {
-              title: '基本信息',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'password',
-            name: 'ProfilePassword',
-            component: () => import('@/views/profile/Password.vue'),
-            meta: {
-              title: '修改密码',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'logs',
-            name: 'ProfileLogs',
-            component: () => import('@/views/profile/Logs.vue'),
-            meta: {
-              title: '登录日志',
-              requiresAuth: true,
-            },
-          },
-        ],
       },
     ],
   },

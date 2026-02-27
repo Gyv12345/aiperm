@@ -10,50 +10,17 @@ interface MenuItem extends MenuVO {
   children?: MenuItem[]
 }
 
-interface StaticMenuItem {
-  id: string
-  menuName: string
-  path: string
-  icon: string
-  menuType: string
-  children?: StaticMenuItem[]
-}
-
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const permissionStore = usePermissionStore()
-
-// 静态菜单项（首页和个人中心）
-const staticMenus: StaticMenuItem[] = [
-  {
-    id: 'dashboard',
-    menuName: '首页',
-    path: '/dashboard',
-    icon: 'HomeFilled',
-    menuType: '2',
-  },
-  {
-    id: 'profile',
-    menuName: '个人中心',
-    path: '/profile',
-    icon: 'User',
-    menuType: '1',
-    children: [
-      { id: 'profile-info', menuName: '基本信息', path: '/profile/info', icon: 'UserFilled', menuType: '2' },
-      { id: 'profile-password', menuName: '修改密码', path: '/profile/password', icon: 'Lock', menuType: '2' },
-      { id: 'profile-logs', menuName: '登录日志', path: '/profile/logs', icon: 'Document', menuType: '2' },
-    ],
-  },
-]
 
 // 从 PermissionStore 获取动态菜单
 const dynamicMenus = computed(() => permissionStore.menus)
 
 // 合并静态菜单和动态菜单
 const menuItems = computed(() => {
-  // 将静态菜单和动态菜单合并
-  return [...staticMenus, ...dynamicMenus.value] as MenuItem[]
+  return [...dynamicMenus.value] as MenuItem[]
 })
 
 // 侧边栏折叠状态
@@ -73,17 +40,6 @@ watch(
     const parentMenu = findParentMenuByPath(menuItems.value, path)
     if (parentMenu) {
       openedMenu.value = `menu-${parentMenu.id}`
-    }
-    // 检查静态菜单
-    for (const menu of staticMenus) {
-      if (menu.children) {
-        for (const child of menu.children) {
-          if (child.path === path) {
-            openedMenu.value = `menu-${menu.id}`
-            return
-          }
-        }
-      }
     }
   },
   { immediate: true }
@@ -140,10 +96,9 @@ function findParent(menus: MenuItem[], parentId: number | null): MenuItem | null
 
 // 选择菜单
 function handleSelect(index: string) {
-  // 处理静态菜单
-  if (index.startsWith('static-')) {
-    const path = index.replace('static-', '')
-    router.push(path)
+  // 处理首页
+  if (index === 'dashboard') {
+    router.push('/dashboard')
     return
   }
 
@@ -162,21 +117,10 @@ function handleMenuOpen(index: string) {
 
 // 获取当前激活菜单的索引
 function getActiveMenuIndex(): string {
-  // 检查静态菜单
-  for (const menu of staticMenus) {
-    if (menu.path === route.path) {
-      return `static-${menu.path}`
-    }
-    if (menu.children) {
-      for (const child of menu.children) {
-        if (child.path === route.path) {
-          return `static-${child.path}`
-        }
-      }
-    }
+  // 首页特殊处理
+  if (route.path === '/dashboard') {
+    return 'dashboard'
   }
-
-  // 检查动态菜单
   const menu = findMenuByPath(dynamicMenus.value as MenuItem[], route.path)
   return menu ? `menu-${menu.id}` : route.path
 }
@@ -256,41 +200,13 @@ function getIconComponent(iconName: string | null | undefined) {
       @select="handleSelect"
       @open="handleMenuOpen"
     >
-      <!-- 静态菜单：首页 -->
-      <el-menu-item index="static-/dashboard">
+      <!-- 首页 -->
+      <el-menu-item index="dashboard">
         <el-icon>
           <HomeFilled />
         </el-icon>
         <span>首页</span>
       </el-menu-item>
-
-      <!-- 静态菜单：个人中心 -->
-      <el-sub-menu index="menu-profile">
-        <template #title>
-          <el-icon>
-            <User />
-          </el-icon>
-          <span>个人中心</span>
-        </template>
-        <el-menu-item index="static-/profile/info">
-          <el-icon>
-            <UserFilled />
-          </el-icon>
-          <span>基本信息</span>
-        </el-menu-item>
-        <el-menu-item index="static-/profile/password">
-          <el-icon>
-            <Lock />
-          </el-icon>
-          <span>修改密码</span>
-        </el-menu-item>
-        <el-menu-item index="static-/profile/logs">
-          <el-icon>
-            <Document />
-          </el-icon>
-          <span>登录日志</span>
-        </el-menu-item>
-      </el-sub-menu>
 
       <!-- 动态菜单 -->
       <template
