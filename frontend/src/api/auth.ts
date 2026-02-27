@@ -9,7 +9,7 @@ export type { MenuVO }
 
 // ==================== 类型定义 ====================
 
-/** 登录请求 */
+/** 登录请求（传统方式） */
 export interface LoginRequest {
   username: string
   password: string
@@ -17,12 +17,26 @@ export interface LoginRequest {
   captcha: string
 }
 
+/** 统一登录请求 */
+export interface UnifiedLoginDTO {
+  loginType: 'PASSWORD' | 'SMS' | 'EMAIL' | 'OAUTH'
+  identifier: string      // 用户名/手机号/邮箱
+  credential: string       // 密码/验证码/OAuth code
+  imageCaptcha?: string    // 图形验证码（密码登录时需要）
+  imageCaptchaKey?: string // 图形验证码Key
+}
+
 /** 登录响应 */
 export interface LoginVO {
   token: string
-  username: string
-  nickname: string
-  avatar: string
+  userInfo: {
+    id: number
+    username: string
+    nickname: string
+    avatar: string
+    email?: string
+    phone?: string
+  }
 }
 
 /** 用户信息（含角色权限） */
@@ -41,6 +55,21 @@ export interface CaptchaVO {
   captchaImage: string
 }
 
+/** 登录配置 */
+export interface LoginConfigVO {
+  passwordEnabled: boolean
+  smsEnabled: boolean
+  emailEnabled: boolean
+  oauthConfigs: OAuthConfig[]
+}
+
+interface OAuthConfig {
+  platform: string
+  displayName: string
+  icon: string
+  enabled: boolean
+}
+
 // ==================== API 函数 ====================
 
 export const authApi = {
@@ -48,9 +77,17 @@ export const authApi = {
   captcha: () =>
     request.get<CaptchaVO>('/auth/captcha'),
 
-  /** 登录 */
+  /** 登录（传统方式） */
   login: (data: LoginRequest) =>
     request.post<LoginVO>('/auth/login', data),
+
+  /** 统一登录（支持多种登录方式） */
+  unifiedLogin: (data: UnifiedLoginDTO) =>
+    request.post<LoginVO>('/auth/unified-login', data),
+
+  /** 获取登录配置 */
+  loginConfig: () =>
+    request.get<LoginConfigVO>('/auth/login-config'),
 
   /** 登出 */
   logout: () =>
