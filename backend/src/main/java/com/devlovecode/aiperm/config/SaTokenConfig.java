@@ -32,7 +32,13 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         // 排除认证相关接口
                         "/auth/login",
+                        "/auth/unified-login",
                         "/auth/captcha",
+                        "/auth/login-config",
+                        // 排除验证码发送接口
+                        "/captcha/**",
+                        // 排除 OAuth 登录接口
+                        "/oauth/login/**",
                         // 排除 MCP 端点（由 McpSecurityInterceptor 单独处理）
                         "/mcp/**",
                         // 排除Swagger相关
