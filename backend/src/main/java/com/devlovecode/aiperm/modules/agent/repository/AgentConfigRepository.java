@@ -51,6 +51,12 @@ public class AgentConfigRepository {
             .orElse(defaultValue);
     }
 
+    public long getValueAsLong(String key, long defaultValue) {
+        return findByKey(key)
+            .map(c -> Long.parseLong(c.getConfigValue()))
+            .orElse(defaultValue);
+    }
+
     public void updateValue(String key, String value) {
         String sql = "UPDATE sys_agent_config SET config_value = :value, update_time = :updateTime WHERE config_key = :key";
         db.sql(sql)
