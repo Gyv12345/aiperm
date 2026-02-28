@@ -3,6 +3,7 @@ package com.devlovecode.aiperm.modules.agent.service;
 import com.devlovecode.aiperm.modules.agent.dto.ChatMessage;
 import com.devlovecode.aiperm.modules.agent.dto.LlmResponse;
 import com.devlovecode.aiperm.modules.agent.dto.ToolResult;
+import com.devlovecode.aiperm.modules.agent.repository.AgentConfigRepository;
 import com.devlovecode.aiperm.modules.agent.tool.AgentTool;
 import com.devlovecode.aiperm.modules.agent.tool.ToolRegistry;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +24,25 @@ public class AgentService {
     private final SessionService sessionService;
     private final LlmService llmService;
     private final ToolRegistry toolRegistry;
+    private final SemanticCacheService semanticCacheService;
+    private final AgentConfigRepository configRepo;
 
     /**
      * 发送消息 (流式)
      */
     public void chatStream(String sessionId, Long userId, String message, StreamCallback callback) {
         try {
+            // 1. 尝试语义缓存
+            if (semanticCacheEnabled()) {
+                Optional<SemanticCacheService.CacheResult> cached =
+                    semanticCacheService.findSimilar(userId, message);
+                if (cached.isPresent()) {
+                    callback.onText(cached.get().getAnswer());
+                    callback.onDone();
+                    return;
+                }
+            }
+
             SessionService.SessionData session = sessionService.getSession(sessionId, userId);
             if (session == null) {
                 session = new SessionService.SessionData();
@@ -47,7 +61,7 @@ public class AgentService {
 
             LlmResponse response = llmService.chat(messages);
 
-            processResponse(sessionId, userId, messages, response, callback);
+            processResponse(sessionId, userId, message, messages, response, callback);
 
         } catch (Exception e) {
             log.error("Agent chat failed", e);
@@ -58,18 +72,25 @@ public class AgentService {
     /**
      * 处理 LLM 响应
      */
-    private void processResponse(String sessionId, Long userId, List<ChatMessage> messages,
-                                 LlmResponse response, StreamCallback callback) {
+    private void processResponse(String sessionId, Long userId, String originalMessage,
+                                 List<ChatMessage> messages, LlmResponse response, StreamCallback callback) {
         if (response.getToolCalls() != null && !response.getToolCalls().isEmpty()) {
             handleToolCalls(sessionId, userId, messages, response.getToolCalls(), callback);
         } else {
             String content = response.getContent();
             if (content != null && !content.isEmpty()) {
                 callback.onText(content);
+
+                // 存入语义缓存（仅纯文本回复）
+                if (semanticCacheEnabled()) {
+                    semanticCacheService.store(userId, originalMessage, content);
+                }
             }
             callback.onDone();
         }
     }
+
+    private List<ChatMessage> messages;
 
     /**
      * 处理工具调用
@@ -168,5 +189,9 @@ public class AgentService {
             UUID.randomUUID().toString(), messages, callback);
 
         callback.onDone();
+    }
+
+    private boolean semanticCacheEnabled() {
+        return configRepo.getValueAsBoolean("semantic_cache_enabled", false);
     }
 }
