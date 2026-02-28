@@ -43,4 +43,49 @@ public class LlmProviderRepository extends BaseRepository<SysLlmProvider> {
             .param("updateTime", LocalDateTime.now())
             .update();
     }
+
+    public void insert(SysLlmProvider entity) {
+        String sql = """
+            INSERT INTO sys_llm_provider (name, display_name, api_key, base_url, model, is_default, status, sort, remark, deleted, version, create_time, create_by, update_time, update_by)
+            VALUES (:name, :displayName, :apiKey, :baseUrl, :model, :isDefault, :status, :sort, :remark, 0, 0, :createTime, :createBy, :updateTime, :updateBy)
+            """;
+        db.sql(sql)
+            .param("name", entity.getName())
+            .param("displayName", entity.getDisplayName())
+            .param("apiKey", entity.getApiKey())
+            .param("baseUrl", entity.getBaseUrl())
+            .param("model", entity.getModel())
+            .param("isDefault", entity.getIsDefault() != null && entity.getIsDefault() ? 1 : 0)
+            .param("status", entity.getStatus() != null ? entity.getStatus() : 0)
+            .param("sort", entity.getSort() != null ? entity.getSort() : 0)
+            .param("remark", entity.getRemark())
+            .param("createTime", LocalDateTime.now())
+            .param("createBy", entity.getCreateBy())
+            .param("updateTime", LocalDateTime.now())
+            .param("updateBy", entity.getUpdateBy())
+            .update();
+    }
+
+    public int update(SysLlmProvider entity) {
+        String sql = """
+            UPDATE sys_llm_provider
+            SET display_name = :displayName, api_key = :apiKey, base_url = :baseUrl, model = :model,
+                is_default = :isDefault, status = :status, sort = :sort, remark = :remark,
+                update_time = :updateTime, update_by = :updateBy, version = version + 1
+            WHERE id = :id AND deleted = 0
+            """;
+        return db.sql(sql)
+            .param("id", entity.getId())
+            .param("displayName", entity.getDisplayName())
+            .param("apiKey", entity.getApiKey())
+            .param("baseUrl", entity.getBaseUrl())
+            .param("model", entity.getModel())
+            .param("isDefault", entity.getIsDefault() != null && entity.getIsDefault() ? 1 : 0)
+            .param("status", entity.getStatus())
+            .param("sort", entity.getSort())
+            .param("remark", entity.getRemark())
+            .param("updateTime", LocalDateTime.now())
+            .param("updateBy", entity.getUpdateBy())
+            .update();
+    }
 }
