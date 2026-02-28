@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
+import AgentFloat from '@/components/agent/AgentFloat.vue'
 
 const route = useRoute()
 
@@ -31,6 +32,9 @@ const pageTitle = computed(() => {
         <router-view />
       </main>
     </div>
+
+    <!-- Agent 悬浮球 -->
+    <AgentFloat />
   </div>
 </template>
 
