@@ -1,0 +1,21 @@
+package com.devlovecode.aiperm.modules.approval.entity;
+
+import com.devlovecode.aiperm.common.domain.BaseEntity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.time.LocalDateTime;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class SysApprovalInstance extends BaseEntity {
+    private String sceneCode;
+    private String businessType;
+    private Long businessId;
+    private Long initiatorId;
+    private String platform;
+    private String platformInstanceId;
+    private String status;
+    private String formData;
+    private LocalDateTime resultTime;
+}
