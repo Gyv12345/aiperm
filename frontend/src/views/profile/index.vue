@@ -3,6 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { profileApi, type ProfileVO, type ProfileDTO } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
+import { useDict } from '@/composables/useDict'
+import DictTag from '@/components/dict/DictTag.vue'
+
+// 字典
+const dictData = useDict('sys_status')
+const sys_status = dictData.sys_status!
 
 const activeTab = ref('info')
 const userStore = useUserStore()
@@ -223,9 +229,7 @@ onMounted(() => {
               </el-form-item>
 
               <el-form-item label="状态">
-                <el-tag :type="profile?.status === 0 ? 'success' : 'danger'">
-                  {{ profile?.status === 0 ? '正常' : '停用' }}
-                </el-tag>
+                <DictTag :options="sys_status" :value="profile?.status" />
               </el-form-item>
 
               <el-form-item label="创建时间">

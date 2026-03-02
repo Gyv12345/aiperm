@@ -6,6 +6,8 @@ import cn.dev33.satoken.exception.NotRoleException;
 import com.devlovecode.aiperm.common.domain.R;
 import com.devlovecode.aiperm.common.enums.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -34,11 +36,14 @@ public class GlobalExceptionHandler {
 
     /**
      * NotLoginException：未登录异常
+     * 返回 HTTP 401 状态码，触发前端重新登录
      */
     @ExceptionHandler(NotLoginException.class)
-    public R<Void> handleNotLoginException(NotLoginException e) {
+    public ResponseEntity<R<Void>> handleNotLoginException(NotLoginException e) {
         log.error("未登录异常：{}", e.getMessage());
-        return R.fail(ErrorCode.UNAUTHORIZED.getCode(), "未登录，请先登录");
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(R.fail(ErrorCode.UNAUTHORIZED.getCode(), "未登录或登录已过期，请重新登录"));
     }
 
     /**

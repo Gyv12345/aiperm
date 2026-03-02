@@ -99,6 +99,11 @@ logging:
     org.springframework.jdbc.core.JdbcTemplate: debug
     org.springframework.jdbc.core.StatementCreatorUtils: trace
 
+# 认证配置
+auth:
+  captcha:
+    enabled: false  # 开发环境关闭验证码，方便测试
+
 # MCP Server 配置
 spring.ai.mcp.server:
   enabled: true

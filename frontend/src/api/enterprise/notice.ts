@@ -10,9 +10,9 @@ import type { PageResult, PageParams } from '@/types'
 /** 公告实体 */
 export interface NoticeVO {
   id: number
-  noticeTitle: string
-  noticeContent: string
-  noticeType: number
+  title: string
+  content: string
+  type: number
   status: number
   publishTime: string
   publishBy: string
@@ -25,11 +25,10 @@ export interface NoticeVO {
 /** 公告查询/创建/更新 DTO */
 export interface NoticeDTO extends PageParams {
   id?: number
-  noticeTitle?: string
-  noticeContent?: string
-  noticeType?: number
-  status?: number
+  title?: string
+  content?: string
   type?: number
+  status?: number
   limit?: number
 }
 

@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 // 错误码映射
 const ERROR_MESSAGES: Record<number, string> = {
@@ -15,8 +15,8 @@ const ERROR_MESSAGES: Record<number, string> = {
   504: '网关超时',
 }
 
-// 是否正在刷新登录状态
-let isRefreshing = false
+// 是否正在处理 401 跳转
+let isRedirecting = false
 
 // 创建 axios 实例
 export const axiosInstance = axios.create({
@@ -80,25 +80,16 @@ axiosInstance.interceptors.response.use(
 
     switch (status) {
       case 401:
-        // Token 过期
-        if (!isRefreshing) {
-          isRefreshing = true
+        // Token 过期，直接跳转登录页
+        if (!isRedirecting) {
+          isRedirecting = true
           localStorage.removeItem('access_token')
-
-          try {
-            await ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
-              confirmButtonText: '重新登录',
-              cancelButtonText: '取消',
-              type: 'warning',
-            })
-          }
-          catch {
-            // 用户取消
-          }
-          finally {
-            isRefreshing = false
+          // 提示用户
+          ElMessage.warning('登录已过期，请重新登录')
+          // 延迟跳转，让用户看到提示
+          setTimeout(() => {
             window.location.href = '/login'
-          }
+          }, 500)
         }
         break
 

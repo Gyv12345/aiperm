@@ -188,4 +188,33 @@ public class UserRepository extends BaseRepository<SysUser> {
         String sql = "SELECT role_id FROM sys_user_role WHERE user_id = :userId AND deleted = 0";
         return db.sql(sql).param("userId", userId).query(Long.class).list();
     }
+
+    /**
+     * 更新用户的角色关联
+     * 先软删除旧关联，再插入新关联
+     */
+    public void updateUserRoles(Long userId, List<Long> roleIds, String createBy) {
+        // 1. 软删除所有旧的角色关联
+        String deleteSql = "UPDATE sys_user_role SET deleted = 1 WHERE user_id = :userId";
+        db.sql(deleteSql).param("userId", userId).update();
+
+        // 2. 如果没有新角色，直接返回
+        if (roleIds == null || roleIds.isEmpty()) {
+            return;
+        }
+
+        // 3. 插入新的角色关联
+        String insertSql = """
+            INSERT INTO sys_user_role (user_id, role_id, deleted, create_time, create_by)
+            VALUES (:userId, :roleId, 0, :createTime, :createBy)
+            """;
+        for (Long roleId : roleIds) {
+            db.sql(insertSql)
+                    .param("userId", userId)
+                    .param("roleId", roleId)
+                    .param("createTime", LocalDateTime.now())
+                    .param("createBy", createBy)
+                    .update();
+        }
+    }
 }

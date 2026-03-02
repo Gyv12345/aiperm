@@ -276,7 +276,7 @@ function handleCreate() {
     deptId: undefined,
     postIds: undefined,
     roleIds: [],
-    status: 1,
+    status: 0,
     remark: '',
   })
   dialogVisible.value = true

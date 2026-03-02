@@ -122,6 +122,11 @@ public class UserService {
         entity.setCreateBy(getCurrentUsername());
 
         userRepo.insert(entity);
+
+        // 创建角色关联
+        if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
+            userRepo.updateUserRoles(entity.getId(), dto.getRoleIds(), getCurrentUsername());
+        }
     }
 
     /**
@@ -150,6 +155,11 @@ public class UserService {
         entity.setUpdateBy(getCurrentUsername());
 
         userRepo.update(entity);
+
+        // 更新角色关联
+        if (dto.getRoleIds() != null) {
+            userRepo.updateUserRoles(id, dto.getRoleIds(), getCurrentUsername());
+        }
     }
 
     /**

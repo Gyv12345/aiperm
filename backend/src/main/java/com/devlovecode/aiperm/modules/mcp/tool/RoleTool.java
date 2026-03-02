@@ -135,7 +135,7 @@ public class RoleTool extends BaseMcpTool {
         map.put("sort", role.getSort());
         map.put("status", role.getStatus());
         map.put("remark", role.getRemark());
-        map.put("isBuiltin", role.getIsBuiltin());
+        map.put("isBuiltin", role.getId() != null && role.getId() == 1L);
         map.put("createTime", role.getCreateTime());
         return map;
     }

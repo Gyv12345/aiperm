@@ -23,6 +23,7 @@ import com.devlovecode.aiperm.modules.system.repository.MenuRepository;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +47,9 @@ public class AuthService {
     private final ConfigRepository configRepo;
     private final StringRedisTemplate redisTemplate;
     private final LoginStrategyFactory loginStrategyFactory;
+
+    @Value("${auth.captcha.enabled:true}")
+    private boolean captchaEnabled;
 
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final long CAPTCHA_EXPIRE = 5; // 验证码过期时间（分钟）
@@ -263,6 +267,11 @@ public class AuthService {
      * 验证码校验
      */
     private void validateCaptcha(String captchaKey, String captcha) {
+        // 如果验证码功能关闭，跳过校验（方便测试）
+        if (!captchaEnabled) {
+            return;
+        }
+
         if (captchaKey == null || captchaKey.isBlank()) {
             throw new BusinessException("验证码Key不能为空");
         }

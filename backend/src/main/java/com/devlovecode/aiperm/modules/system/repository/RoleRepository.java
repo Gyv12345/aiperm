@@ -22,8 +22,8 @@ public class RoleRepository extends BaseRepository<SysRole> {
      */
     public void insert(SysRole entity) {
         String sql = """
-            INSERT INTO sys_role (role_name, role_code, sort, status, remark, is_builtin, deleted, version, create_time, create_by)
-            VALUES (:roleName, :roleCode, :sort, :status, :remark, :isBuiltin, 0, 0, :createTime, :createBy)
+            INSERT INTO sys_role (role_name, role_code, sort, status, remark, deleted, version, create_time, create_by)
+            VALUES (:roleName, :roleCode, :sort, :status, :remark, 0, 0, :createTime, :createBy)
             """;
         db.sql(sql)
                 .param("roleName", entity.getRoleName())
@@ -31,7 +31,6 @@ public class RoleRepository extends BaseRepository<SysRole> {
                 .param("sort", entity.getSort())
                 .param("status", entity.getStatus())
                 .param("remark", entity.getRemark())
-                .param("isBuiltin", entity.getIsBuiltin() != null ? entity.getIsBuiltin() : 0)
                 .param("createTime", LocalDateTime.now())
                 .param("createBy", entity.getCreateBy())
                 .update();

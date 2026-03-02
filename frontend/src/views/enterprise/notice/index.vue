@@ -8,8 +8,8 @@ import type { PageResult, TableColumn } from '@/types'
 // 表格列配置
 const columns = ref<TableColumn[]>([
   { key: 'id', label: 'ID', visible: true, fixed: 'left' },
-  { key: 'noticeTitle', label: '标题', visible: true },
-  { key: 'noticeType', label: '类型', visible: true },
+  { key: 'title', label: '标题', visible: true },
+  { key: 'type', label: '类型', visible: true },
   { key: 'publishTime', label: '发布时间', visible: true },
   { key: 'createBy', label: '创建人', visible: true },
   { key: 'createTime', label: '创建时间', visible: true },
@@ -36,8 +36,8 @@ const pagination = reactive({
 
 // 查询表单
 const queryForm = reactive({
-  noticeTitle: '',
-  noticeType: undefined as number | undefined,
+  title: '',
+  type: undefined as number | undefined,
   status: undefined as number | undefined,
 })
 
@@ -48,10 +48,12 @@ const currentId = ref<number>(0)
 
 // 表单数据
 const formData = reactive<NoticeDTO>({
-  noticeTitle: '',
-  noticeContent: '',
-  noticeType: 1,
+  title: '',
+  content: '',
+  type: 1,
   status: 0,
+  page: 1,
+  pageSize: 10,
 })
 
 // 类型选项
@@ -110,8 +112,8 @@ async function fetchNoticeList() {
     const params: NoticeDTO = {
       page: pagination.page,
       pageSize: pagination.pageSize,
-      noticeTitle: queryForm.noticeTitle || undefined,
-      noticeType: queryForm.noticeType,
+      title: queryForm.title || undefined,
+      type: queryForm.type,
       status: queryForm.status,
     }
     const result = await noticeApi.list(params) as PageResult<NoticeVO>
@@ -135,8 +137,8 @@ function handleSearch() {
 
 // 重置
 function handleReset() {
-  queryForm.noticeTitle = ''
-  queryForm.noticeType = undefined
+  queryForm.title = ''
+  queryForm.type = undefined
   queryForm.status = undefined
   pagination.page = 1
   fetchNoticeList()
@@ -147,9 +149,9 @@ function handleAdd() {
   dialogTitle.value = '新增公告'
   currentId.value = 0
   Object.assign(formData, {
-    noticeTitle: '',
-    noticeContent: '',
-    noticeType: 1,
+    title: '',
+    content: '',
+    type: 1,
     status: 0,
   })
   dialogVisible.value = true
@@ -160,9 +162,9 @@ function handleEdit(row: NoticeVO) {
   dialogTitle.value = '编辑公告'
   currentId.value = row.id || 0
   Object.assign(formData, {
-    noticeTitle: row.noticeTitle,
-    noticeContent: row.noticeContent,
-    noticeType: row.noticeType,
+    title: row.title,
+    content: row.content,
+    type: row.type,
     status: row.status,
   })
   dialogVisible.value = true
@@ -170,7 +172,7 @@ function handleEdit(row: NoticeVO) {
 
 // 提交表单
 async function handleSubmit() {
-  if (!formData.noticeTitle) {
+  if (!formData.title) {
     ElMessage.warning('请输入标题')
     return
   }
@@ -312,7 +314,7 @@ onMounted(() => {
       >
         <el-form-item label="标题">
           <el-input
-            v-model="queryForm.noticeTitle"
+            v-model="queryForm.title"
             placeholder="请输入标题"
             clearable
             @keyup.enter="handleSearch"
@@ -320,7 +322,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="类型">
           <el-select
-            v-model="queryForm.noticeType"
+            v-model="queryForm.type"
             placeholder="请选择类型"
             clearable
           >
@@ -415,22 +417,22 @@ onMounted(() => {
             fixed="left"
           />
           <el-table-column
-            v-else-if="col.key === 'noticeTitle'"
-            prop="noticeTitle"
+            v-else-if="col.key === 'title'"
+            prop="title"
             :label="col.label"
             min-width="200"
             show-overflow-tooltip
           />
           <el-table-column
-            v-else-if="col.key === 'noticeType'"
-            prop="noticeType"
+            v-else-if="col.key === 'type'"
+            prop="type"
             :label="col.label"
             width="100"
             align="center"
           >
             <template #default="{ row }">
-              <el-tag :type="row.noticeType === 1 ? 'primary' : 'success'">
-                {{ formatType(row.noticeType) }}
+              <el-tag :type="row.type === 1 ? 'primary' : 'success'">
+                {{ formatType(row.type) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -571,7 +573,7 @@ onMounted(() => {
           required
         >
           <el-input
-            v-model="formData.noticeTitle"
+            v-model="formData.title"
             placeholder="请输入标题"
             maxlength="200"
             show-word-limit
@@ -579,7 +581,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="类型">
           <el-select
-            v-model="formData.noticeType"
+            v-model="formData.type"
             placeholder="请选择类型"
           >
             <el-option
@@ -592,7 +594,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="内容">
           <el-input
-            v-model="formData.noticeContent"
+            v-model="formData.content"
             type="textarea"
             :rows="6"
             placeholder="请输入内容"
@@ -624,10 +626,10 @@ onMounted(() => {
         border
       >
         <el-descriptions-item label="标题">
-          {{ detailData.noticeTitle }}
+          {{ detailData.title }}
         </el-descriptions-item>
         <el-descriptions-item label="类型">
-          {{ formatType(detailData.noticeType) }}
+          {{ formatType(detailData.type) }}
         </el-descriptions-item>
         <el-descriptions-item label="状态">
           {{ formatStatus(detailData.status) }}
@@ -643,7 +645,7 @@ onMounted(() => {
         </el-descriptions-item>
         <el-descriptions-item label="内容">
           <div class="whitespace-pre-wrap">
-            {{ detailData.noticeContent }}
+            {{ detailData.content }}
           </div>
         </el-descriptions-item>
       </el-descriptions>

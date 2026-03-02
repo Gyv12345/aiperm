@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Schema(description = "用户数据")
 public class UserDTO {
@@ -71,6 +73,10 @@ public class UserDTO {
     @JsonView({Views.Create.class, Views.Update.class})
     @Schema(description = "岗位ID")
     private Long postId;
+
+    @JsonView({Views.Create.class, Views.Update.class})
+    @Schema(description = "角色ID列表")
+    private List<Long> roleIds;
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
     @Schema(description = "用户状态（0=正常，1=停用）")
