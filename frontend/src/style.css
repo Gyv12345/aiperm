@@ -165,3 +165,30 @@ a:hover {
 :root.dark .el-empty__description {
   color: var(--color-text-secondary);
 }
+
+/* 筛选区栅格规范（项目统一） */
+.grid-filter-form .el-form-item {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.grid-filter-form .el-form-item__content {
+  width: 100%;
+}
+
+.grid-filter-form .filter-control {
+  width: 100%;
+}
+
+.grid-filter-form .filter-actions .el-form-item__content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 1200px) {
+  .grid-filter-form .filter-actions .el-form-item__content {
+    justify-content: flex-end;
+  }
+}

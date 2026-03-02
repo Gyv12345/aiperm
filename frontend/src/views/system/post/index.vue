@@ -275,47 +275,61 @@ onMounted(() => {
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
-        :inline="true"
         :model="queryForm"
+        label-width="72px"
+        class="grid-filter-form"
       >
-        <el-form-item label="岗位名称">
-          <el-input
-            v-model="queryForm.postName"
-            placeholder="请输入岗位名称"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="岗位编码">
-          <el-input
-            v-model="queryForm.postCode"
-            placeholder="请输入岗位编码"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <DictSelect
-            v-model="queryForm.status"
-            dict-type="sys_status"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            :icon="Search"
-            @click="handleSearch"
-          >
-            搜索
-          </el-button>
-          <el-button
-            :icon="Refresh"
-            @click="handleReset"
-          >
-            重置
-          </el-button>
-        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="岗位名称">
+              <el-input
+                v-model="queryForm.postName"
+                placeholder="请输入岗位名称"
+                clearable
+                class="filter-control"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="岗位编码">
+              <el-input
+                v-model="queryForm.postCode"
+                placeholder="请输入岗位编码"
+                clearable
+                class="filter-control"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="状态">
+              <DictSelect
+                v-model="queryForm.status"
+                dict-type="sys_status"
+                class="filter-control"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+            <el-form-item class="filter-actions">
+              <el-button
+                type="primary"
+                :icon="Search"
+                @click="handleSearch"
+              >
+                搜索
+              </el-button>
+              <el-button
+                :icon="Refresh"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </el-card>
 

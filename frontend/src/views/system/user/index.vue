@@ -499,61 +499,73 @@ onMounted(() => {
       <el-collapse-transition>
         <div v-show="!searchCollapsed">
           <el-form
-            :inline="true"
             :model="queryForm"
-            class="search-form"
+            label-width="72px"
+            class="search-form grid-filter-form"
           >
-            <el-form-item label="用户名">
-              <el-input
-                v-model="queryForm.username"
-                placeholder="请输入用户名"
-                clearable
-                class="w-48"
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="昵称">
-              <el-input
-                v-model="queryForm.nickname"
-                placeholder="请输入昵称"
-                clearable
-                class="w-48"
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="手机号">
-              <el-input
-                v-model="queryForm.phone"
-                placeholder="请输入手机号"
-                clearable
-                class="w-48"
-                @keyup.enter="handleSearch"
-              />
-            </el-form-item>
-            <el-form-item label="状态">
-              <DictSelect
-                v-model="queryForm.status"
-                dict-type="sys_status"
-                clearable
-                placeholder="请选择状态"
-                class="w-36"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                :icon="Search"
-                @click="handleSearch"
-              >
-                搜索
-              </el-button>
-              <el-button
-                :icon="Refresh"
-                @click="handleReset"
-              >
-                重置
-              </el-button>
-            </el-form-item>
+            <el-row :gutter="12">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="用户名">
+                  <el-input
+                    v-model="queryForm.username"
+                    placeholder="请输入用户名"
+                    clearable
+                    class="filter-control"
+                    @keyup.enter="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="昵称">
+                  <el-input
+                    v-model="queryForm.nickname"
+                    placeholder="请输入昵称"
+                    clearable
+                    class="filter-control"
+                    @keyup.enter="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="手机号">
+                  <el-input
+                    v-model="queryForm.phone"
+                    placeholder="请输入手机号"
+                    clearable
+                    class="filter-control"
+                    @keyup.enter="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="状态">
+                  <DictSelect
+                    v-model="queryForm.status"
+                    dict-type="sys_status"
+                    clearable
+                    placeholder="请选择状态"
+                    class="filter-control"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="24" :lg="6">
+                <el-form-item class="filter-actions">
+                  <el-button
+                    type="primary"
+                    :icon="Search"
+                    @click="handleSearch"
+                  >
+                    搜索
+                  </el-button>
+                  <el-button
+                    :icon="Refresh"
+                    @click="handleReset"
+                  >
+                    重置
+                  </el-button>
+                </el-form-item>
+              </el-col>
+            </el-row>
           </el-form>
         </div>
       </el-collapse-transition>

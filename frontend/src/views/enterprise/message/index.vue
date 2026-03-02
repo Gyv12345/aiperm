@@ -309,38 +309,46 @@ onMounted(() => {
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
-        :inline="true"
         :model="queryForm"
+        label-width="72px"
+        class="grid-filter-form"
       >
-        <el-form-item label="阅读状态">
-          <el-select
-            v-model="queryForm.isRead"
-            placeholder="请选择状态"
-            clearable
-          >
-            <el-option
-              v-for="item in readStatusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            :icon="Search"
-            @click="handleSearch"
-          >
-            搜索
-          </el-button>
-          <el-button
-            :icon="Refresh"
-            @click="handleReset"
-          >
-            重置
-          </el-button>
-        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="阅读状态">
+              <el-select
+                v-model="queryForm.isRead"
+                placeholder="请选择状态"
+                clearable
+                class="filter-control"
+              >
+                <el-option
+                  v-for="item in readStatusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+            <el-form-item class="filter-actions">
+              <el-button
+                type="primary"
+                :icon="Search"
+                @click="handleSearch"
+              >
+                搜索
+              </el-button>
+              <el-button
+                :icon="Refresh"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </el-card>
 

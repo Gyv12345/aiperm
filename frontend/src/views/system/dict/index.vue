@@ -432,37 +432,54 @@ onMounted(() => {
 
       <!-- 搜索区域 -->
       <div class="mb-4">
-        <el-input
-          v-model="searchForm.dictName"
-          placeholder="字典名称"
-          clearable
-          class="mb-2"
-          :prefix-icon="Search"
-          @keyup.enter="handleSearch"
-        />
-        <el-input
-          v-model="searchForm.dictType"
-          placeholder="字典类型"
-          clearable
-          class="mb-2"
-          :prefix-icon="Search"
-          @keyup.enter="handleSearch"
-        />
-        <div class="flex gap-2">
-          <el-button
-            type="primary"
-            size="small"
-            @click="handleSearch"
-          >
-            搜索
-          </el-button>
-          <el-button
-            size="small"
-            @click="handleResetSearch"
-          >
-            重置
-          </el-button>
-        </div>
+        <el-form
+          :model="searchForm"
+          class="grid-filter-form dict-type-search-form"
+        >
+          <el-row :gutter="8">
+            <el-col :xs="24" :sm="12" :md="24" :lg="24">
+              <el-form-item>
+                <el-input
+                  v-model="searchForm.dictName"
+                  placeholder="字典名称"
+                  clearable
+                  class="filter-control"
+                  :prefix-icon="Search"
+                  @keyup.enter="handleSearch"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="24" :lg="24">
+              <el-form-item>
+                <el-input
+                  v-model="searchForm.dictType"
+                  placeholder="字典类型"
+                  clearable
+                  class="filter-control"
+                  :prefix-icon="Search"
+                  @keyup.enter="handleSearch"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="24" :lg="24">
+              <el-form-item class="filter-actions">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="handleSearch"
+                >
+                  搜索
+                </el-button>
+                <el-button
+                  size="small"
+                  @click="handleResetSearch"
+                >
+                  重置
+                </el-button>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </div>
 
       <!-- 字典类型列表 -->
