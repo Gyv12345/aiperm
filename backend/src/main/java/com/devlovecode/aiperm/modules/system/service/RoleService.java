@@ -61,6 +61,7 @@ public class RoleService {
         entity.setRoleCode(dto.getRoleCode());
         entity.setSort(dto.getSort() != null ? dto.getSort() : 0);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
+        entity.setDataScope(dto.getDataScope() != null ? dto.getDataScope() : 1);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
 
@@ -87,6 +88,9 @@ public class RoleService {
         entity.setRoleCode(dto.getRoleCode());
         entity.setSort(dto.getSort());
         entity.setStatus(dto.getStatus());
+        if (dto.getDataScope() != null) {
+            entity.setDataScope(dto.getDataScope());
+        }
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
 

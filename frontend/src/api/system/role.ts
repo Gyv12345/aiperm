@@ -14,6 +14,7 @@ export interface RoleVO {
   roleCode: string
   sort: number
   status: number
+  dataScope: number
   remark: string
   createTime: string
   createBy: string
@@ -28,6 +29,7 @@ export interface RoleDTO extends PageParams {
   roleCode?: string
   sort?: number
   status?: number
+  dataScope?: number
   remark?: string
 }
 

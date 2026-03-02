@@ -11,11 +11,25 @@ import { useDict } from '@/composables/useDict'
 const dictData = useDict('sys_status')
 const sys_status = dictData.sys_status!
 
+// 数据权限选项
+const dataScopeOptions = [
+  { value: 1, label: '全部数据' },
+  { value: 2, label: '本部门数据' },
+  { value: 3, label: '本部门及下级部门数据' },
+  { value: 4, label: '仅本人数据' },
+]
+
+// 获取数据权限标签
+function getDataScopeLabel(scope: number) {
+  return dataScopeOptions.find(opt => opt.value === scope)?.label || '未知'
+}
+
 // 表格列配置
 const columns = ref<TableColumn[]>([
   { key: 'id', label: '角色ID', visible: true, fixed: 'left' },
   { key: 'roleName', label: '角色名称', visible: true },
   { key: 'roleCode', label: '角色编码', visible: true },
+  { key: 'dataScope', label: '数据权限', visible: true },
   { key: 'sort', label: '排序', visible: true },
   { key: 'createTime', label: '创建时间', visible: true },
   { key: 'remark', label: '备注', visible: true },
@@ -105,6 +119,7 @@ const formData = reactive<RoleDTO>({
   roleCode: '',
   sort: 0,
   status: 0,
+  dataScope: 1,
   remark: '',
 })
 
@@ -199,6 +214,7 @@ function handleCreate() {
     roleCode: '',
     sort: 0,
     status: 0,
+    dataScope: 1,
     remark: '',
   })
   dialogVisible.value = true
@@ -218,6 +234,7 @@ async function handleUpdate(row: RoleVO) {
       roleCode: role.roleCode || '',
       sort: role.sort || 0,
       status: role.status || 0,
+      dataScope: role.dataScope || 1,
       remark: role.remark || '',
     })
   }
@@ -311,6 +328,7 @@ async function handleSubmit() {
       roleCode: formData.roleCode,
       sort: formData.sort,
       status: formData.status,
+      dataScope: formData.dataScope,
       remark: formData.remark || undefined,
     }
 
@@ -364,47 +382,62 @@ onMounted(() => {
     <!-- 搜索区域 -->
     <el-card class="mb-4">
       <el-form
-        :inline="true"
         :model="queryForm"
+        label-width="72px"
+        class="grid-filter-form"
       >
-        <el-form-item label="角色名称">
-          <el-input
-            v-model="queryForm.roleName"
-            placeholder="请输入角色名称"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="角色编码">
-          <el-input
-            v-model="queryForm.roleCode"
-            placeholder="请输入角色编码"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <DictSelect
-            v-model="queryForm.status"
-            dict-type="sys_status"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            :icon="Search"
-            @click="handleSearch"
-          >
-            搜索
-          </el-button>
-          <el-button
-            :icon="Refresh"
-            @click="handleReset"
-          >
-            重置
-          </el-button>
-        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="角色名称">
+              <el-input
+                v-model="queryForm.roleName"
+                placeholder="请输入角色名称"
+                clearable
+                class="filter-control"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="角色编码">
+              <el-input
+                v-model="queryForm.roleCode"
+                placeholder="请输入角色编码"
+                clearable
+                class="filter-control"
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="状态">
+              <DictSelect
+                v-model="queryForm.status"
+                dict-type="sys_status"
+                placeholder="请选择状态"
+                class="filter-control"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+            <el-form-item class="filter-actions">
+              <el-button
+                type="primary"
+                :icon="Search"
+                @click="handleSearch"
+              >
+                搜索
+              </el-button>
+              <el-button
+                :icon="Refresh"
+                @click="handleReset"
+              >
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </el-card>
 
@@ -472,6 +505,19 @@ onMounted(() => {
             min-width="120"
             show-overflow-tooltip
           />
+          <el-table-column
+            v-else-if="col.key === 'dataScope'"
+            prop="dataScope"
+            :label="col.label"
+            min-width="150"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag type="info">
+                {{ getDataScopeLabel(row.dataScope) }}
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column
             v-else-if="col.key === 'sort'"
             prop="sort"
@@ -624,6 +670,23 @@ onMounted(() => {
             v-model="formData.status"
             dict-type="sys_status"
           />
+        </el-form-item>
+        <el-form-item
+          label="数据权限"
+          prop="dataScope"
+        >
+          <el-select
+            v-model="formData.dataScope"
+            placeholder="请选择数据权限"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in dataScopeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item
           label="备注"

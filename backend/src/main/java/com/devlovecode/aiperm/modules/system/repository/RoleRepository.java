@@ -22,14 +22,15 @@ public class RoleRepository extends BaseRepository<SysRole> {
      */
     public void insert(SysRole entity) {
         String sql = """
-            INSERT INTO sys_role (role_name, role_code, sort, status, remark, deleted, version, create_time, create_by)
-            VALUES (:roleName, :roleCode, :sort, :status, :remark, 0, 0, :createTime, :createBy)
+            INSERT INTO sys_role (role_name, role_code, sort, status, data_scope, remark, deleted, version, create_time, create_by)
+            VALUES (:roleName, :roleCode, :sort, :status, :dataScope, :remark, 0, 0, :createTime, :createBy)
             """;
         db.sql(sql)
                 .param("roleName", entity.getRoleName())
                 .param("roleCode", entity.getRoleCode())
                 .param("sort", entity.getSort())
                 .param("status", entity.getStatus())
+                .param("dataScope", entity.getDataScope())
                 .param("remark", entity.getRemark())
                 .param("createTime", LocalDateTime.now())
                 .param("createBy", entity.getCreateBy())
@@ -42,7 +43,7 @@ public class RoleRepository extends BaseRepository<SysRole> {
     public int update(SysRole entity) {
         String sql = """
             UPDATE sys_role
-            SET role_name = :roleName, role_code = :roleCode, sort = :sort, status = :status, remark = :remark,
+            SET role_name = :roleName, role_code = :roleCode, sort = :sort, status = :status, data_scope = :dataScope, remark = :remark,
                 update_time = :updateTime, update_by = :updateBy
             WHERE id = :id AND deleted = 0
             """;
@@ -51,6 +52,7 @@ public class RoleRepository extends BaseRepository<SysRole> {
                 .param("roleCode", entity.getRoleCode())
                 .param("sort", entity.getSort())
                 .param("status", entity.getStatus())
+                .param("dataScope", entity.getDataScope())
                 .param("remark", entity.getRemark())
                 .param("updateTime", LocalDateTime.now())
                 .param("updateBy", entity.getUpdateBy())
