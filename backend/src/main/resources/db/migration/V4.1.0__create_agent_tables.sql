@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS `sys_llm_provider` (
     `id`            BIGINT       NOT NULL AUTO_INCREMENT,
     `name`          VARCHAR(50)  NOT NULL COMMENT '提供商名称: deepseek/qwen/openai',
     `display_name`  VARCHAR(100) NOT NULL COMMENT '显示名称',
+    `protocol`      VARCHAR(20)  NOT NULL DEFAULT 'openai' COMMENT '协议: openai/anthropic',
     `api_key`       VARCHAR(255) NOT NULL COMMENT 'API Key (加密存储)',
     `base_url`      VARCHAR(255) DEFAULT NULL COMMENT 'API 地址',
     `model`         VARCHAR(100) NOT NULL COMMENT '模型名称',

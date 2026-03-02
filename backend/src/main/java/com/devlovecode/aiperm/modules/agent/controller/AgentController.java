@@ -21,8 +21,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Agent 控制器
@@ -66,16 +68,28 @@ public class AgentController {
 
         final String finalSessionId = sessionId;
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
+        final String textPartId = UUID.randomUUID().toString();
+        final AtomicBoolean textStarted = new AtomicBoolean(false);
 
         CompletableFuture.runAsync(() -> {
             try {
+                sendChunk(emitter, Map.of("type", "start"));
                 agentService.chatStream(finalSessionId, userId, request.getMessage(),
                     new StreamCallback() {
                         @Override
                         public void onText(String delta) {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(ChatEvent.text(delta))));
+                                if (textStarted.compareAndSet(false, true)) {
+                                    sendChunk(emitter, Map.of(
+                                            "type", "text-start",
+                                            "id", textPartId
+                                    ));
+                                }
+                                sendChunk(emitter, Map.of(
+                                        "type", "text-delta",
+                                        "id", textPartId,
+                                        "delta", delta != null ? delta : ""
+                                ));
                             } catch (IOException e) {
                                 log.error("Failed to send text event", e);
                             }
@@ -84,9 +98,24 @@ public class AgentController {
                         @Override
                         public void onConfirm(String actionId, String toolName, String message) {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(
-                                        ChatEvent.confirm(actionId, toolName, message))));
+                                sendChunk(emitter, Map.of(
+                                        "type", "data-confirm",
+                                        "data", Map.of(
+                                                "actionId", actionId != null ? actionId : "",
+                                                "toolName", toolName != null ? toolName : "",
+                                                "message", message != null ? message : ""
+                                        )
+                                ));
+                                if (textStarted.get()) {
+                                    sendChunk(emitter, Map.of(
+                                            "type", "text-end",
+                                            "id", textPartId
+                                    ));
+                                }
+                                sendChunk(emitter, Map.of(
+                                        "type", "finish",
+                                        "finishReason", "stop"
+                                ));
                                 emitter.complete();
                             } catch (IOException e) {
                                 log.error("Failed to send confirm event", e);
@@ -107,8 +136,16 @@ public class AgentController {
                         @Override
                         public void onDone() {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(ChatEvent.done())));
+                                if (textStarted.get()) {
+                                    sendChunk(emitter, Map.of(
+                                            "type", "text-end",
+                                            "id", textPartId
+                                    ));
+                                }
+                                sendChunk(emitter, Map.of(
+                                        "type", "finish",
+                                        "finishReason", "stop"
+                                ));
                                 emitter.complete();
                             } catch (IOException e) {
                                 log.error("Failed to send done event", e);
@@ -118,10 +155,15 @@ public class AgentController {
                         @Override
                         public void onError(Throwable e) {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(
-                                        ChatEvent.error(e.getMessage()))));
-                                emitter.completeWithError(e);
+                                sendChunk(emitter, Map.of(
+                                        "type", "error",
+                                        "errorText", e.getMessage() != null ? e.getMessage() : "发生错误"
+                                ));
+                                sendChunk(emitter, Map.of(
+                                        "type", "finish",
+                                        "finishReason", "error"
+                                ));
+                                emitter.complete();
                             } catch (IOException ex) {
                                 log.error("Failed to send error event", ex);
                             }
@@ -130,9 +172,15 @@ public class AgentController {
             } catch (Exception e) {
                 log.error("Agent chat stream failed", e);
                 try {
-                    emitter.send(SseEmitter.event()
-                        .data(objectMapper.writeValueAsString(ChatEvent.error(e.getMessage()))));
-                    emitter.completeWithError(e);
+                    sendChunk(emitter, Map.of(
+                            "type", "error",
+                            "errorText", e.getMessage() != null ? e.getMessage() : "发生错误"
+                    ));
+                    sendChunk(emitter, Map.of(
+                            "type", "finish",
+                            "finishReason", "error"
+                    ));
+                    emitter.complete();
                 } catch (IOException ex) {
                     log.error("Failed to send error", ex);
                 }
@@ -218,16 +266,28 @@ public class AgentController {
         Long userId = Long.parseLong(StpUtil.getLoginIdAsString());
 
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
+        final String textPartId = UUID.randomUUID().toString();
+        final AtomicBoolean textStarted = new AtomicBoolean(false);
 
         CompletableFuture.runAsync(() -> {
             try {
+                sendChunk(emitter, Map.of("type", "start"));
                 agentService.confirmAction(request.getSessionId(), userId, request.getActionId(),
                     new StreamCallback() {
                         @Override
                         public void onText(String delta) {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(ChatEvent.text(delta))));
+                                if (textStarted.compareAndSet(false, true)) {
+                                    sendChunk(emitter, Map.of(
+                                            "type", "text-start",
+                                            "id", textPartId
+                                    ));
+                                }
+                                sendChunk(emitter, Map.of(
+                                        "type", "text-delta",
+                                        "id", textPartId,
+                                        "delta", delta != null ? delta : ""
+                                ));
                             } catch (IOException e) {
                                 log.error("Failed to send text event", e);
                             }
@@ -235,6 +295,18 @@ public class AgentController {
 
                         @Override
                         public void onConfirm(String actionId, String toolName, String message) {
+                            try {
+                                sendChunk(emitter, Map.of(
+                                        "type", "data-confirm",
+                                        "data", Map.of(
+                                                "actionId", actionId != null ? actionId : "",
+                                                "toolName", toolName != null ? toolName : "",
+                                                "message", message != null ? message : ""
+                                        )
+                                ));
+                            } catch (IOException e) {
+                                log.error("Failed to send confirm event", e);
+                            }
                         }
 
                         @Override
@@ -251,8 +323,16 @@ public class AgentController {
                         @Override
                         public void onDone() {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(ChatEvent.done())));
+                                if (textStarted.get()) {
+                                    sendChunk(emitter, Map.of(
+                                            "type", "text-end",
+                                            "id", textPartId
+                                    ));
+                                }
+                                sendChunk(emitter, Map.of(
+                                        "type", "finish",
+                                        "finishReason", "stop"
+                                ));
                                 emitter.complete();
                             } catch (IOException e) {
                                 log.error("Failed to send done event", e);
@@ -262,10 +342,15 @@ public class AgentController {
                         @Override
                         public void onError(Throwable e) {
                             try {
-                                emitter.send(SseEmitter.event()
-                                    .data(objectMapper.writeValueAsString(
-                                        ChatEvent.error(e.getMessage()))));
-                                emitter.completeWithError(e);
+                                sendChunk(emitter, Map.of(
+                                        "type", "error",
+                                        "errorText", e.getMessage() != null ? e.getMessage() : "发生错误"
+                                ));
+                                sendChunk(emitter, Map.of(
+                                        "type", "finish",
+                                        "finishReason", "error"
+                                ));
+                                emitter.complete();
                             } catch (IOException ex) {
                                 log.error("Failed to send error event", ex);
                             }
@@ -274,8 +359,16 @@ public class AgentController {
             } catch (Exception e) {
                 log.error("Confirm action failed", e);
                 try {
-                    emitter.completeWithError(e);
-                } catch (Exception ex) {
+                    sendChunk(emitter, Map.of(
+                            "type", "error",
+                            "errorText", e.getMessage() != null ? e.getMessage() : "发生错误"
+                    ));
+                    sendChunk(emitter, Map.of(
+                            "type", "finish",
+                            "finishReason", "error"
+                    ));
+                    emitter.complete();
+                } catch (IOException ex) {
                     log.error("Failed to complete with error", ex);
                 }
             }
@@ -284,6 +377,10 @@ public class AgentController {
         emitter.onTimeout(emitter::complete);
 
         return emitter;
+    }
+
+    private void sendChunk(SseEmitter emitter, Object chunk) throws IOException {
+        emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(chunk)));
     }
 
     /**

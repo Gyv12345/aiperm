@@ -5,14 +5,34 @@ import com.devlovecode.aiperm.modules.agent.dto.LlmResponse;
 import com.devlovecode.aiperm.modules.agent.entity.SysLlmProvider;
 import com.devlovecode.aiperm.modules.agent.repository.AgentConfigRepository;
 import com.devlovecode.aiperm.modules.agent.repository.LlmProviderRepository;
+import com.devlovecode.aiperm.modules.agent.tool.AgentTool;
 import com.devlovecode.aiperm.modules.agent.tool.ToolRegistry;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessageType;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.json.JsonArraySchema;
+import dev.langchain4j.model.chat.request.json.JsonBooleanSchema;
+import dev.langchain4j.model.chat.request.json.JsonEnumSchema;
+import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
+import dev.langchain4j.model.chat.request.json.JsonNumberSchema;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
+import dev.langchain4j.model.chat.request.json.JsonStringSchema;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -24,7 +44,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class LlmService {
 
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final LlmProviderRepository providerRepo;
     private final AgentConfigRepository configRepo;
@@ -40,24 +59,16 @@ public class LlmService {
         }
 
         try {
-            String url = provider.getBaseUrl() + "/chat/completions";
+            List<ToolSpecification> toolSpecifications = buildToolSpecifications();
+            ChatModel model = buildChatModel(provider, toolSpecifications);
 
-            Map<String, Object> request = new HashMap<>();
-            request.put("model", provider.getModel());
-            request.put("messages", buildMessages(messages));
-            request.put("tools", toolRegistry.getToolsSchema());
+            ChatRequest request = ChatRequest.builder()
+                    .messages(buildMessages(messages))
+                    .toolSpecifications(toolSpecifications)
+                    .build();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(provider.getApiKey());
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
-
-            log.debug("Calling LLM: {}", provider.getName());
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
-
+            log.debug("Calling LLM via LangChain4j: {}", provider.getName());
+            ChatResponse response = model.chat(request);
             return parseResponse(response);
         } catch (Exception e) {
             log.error("LLM call failed", e);
@@ -79,13 +90,62 @@ public class LlmService {
     /**
      * 构建消息列表
      */
-    private List<Map<String, Object>> buildMessages(List<ChatMessage> messages) {
-        List<Map<String, Object>> result = new ArrayList<>();
+    private List<dev.langchain4j.data.message.ChatMessage> buildMessages(List<ChatMessage> messages) {
+        List<dev.langchain4j.data.message.ChatMessage> result = new ArrayList<>();
+        Set<String> validToolCallIds = new HashSet<>();
         for (ChatMessage msg : messages) {
-            Map<String, Object> m = new HashMap<>();
-            m.put("role", msg.getRole());
-            m.put("content", msg.getContent());
-            result.add(m);
+            switch (msg.getRole()) {
+                case "system" -> result.add(SystemMessage.from(msg.getContent()));
+                case "user" -> result.add(UserMessage.from(msg.getContent()));
+                case "assistant" -> {
+                    if (msg.getToolCalls() != null && !msg.getToolCalls().isEmpty()) {
+                        List<ToolExecutionRequest> toolExecutionRequests = new ArrayList<>();
+                        for (Map<String, Object> tc : msg.getToolCalls()) {
+                            String id = (String) tc.get("id");
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> function = (Map<String, Object>) tc.get("function");
+                            String name = function != null ? (String) function.get("name") : null;
+                            String arguments = function != null ? (String) function.get("arguments") : null;
+                            if (id != null && name != null) {
+                                toolExecutionRequests.add(ToolExecutionRequest.builder()
+                                        .id(id)
+                                        .name(name)
+                                        .arguments(arguments != null ? arguments : "{}")
+                                        .build());
+                            }
+                        }
+                        result.add(AiMessage.from(toolExecutionRequests));
+                    } else {
+                        result.add(AiMessage.from(msg.getContent() != null ? msg.getContent() : ""));
+                    }
+                }
+                case "tool" -> {
+                    if (msg.getToolCallId() == null || msg.getToolCallId().isBlank()) {
+                        continue;
+                    }
+                    if (!validToolCallIds.contains(msg.getToolCallId())) {
+                        // 跳过历史中不完整的 tool 消息，避免 provider 400
+                        log.warn("Skip orphan tool message, tool_call_id={}", msg.getToolCallId());
+                        continue;
+                    }
+                    result.add(ToolExecutionResultMessage.from(
+                            msg.getToolCallId(),
+                            msg.getToolName() != null ? msg.getToolName() : "",
+                            msg.getContent() != null ? msg.getContent() : ""
+                    ));
+                }
+                default -> log.warn("Unknown chat role, skip: {}", msg.getRole());
+            }
+
+            if ("assistant".equals(msg.getRole()) && msg.getToolCalls() != null && !msg.getToolCalls().isEmpty()) {
+                validToolCallIds.clear();
+                for (Map<String, Object> tc : msg.getToolCalls()) {
+                    Object id = tc.get("id");
+                    if (id instanceof String idStr && !idStr.isBlank()) {
+                        validToolCallIds.add(idStr);
+                    }
+                }
+            }
         }
         return result;
     }
@@ -93,37 +153,193 @@ public class LlmService {
     /**
      * 解析 LLM 响应
      */
-    @SuppressWarnings("unchecked")
-    private LlmResponse parseResponse(Map<String, Object> response) {
+    private LlmResponse parseResponse(ChatResponse response) {
         try {
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            if (choices == null || choices.isEmpty()) {
+            if (response == null || response.aiMessage() == null) {
                 return LlmResponse.text("AI 未返回有效响应");
             }
 
-            Map<String, Object> choice = choices.get(0);
-            Map<String, Object> message = (Map<String, Object>) choice.get("message");
-
-            List<Map<String, Object>> toolCalls = (List<Map<String, Object>>) message.get("tool_calls");
-            if (toolCalls != null && !toolCalls.isEmpty()) {
+            AiMessage aiMessage = response.aiMessage();
+            if (aiMessage.hasToolExecutionRequests()) {
                 List<LlmResponse.ToolCall> calls = new ArrayList<>();
-                for (Map<String, Object> tc : toolCalls) {
-                    Map<String, Object> func = (Map<String, Object>) tc.get("function");
+                for (ToolExecutionRequest tc : aiMessage.toolExecutionRequests()) {
                     LlmResponse.ToolCall call = new LlmResponse.ToolCall();
-                    call.setId((String) tc.get("id"));
-                    call.setName((String) func.get("name"));
-                    call.setArguments((String) func.get("arguments"));
+                    call.setId(tc.id());
+                    call.setName(tc.name());
+                    call.setArguments(tc.arguments());
                     calls.add(call);
                 }
                 return LlmResponse.toolCall(calls);
             }
 
-            String content = (String) message.get("content");
+            String content = aiMessage.text();
             return LlmResponse.text(content != null ? content : "");
         } catch (Exception e) {
             log.error("Failed to parse LLM response", e);
             return LlmResponse.text("解析 AI 响应失败");
         }
+    }
+
+    /**
+     * 构建 LangChain4j 工具定义
+     */
+    private List<ToolSpecification> buildToolSpecifications() {
+        List<ToolSpecification> specs = new ArrayList<>();
+        for (AgentTool tool : toolRegistry.getWhitelistedTools()) {
+            try {
+                Map<String, Object> schema = objectMapper.readValue(tool.getParameterSchema(), Map.class);
+                JsonObjectSchema parameters = toJsonObjectSchema(schema);
+                specs.add(ToolSpecification.builder()
+                        .name(tool.getName())
+                        .description(tool.getDescription())
+                        .parameters(parameters)
+                        .build());
+            } catch (Exception e) {
+                log.warn("Failed to parse tool schema, use empty schema. tool={}", tool.getName(), e);
+                specs.add(ToolSpecification.builder()
+                        .name(tool.getName())
+                        .description(tool.getDescription())
+                        .parameters(JsonObjectSchema.builder().build())
+                        .build());
+            }
+        }
+        return specs;
+    }
+
+    @SuppressWarnings("unchecked")
+    private JsonObjectSchema toJsonObjectSchema(Map<String, Object> schema) {
+        JsonObjectSchema.Builder builder = JsonObjectSchema.builder();
+
+        Object desc = schema.get("description");
+        if (desc instanceof String s && !s.isBlank()) {
+            builder.description(s);
+        }
+
+        Object propertiesObj = schema.get("properties");
+        if (propertiesObj instanceof Map<?, ?> properties) {
+            for (Map.Entry<?, ?> entry : properties.entrySet()) {
+                String name = String.valueOf(entry.getKey());
+                if (entry.getValue() instanceof Map<?, ?> propertyMapRaw) {
+                    Map<String, Object> propertyMap = new HashMap<>();
+                    for (Map.Entry<?, ?> e : propertyMapRaw.entrySet()) {
+                        propertyMap.put(String.valueOf(e.getKey()), e.getValue());
+                    }
+                    builder.addProperty(name, toJsonSchemaElement(propertyMap));
+                }
+            }
+        }
+
+        Object requiredObj = schema.get("required");
+        if (requiredObj instanceof List<?> requiredList) {
+            List<String> required = new ArrayList<>();
+            for (Object item : requiredList) {
+                required.add(String.valueOf(item));
+            }
+            builder.required(required);
+        }
+
+        Object additionalProps = schema.get("additionalProperties");
+        if (additionalProps instanceof Boolean b) {
+            builder.additionalProperties(b);
+        }
+
+        return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private JsonSchemaElement toJsonSchemaElement(Map<String, Object> propertySchema) {
+        String type = propertySchema.get("type") instanceof String s ? s : "string";
+        String description = propertySchema.get("description") instanceof String s ? s : null;
+
+        if (propertySchema.get("enum") instanceof List<?> enumValuesRaw && !enumValuesRaw.isEmpty()) {
+            List<String> enumValues = enumValuesRaw.stream().map(String::valueOf).toList();
+            JsonEnumSchema.Builder builder = JsonEnumSchema.builder().enumValues(enumValues);
+            if (description != null) {
+                builder.description(description);
+            }
+            return builder.build();
+        }
+
+        return switch (type) {
+            case "object" -> toJsonObjectSchema(propertySchema);
+            case "array" -> {
+                JsonArraySchema.Builder builder = JsonArraySchema.builder();
+                if (description != null) {
+                    builder.description(description);
+                }
+                Object items = propertySchema.get("items");
+                if (items instanceof Map<?, ?> itemsRaw) {
+                    Map<String, Object> itemSchema = new HashMap<>();
+                    for (Map.Entry<?, ?> e : itemsRaw.entrySet()) {
+                        itemSchema.put(String.valueOf(e.getKey()), e.getValue());
+                    }
+                    builder.items(toJsonSchemaElement(itemSchema));
+                } else {
+                    builder.items(JsonStringSchema.builder().build());
+                }
+                yield builder.build();
+            }
+            case "integer" -> {
+                JsonIntegerSchema.Builder builder = JsonIntegerSchema.builder();
+                if (description != null) {
+                    builder.description(description);
+                }
+                yield builder.build();
+            }
+            case "number" -> {
+                JsonNumberSchema.Builder builder = JsonNumberSchema.builder();
+                if (description != null) {
+                    builder.description(description);
+                }
+                yield builder.build();
+            }
+            case "boolean" -> {
+                JsonBooleanSchema.Builder builder = JsonBooleanSchema.builder();
+                if (description != null) {
+                    builder.description(description);
+                }
+                yield builder.build();
+            }
+            default -> {
+                JsonStringSchema.Builder builder = JsonStringSchema.builder();
+                if (description != null) {
+                    builder.description(description);
+                }
+                yield builder.build();
+            }
+        };
+    }
+
+    private ChatModel buildChatModel(SysLlmProvider provider, List<ToolSpecification> toolSpecifications) {
+        String protocol = provider.getProtocol() != null
+                ? provider.getProtocol().toLowerCase(Locale.ROOT).trim()
+                : "";
+
+        // 兼容历史数据: protocol 为空时，回退到 name 判断
+        if (protocol.isBlank()) {
+            String providerName = provider.getName() != null ? provider.getName().toLowerCase(Locale.ROOT) : "";
+            if (providerName.contains("anthropic") || providerName.contains("claude")) {
+                protocol = "anthropic";
+            } else {
+                protocol = "openai";
+            }
+        }
+
+        if ("anthropic".equals(protocol)) {
+            return AnthropicChatModel.builder()
+                    .baseUrl(provider.getBaseUrl())
+                    .apiKey(provider.getApiKey())
+                    .modelName(provider.getModel())
+                    .toolSpecifications(toolSpecifications)
+                    .timeout(Duration.ofSeconds(60))
+                    .build();
+        }
+        return OpenAiChatModel.builder()
+                .baseUrl(provider.getBaseUrl())
+                .apiKey(provider.getApiKey())
+                .modelName(provider.getModel())
+                .timeout(Duration.ofSeconds(60))
+                .build();
     }
 
     /**

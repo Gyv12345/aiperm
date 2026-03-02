@@ -59,7 +59,6 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
-  is-print-cookie: false
   jwt-secret-key: ${SA_TOKEN_JWT_SECRET:change-this-to-random-string}
   alone-redis:
     database: 1
@@ -103,15 +102,6 @@ logging:
 auth:
   captcha:
     enabled: false  # 开发环境关闭验证码，方便测试
-
-# MCP Server 配置
-spring.ai.mcp.server:
-  enabled: true
-  name: aiperm-mcp-server
-  version: 1.0.0
-  type: SYNC
-  sse-endpoint: /mcp/sse
-  sse-message-endpoint: /mcp/message
 
 # OSS 文件存储配置
 oss:

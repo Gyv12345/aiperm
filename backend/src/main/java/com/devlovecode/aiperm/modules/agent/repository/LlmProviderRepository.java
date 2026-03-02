@@ -46,12 +46,13 @@ public class LlmProviderRepository extends BaseRepository<SysLlmProvider> {
 
     public void insert(SysLlmProvider entity) {
         String sql = """
-            INSERT INTO sys_llm_provider (name, display_name, api_key, base_url, model, is_default, status, sort, remark, deleted, version, create_time, create_by, update_time, update_by)
-            VALUES (:name, :displayName, :apiKey, :baseUrl, :model, :isDefault, :status, :sort, :remark, 0, 0, :createTime, :createBy, :updateTime, :updateBy)
+            INSERT INTO sys_llm_provider (name, display_name, protocol, api_key, base_url, model, is_default, status, sort, remark, deleted, version, create_time, create_by, update_time, update_by)
+            VALUES (:name, :displayName, :protocol, :apiKey, :baseUrl, :model, :isDefault, :status, :sort, :remark, 0, 0, :createTime, :createBy, :updateTime, :updateBy)
             """;
         db.sql(sql)
             .param("name", entity.getName())
             .param("displayName", entity.getDisplayName())
+            .param("protocol", entity.getProtocol())
             .param("apiKey", entity.getApiKey())
             .param("baseUrl", entity.getBaseUrl())
             .param("model", entity.getModel())
@@ -69,7 +70,7 @@ public class LlmProviderRepository extends BaseRepository<SysLlmProvider> {
     public int update(SysLlmProvider entity) {
         String sql = """
             UPDATE sys_llm_provider
-            SET display_name = :displayName, api_key = :apiKey, base_url = :baseUrl, model = :model,
+            SET display_name = :displayName, protocol = :protocol, api_key = :apiKey, base_url = :baseUrl, model = :model,
                 is_default = :isDefault, status = :status, sort = :sort, remark = :remark,
                 update_time = :updateTime, update_by = :updateBy, version = version + 1
             WHERE id = :id AND deleted = 0
@@ -77,6 +78,7 @@ public class LlmProviderRepository extends BaseRepository<SysLlmProvider> {
         return db.sql(sql)
             .param("id", entity.getId())
             .param("displayName", entity.getDisplayName())
+            .param("protocol", entity.getProtocol())
             .param("apiKey", entity.getApiKey())
             .param("baseUrl", entity.getBaseUrl())
             .param("model", entity.getModel())

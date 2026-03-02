@@ -12,8 +12,10 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@ai-sdk/vue": "^2.0.141",
     "@element-plus/icons-vue": "^2.3.2",
     "@vueuse/core": "^14.2.1",
+    "ai": "^5.0.141",
     "axios": "^1.13.5",
     "element-plus": "^2.13.2",
     "orval": "^7.13.2",

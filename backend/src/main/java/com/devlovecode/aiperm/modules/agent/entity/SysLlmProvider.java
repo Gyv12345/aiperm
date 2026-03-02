@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 public class SysLlmProvider extends BaseEntity {
     private String name;
     private String displayName;
+    private String protocol;
     private String apiKey;
     private String baseUrl;
     private String model;

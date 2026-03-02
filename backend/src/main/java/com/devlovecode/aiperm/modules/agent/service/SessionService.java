@@ -128,7 +128,7 @@ public class SessionService {
     /**
      * 保存待确认操作
      */
-    public void savePendingAction(String sessionId, String actionId, String toolName, String toolArgs) {
+    public void savePendingAction(String sessionId, String actionId, String toolName, String toolArgs, String toolCallId) {
         String key = SESSION_KEY_PREFIX + sessionId;
         String json = redis.opsForValue().get(key);
 
@@ -138,7 +138,7 @@ public class SessionService {
 
         try {
             SessionData data = objectMapper.readValue(json, SessionData.class);
-            data.setPendingAction(new PendingAction(actionId, toolName, toolArgs));
+            data.setPendingAction(new PendingAction(actionId, toolName, toolArgs, toolCallId));
 
             int timeout = configRepo.getValueAsInt("session_timeout", 30);
             redis.opsForValue().set(key, objectMapper.writeValueAsString(data),
@@ -200,5 +200,6 @@ public class SessionService {
         private String actionId;
         private String toolName;
         private String toolArgs;
+        private String toolCallId;
     }
 }

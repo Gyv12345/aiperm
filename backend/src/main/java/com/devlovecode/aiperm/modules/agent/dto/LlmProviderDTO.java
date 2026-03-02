@@ -18,6 +18,10 @@ public class LlmProviderDTO {
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
     private String displayName;
 
+    @NotBlank(message = "协议不能为空", groups = {Views.Create.class, Views.Update.class})
+    @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
+    private String protocol;
+
     @NotBlank(message = "API Key不能为空", groups = {Views.Create.class, Views.Update.class})
     @JsonView({Views.Create.class, Views.Update.class})
     private String apiKey;

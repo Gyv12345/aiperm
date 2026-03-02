@@ -118,4 +118,18 @@ public class ToolRegistry {
     public Set<String> getWhitelistedToolNames() {
         return Collections.unmodifiableSet(whitelist);
     }
+
+    /**
+     * 获取白名单中的工具对象
+     */
+    public List<AgentTool> getWhitelistedTools() {
+        List<AgentTool> result = new ArrayList<>();
+        for (String toolName : whitelist) {
+            AgentTool tool = tools.get(toolName);
+            if (tool != null) {
+                result.add(tool);
+            }
+        }
+        return result;
+    }
 }

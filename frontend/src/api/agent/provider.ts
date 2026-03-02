@@ -8,6 +8,7 @@ export interface LlmProvider {
   id: number
   name: string
   displayName: string
+  protocol: 'openai' | 'anthropic'
   baseUrl: string
   model: string
   isDefault: boolean
@@ -22,6 +23,7 @@ export interface LlmProviderDTO {
   id?: number
   name: string
   displayName: string
+  protocol: 'openai' | 'anthropic'
   apiKey?: string
   baseUrl?: string
   model: string

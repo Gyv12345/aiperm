@@ -15,6 +15,11 @@
       <el-table :data="providers" v-loading="loading" stripe>
         <el-table-column prop="displayName" label="名称" width="150" />
         <el-table-column prop="name" label="标识" width="120" />
+        <el-table-column prop="protocol" label="协议" width="110">
+          <template #default="{ row }">
+            <el-tag size="small" type="info">{{ row.protocol }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="model" label="模型" width="150" />
         <el-table-column prop="baseUrl" label="API 地址" min-width="200" show-overflow-tooltip />
         <el-table-column label="默认" width="80" align="center">
@@ -70,6 +75,12 @@
         </el-form-item>
         <el-form-item label="显示名称" prop="displayName">
           <el-input v-model="form.displayName" placeholder="显示名称" />
+        </el-form-item>
+        <el-form-item label="协议" prop="protocol">
+          <el-select v-model="form.protocol" placeholder="选择协议" @change="handleProtocolChange">
+            <el-option label="OpenAI Compatible" value="openai" />
+            <el-option label="Anthropic" value="anthropic" />
+          </el-select>
         </el-form-item>
         <el-form-item label="API Key" prop="apiKey">
           <el-input
@@ -127,6 +138,7 @@ const formRef = ref<FormInstance>()
 const form = reactive<LlmProviderDTO>({
   name: '',
   displayName: '',
+  protocol: 'openai',
   apiKey: '',
   baseUrl: '',
   model: '',
@@ -138,22 +150,30 @@ const form = reactive<LlmProviderDTO>({
 const rules: FormRules = {
   name: [{ required: true, message: '请选择提供商', trigger: 'change' }],
   displayName: [{ required: true, message: '请输入显示名称', trigger: 'blur' }],
+  protocol: [{ required: true, message: '请选择协议', trigger: 'change' }],
   apiKey: [{ required: true, message: '请输入 API Key', trigger: 'blur' }],
   model: [{ required: true, message: '请输入模型名称', trigger: 'blur' }]
 }
 
-const providerDefaults: Record<string, { displayName: string; baseUrl: string; model: string }> = {
-  deepseek: { displayName: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
-  qwen: { displayName: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
-  openai: { displayName: 'OpenAI', baseUrl: 'https://api.openai.com', model: 'gpt-4o-mini' }
+const providerDefaults: Record<string, { displayName: string; protocol: 'openai' | 'anthropic'; baseUrl: string; model: string }> = {
+  deepseek: { displayName: 'DeepSeek', protocol: 'openai', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  qwen: { displayName: '通义千问', protocol: 'openai', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+  openai: { displayName: 'OpenAI', protocol: 'openai', baseUrl: 'https://api.openai.com', model: 'gpt-4o-mini' }
 }
 
 const handleProviderChange = (name: string) => {
   const defaults = providerDefaults[name]
   if (defaults) {
     form.displayName = defaults.displayName
+    form.protocol = defaults.protocol
     form.baseUrl = defaults.baseUrl
     form.model = defaults.model
+  }
+}
+
+const handleProtocolChange = (protocol: 'openai' | 'anthropic') => {
+  if (protocol === 'anthropic' && !form.baseUrl) {
+    form.baseUrl = 'https://api.anthropic.com'
   }
 }
 
@@ -172,6 +192,7 @@ const handleAdd = () => {
   Object.assign(form, {
     name: '',
     displayName: '',
+    protocol: 'openai',
     apiKey: '',
     baseUrl: '',
     model: '',
@@ -187,6 +208,7 @@ const handleEdit = (row: LlmProvider) => {
   Object.assign(form, {
     name: row.name,
     displayName: row.displayName,
+    protocol: row.protocol || 'openai',
     apiKey: '',
     baseUrl: row.baseUrl,
     model: row.model,

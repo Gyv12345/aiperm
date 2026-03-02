@@ -35,16 +35,18 @@ export function chat(data: ChatRequest) {
 
 /**
  * 获取 SSE 流式对话 URL
+ * 使用相对路径，走 Vite 代理避免跨域
  */
 export function getChatStreamUrl(): string {
-  return `${import.meta.env.VITE_API_BASE_URL}${BASE_URL}/chat/stream`
+  return `/api${BASE_URL}/chat/stream`
 }
 
 /**
  * 获取确认操作 URL
+ * 使用相对路径，走 Vite 代理避免跨域
  */
 export function getConfirmUrl(): string {
-  return `${import.meta.env.VITE_API_BASE_URL}${BASE_URL}/confirm`
+  return `/api${BASE_URL}/confirm`
 }
 
 export * from './types'

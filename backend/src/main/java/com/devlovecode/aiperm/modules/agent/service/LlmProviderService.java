@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,8 +45,10 @@ public class LlmProviderService {
         SysLlmProvider entity = new SysLlmProvider();
         entity.setName(dto.getName());
         entity.setDisplayName(dto.getDisplayName());
+        String protocol = normalizeProtocol(dto.getProtocol());
+        entity.setProtocol(protocol);
         entity.setApiKey(dto.getApiKey());
-        entity.setBaseUrl(dto.getBaseUrl() != null ? dto.getBaseUrl() : getDefaultBaseUrl(dto.getName()));
+        entity.setBaseUrl(dto.getBaseUrl() != null ? dto.getBaseUrl() : getDefaultBaseUrl(dto.getName(), protocol));
         entity.setModel(dto.getModel());
         entity.setIsDefault(dto.getIsDefault() != null ? dto.getIsDefault() : false);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
@@ -69,6 +72,7 @@ public class LlmProviderService {
             .orElseThrow(() -> new BusinessException("提供商不存在"));
 
         entity.setDisplayName(dto.getDisplayName());
+        entity.setProtocol(normalizeProtocol(dto.getProtocol()));
         if (dto.getApiKey() != null) {
             entity.setApiKey(dto.getApiKey());
         }
@@ -109,7 +113,10 @@ public class LlmProviderService {
         providerRepo.setDefault(id);
     }
 
-    private String getDefaultBaseUrl(String name) {
+    private String getDefaultBaseUrl(String name, String protocol) {
+        if ("anthropic".equals(protocol)) {
+            return "https://api.anthropic.com";
+        }
         return switch (name) {
             case "deepseek" -> "https://api.deepseek.com";
             case "qwen" -> "https://dashscope.aliyuncs.com/compatible-mode/v1";
@@ -118,11 +125,23 @@ public class LlmProviderService {
         };
     }
 
+    private String normalizeProtocol(String protocol) {
+        if (protocol == null) {
+            throw new BusinessException("协议不能为空");
+        }
+        String p = protocol.toLowerCase(Locale.ROOT).trim();
+        if (!"openai".equals(p) && !"anthropic".equals(p)) {
+            throw new BusinessException("协议仅支持 openai 或 anthropic");
+        }
+        return p;
+    }
+
     private LlmProviderVO toVO(SysLlmProvider entity) {
         LlmProviderVO vo = new LlmProviderVO();
         vo.setId(entity.getId());
         vo.setName(entity.getName());
         vo.setDisplayName(entity.getDisplayName());
+        vo.setProtocol(entity.getProtocol());
         vo.setBaseUrl(entity.getBaseUrl());
         vo.setModel(entity.getModel());
         vo.setIsDefault(entity.getIsDefault());

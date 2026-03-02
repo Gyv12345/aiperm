@@ -97,6 +97,11 @@ public class AgentService {
      */
     private void handleToolCalls(String sessionId, Long userId, List<ChatMessage> messages,
                                  List<LlmResponse.ToolCall> toolCalls, StreamCallback callback) {
+        // 必须保留 assistant.tool_calls，后续 tool 消息才是合法上下文
+        ChatMessage assistantToolCallsMsg = ChatMessage.assistantToolCalls(toolCalls);
+        messages.add(assistantToolCallsMsg);
+        sessionService.appendMessage(sessionId, assistantToolCallsMsg);
+
         for (LlmResponse.ToolCall tc : toolCalls) {
             String toolName = tc.getName();
             String toolArgs = tc.getArguments();
@@ -116,7 +121,7 @@ public class AgentService {
 
             if (tool.isSensitive()) {
                 String actionId = UUID.randomUUID().toString();
-                sessionService.savePendingAction(sessionId, actionId, toolName, toolArgs);
+                sessionService.savePendingAction(sessionId, actionId, toolName, toolArgs, tc.getId());
                 callback.onConfirm(actionId, toolName, "确认执行 " + toolName + " 操作？");
                 return;
             }
@@ -177,6 +182,11 @@ public class AgentService {
             callback.onDone();
             return;
         }
+        if (action.getToolCallId() == null || action.getToolCallId().isBlank()) {
+            callback.onText("待确认操作上下文已过期，请重新发起操作");
+            callback.onDone();
+            return;
+        }
 
         SessionService.SessionData session = sessionService.getSession(sessionId, userId);
         List<ChatMessage> messages = new ArrayList<>();
@@ -186,7 +196,7 @@ public class AgentService {
         }
 
         executeTool(sessionId, userId, toolOpt.get(), action.getToolArgs(),
-            UUID.randomUUID().toString(), messages, callback);
+            action.getToolCallId(), messages, callback);
 
         callback.onDone();
     }

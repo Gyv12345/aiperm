@@ -7,6 +7,7 @@ public class LlmProviderVO {
     private Long id;
     private String name;
     private String displayName;
+    private String protocol;
     private String baseUrl;
     private String model;
     private Boolean isDefault;
