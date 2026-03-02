@@ -54,10 +54,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 数据权限拦截器
+        // 数据权限拦截器（排除 SSE 流式接口，避免异步分发时 Sa-Token 上下文不存在）
         registry.addInterceptor(dataScopeInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/auth/**", "/error", "/v3/api-docs/**", "/swagger-ui/**");
+                .excludePathPatterns(
+                        "/auth/**",
+                        "/agent/**",  // SSE 流式接口，异步场景
+                        "/error",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**"
+                );
 
         // 2FA 拦截器（检查敏感操作是否需要二次验证）
         registry.addInterceptor(mfaInterceptor)
