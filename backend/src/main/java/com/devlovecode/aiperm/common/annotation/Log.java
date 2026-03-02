@@ -4,6 +4,9 @@ import com.devlovecode.aiperm.common.enums.OperType;
 
 import java.lang.annotation.*;
 
+/**
+ * @author shichenyang
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

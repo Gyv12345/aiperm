@@ -21,7 +21,7 @@ public class SqlBuilder {
      * 添加 WHERE 条件
      */
     public SqlBuilder where(String condition, Object... args) {
-        if (sql.length() > 0) {
+        if (!sql.isEmpty()) {
             sql.append(" AND ");
         } else {
             sql.append(" WHERE ");
