@@ -131,30 +131,11 @@ a:hover {
 }
 
 :root.dark .el-select-dropdown__item {
-  color: #f9fafb;
+  color: var(--color-text-primary);
 }
 
-:root.dark .el-select-dropdown__item.hover,
-:root.dark .el-select-dropdown__item:hover {
-  background-color: #374151;
-}
-
-/* Element Plus Select 深色模式 */
-:root.dark .el-select .el-input__wrapper {
-  background-color: #111827;
-  box-shadow: 0 0 0 1px #374151 inset;
-}
-
-:root.dark .el-select .el-input__inner {
-  color: #f9fafb !important;
-}
-
-:root.dark .el-select__placeholder {
-  color: #6b7280 !important;
-}
-
-:root.dark .el-select__selected-item {
-  color: #f9fafb !important;
+:root.dark .el-select-dropdown__item.hover {
+  background-color: var(--color-bg-page);
 }
 
 :root.dark .el-tree {
