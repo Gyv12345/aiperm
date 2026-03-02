@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { profileApi, type ProfileVO, type ProfileDTO } from '@/api/profile'
+import { mfaApi, type MfaStatusVO } from '@/api/mfa'
 import { useUserStore } from '@/stores/user'
 import { useDict } from '@/composables/useDict'
 import DictTag from '@/components/dict/DictTag.vue'
+import MfaBindDialog from '@/components/mfa/MfaBindDialog.vue'
 
 // 字典
 const dictData = useDict('sys_status')
@@ -66,6 +68,11 @@ const passwordRules = {
 // 登录日志
 const logsLoading = ref(false)
 const logs = ref<any[]>([])
+
+// 2FA 设置
+const mfaLoading = ref(false)
+const mfaStatus = ref<MfaStatusVO | null>(null)
+const mfaBindDialogVisible = ref(false)
 
 // 获取个人信息
 async function fetchProfile() {
@@ -146,15 +153,62 @@ async function fetchLogs() {
   }
 }
 
+// 获取 2FA 状态
+async function fetchMfaStatus() {
+  mfaLoading.value = true
+  try {
+    mfaStatus.value = await mfaApi.status()
+  } catch (error) {
+    console.error('获取 2FA 状态失败:', error)
+  } finally {
+    mfaLoading.value = false
+  }
+}
+
+// 解绑 2FA
+async function handleUnbindMfa() {
+  if (!mfaStatus.value?.bound) {
+    ElMessage.warning('当前账号尚未绑定 2FA')
+    return
+  }
+
+  if (mfaStatus.value.required) {
+    ElMessage.warning('当前账号为强制启用 2FA，不能解绑')
+    return
+  }
+
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '请输入 Authenticator App 当前 6 位验证码以完成解绑',
+      '解绑双因素认证',
+      {
+        confirmButtonText: '确认解绑',
+        cancelButtonText: '取消',
+        inputPattern: /^\d{6}$/,
+        inputErrorMessage: '请输入 6 位数字验证码',
+      },
+    )
+    await mfaApi.unbind({ code: value })
+    ElMessage.success('2FA 已解绑')
+    fetchMfaStatus()
+  } catch {
+    // 用户取消或请求失败，失败提示由全局请求层处理
+  }
+}
+
 // Tab 切换时加载数据
 function handleTabChange(tab: string) {
   if (tab === 'logs' && logs.value.length === 0) {
     fetchLogs()
   }
+  if (tab === 'mfa' && !mfaStatus.value) {
+    fetchMfaStatus()
+  }
 }
 
 onMounted(() => {
   fetchProfile()
+  fetchMfaStatus()
 })
 </script>
 
@@ -307,8 +361,57 @@ onMounted(() => {
             <el-table-column prop="msg" label="提示消息" />
           </el-table>
         </el-tab-pane>
+
+        <!-- 安全设置 Tab -->
+        <el-tab-pane label="安全设置" name="mfa">
+          <el-card shadow="never" class="max-w-2xl mt-4" v-loading="mfaLoading">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <div class="font-medium text-base mb-2">双因素认证（2FA）</div>
+                <div class="text-sm text-gray-500 leading-6">
+                  绑定后，登录和敏感操作会要求输入 Authenticator 动态验证码，提升账号安全性。
+                </div>
+              </div>
+              <el-tag :type="mfaStatus?.bound ? 'success' : 'info'">
+                {{ mfaStatus?.bound ? '已绑定' : '未绑定' }}
+              </el-tag>
+            </div>
+
+            <el-alert
+              v-if="mfaStatus?.required"
+              class="mt-4"
+              type="warning"
+              :closable="false"
+              show-icon
+              title="当前账号已启用强制 2FA，不允许解绑"
+            />
+
+            <div class="mt-5 flex items-center gap-3">
+              <el-button
+                type="primary"
+                :disabled="!!mfaStatus?.bound"
+                @click="mfaBindDialogVisible = true"
+              >
+                绑定 2FA
+              </el-button>
+              <el-button
+                type="danger"
+                plain
+                :disabled="!mfaStatus?.bound || !!mfaStatus?.required"
+                @click="handleUnbindMfa"
+              >
+                解绑 2FA
+              </el-button>
+            </div>
+          </el-card>
+        </el-tab-pane>
       </el-tabs>
     </el-card>
+
+    <MfaBindDialog
+      v-model:visible="mfaBindDialogVisible"
+      @success="fetchMfaStatus"
+    />
   </div>
 </template>
 
