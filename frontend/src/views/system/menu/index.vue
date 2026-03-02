@@ -16,10 +16,36 @@ const formLoading = ref(false)
 
 // 菜单类型选项
 const menuTypeOptions = [
-  { value: 'M', label: '目录' },
-  { value: 'C', label: '菜单' },
-  { value: 'F', label: '按钮' },
+  { value: 1, label: '目录' },
+  { value: 2, label: '菜单' },
+  { value: 3, label: '按钮' },
 ]
+
+// 获取菜单类型标签
+function getMenuTypeLabel(type: number | string) {
+  const numType = typeof type === 'string' ? parseInt(type) : type
+  return menuTypeOptions.find(o => o.value === numType)?.label || '未知'
+}
+
+// 获取菜单类型 tag 类型
+function getMenuTypeTagType(type: number | string) {
+  const numType = typeof type === 'string' ? parseInt(type) : type
+  if (numType === 1) return 'info'
+  if (numType === 2) return 'primary'
+  return 'warning'
+}
+
+// 判断是否为按钮类型
+function isButtonType(type: number | string) {
+  const numType = typeof type === 'string' ? parseInt(type) : type
+  return numType === 3
+}
+
+// 判断是否为菜单类型
+function isMenuType(type: number | string) {
+  const numType = typeof type === 'string' ? parseInt(type) : type
+  return numType === 2
+}
 
 // 状态选项
 const statusOptions = [
@@ -34,13 +60,13 @@ const boolOptions = [
 ]
 
 // 筛选条件
-const filterType = ref<string>('')
+const filterType = ref<number | string>('')
 
 // 表单数据
 const form = reactive<MenuDTO & { id?: number }>({
   menuName: '',
   parentId: 0,
-  menuType: 'C',
+  menuType: 2,
   sort: 0,
   path: '',
   component: '',
@@ -119,12 +145,16 @@ function selectIcon(icon: string) {
   showIconPicker.value = false
 }
 
+// 原始菜单树数据（未筛选）
+const originalMenuTree = ref<MenuVO[]>([])
+
 // 获取菜单树
 async function fetchMenuTree() {
   loading.value = true
   try {
     const data = await menuApi.tree()
-    menuTree.value = filterMenuTree(data)
+    originalMenuTree.value = data
+    applyFilter()
   }
   catch (error) {
     console.error('获取菜单树失败:', error)
@@ -135,21 +165,42 @@ async function fetchMenuTree() {
   }
 }
 
+// 应用筛选
+function applyFilter() {
+  menuTree.value = filterMenuTree(originalMenuTree.value)
+}
+
 // 筛选菜单树
 function filterMenuTree(menus: MenuVO[]): MenuVO[] {
-  if (!filterType.value) return menus
+  // 没有筛选条件时返回全部数据
+  if (filterType.value === '' || filterType.value === null || filterType.value === undefined) {
+    return menus
+  }
 
-  return menus.filter((menu) => {
-    const match = menu.menuType === filterType.value
+  const filterValue = typeof filterType.value === 'string' ? parseInt(filterType.value) : filterType.value
+
+  const result: MenuVO[] = []
+
+  for (const menu of menus) {
+    const menuTypeNum = typeof menu.menuType === 'string' ? parseInt(menu.menuType) : menu.menuType
+    const match = menuTypeNum === filterValue
+
+    // 递归筛选子菜单
+    let filteredChildren: MenuVO[] = []
     if (menu.children && menu.children.length > 0) {
-      const filteredChildren = filterMenuTree(menu.children)
-      if (filteredChildren.length > 0) {
-        menu.children = filteredChildren
-        return true
-      }
+      filteredChildren = filterMenuTree(menu.children)
     }
-    return match
-  }).filter((menu) => menu.menuType === filterType.value || (menu.children && menu.children.length > 0))
+
+    // 如果当前菜单匹配，或者有匹配的子菜单
+    if (match || filteredChildren.length > 0) {
+      result.push({
+        ...menu,
+        children: filteredChildren.length > 0 ? filteredChildren : menu.children,
+      })
+    }
+  }
+
+  return result
 }
 
 // 重置表单
@@ -158,7 +209,7 @@ function resetForm() {
     id: undefined,
     menuName: '',
     parentId: 0,
-    menuType: 'C',
+    menuType: 2,
     sort: 0,
     path: '',
     component: '',
@@ -312,7 +363,7 @@ onMounted(() => {
             placeholder="菜单类型"
             clearable
             style="width: 120px"
-            @change="fetchMenuTree"
+            @change="applyFilter"
           >
             <el-option
               v-for="item in menuTypeOptions"
@@ -375,10 +426,10 @@ onMounted(() => {
         >
           <template #default="{ row }">
             <el-tag
-              :type="row.menuType === 'M' ? 'info' : row.menuType === 'C' ? 'primary' : 'warning'"
+              :type="getMenuTypeTagType(row.menuType)"
               size="small"
             >
-              {{ menuTypeOptions.find(o => o.value === row.menuType)?.label || row.menuType }}
+              {{ getMenuTypeLabel(row.menuType) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -537,7 +588,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType !== 'F'"
+            v-if="!isButtonType(form.menuType)"
             :span="12"
           >
             <el-form-item label="菜单图标">
@@ -555,7 +606,7 @@ onMounted(() => {
               </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="form.menuType !== 'F' ? 12 : 24">
+          <el-col :span="!isButtonType(form.menuType) ? 12 : 24">
             <el-form-item
               label="显示排序"
               prop="sort"
@@ -570,7 +621,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType !== 'F'"
+            v-if="!isButtonType(form.menuType)"
             :span="12"
           >
             <el-form-item
@@ -584,7 +635,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType === 'C'"
+            v-if="isMenuType(form.menuType)"
             :span="12"
           >
             <el-form-item
@@ -609,7 +660,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType !== 'F'"
+            v-if="!isButtonType(form.menuType)"
             :span="12"
           >
             <el-form-item label="是否外链">
@@ -627,7 +678,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType !== 'F'"
+            v-if="!isButtonType(form.menuType)"
             :span="12"
           >
             <el-form-item label="是否缓存">
@@ -645,7 +696,7 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col
-            v-if="form.menuType !== 'F'"
+            v-if="!isButtonType(form.menuType)"
             :span="12"
           >
             <el-form-item label="是否显示">

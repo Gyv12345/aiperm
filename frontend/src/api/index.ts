@@ -22,9 +22,16 @@ export * from './system/menu'
 export * from './system/post'
 export * from './system/dept'
 export * from './system/dict'
+export * from './system/imConfig'
+export * from './system/approvalScene'
 
 // 企业管理模块
 export * from './enterprise/notice'
 export * from './enterprise/message'
 export * from './enterprise/job'
 export * from './enterprise/config'
+export * from './enterprise/messageTemplate'
+export * from './enterprise/messageLog'
+
+// 审批中心
+export * from './approval'

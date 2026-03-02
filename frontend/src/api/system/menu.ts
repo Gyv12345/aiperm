@@ -15,7 +15,7 @@ export interface MenuVO {
   menuCode: string
   path: string
   icon: string
-  menuType: string  // M-目录 C-菜单 F-按钮
+  menuType: number | string  // 1-目录 2-菜单 3-按钮 (可能是数字或字符串)
   sort: number
   status: number
   visible: number
@@ -39,7 +39,7 @@ export interface MenuDTO extends PageParams {
   menuCode?: string
   path?: string
   icon?: string
-  menuType?: string
+  menuType?: number
   sort?: number
   status?: number
   visible?: number
