@@ -41,6 +41,7 @@ export interface Message {
   needConfirm?: boolean
   actionId?: string
   read?: boolean
+  uiPayload?: Record<string, unknown>
 }
 
 /**

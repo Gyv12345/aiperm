@@ -13,12 +13,12 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * 角色管理工具
+ * 角色创建工具
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RoleAgentTool implements AgentTool {
+public class RoleCreateAgentTool implements AgentTool {
 
     private final ToolRegistry toolRegistry;
     private final RoleService roleService;
@@ -31,12 +31,12 @@ public class RoleAgentTool implements AgentTool {
 
     @Override
     public String getName() {
-        return "role_list";
+        return "role_create";
     }
 
     @Override
     public String getDescription() {
-        return "查询角色列表，支持按角色名称模糊搜索。参数: roleName(可选,角色名称), pageNum(可选,页码,默认1), pageSize(可选,每页条数,默认10)";
+        return "创建角色。参数: roleName(必填), roleCode(必填), sort(可选), status(可选,0正常1停用), remark(可选)";
     }
 
     @Override
@@ -45,46 +45,40 @@ public class RoleAgentTool implements AgentTool {
             {
               "type": "object",
               "properties": {
-                "roleName": {
-                  "type": "string",
-                  "description": "角色名称，支持模糊搜索"
-                },
-                "pageNum": {
-                  "type": "integer",
-                  "description": "页码，默认1",
-                  "default": 1
-                },
-                "pageSize": {
-                  "type": "integer",
-                  "description": "每页条数，默认10",
-                  "default": 10
-                }
-              }
+                "roleName": { "type": "string", "description": "角色名称" },
+                "roleCode": { "type": "string", "description": "角色编码" },
+                "sort": { "type": "integer", "description": "排序，默认0" },
+                "status": { "type": "integer", "description": "状态: 0正常, 1停用" },
+                "remark": { "type": "string", "description": "备注" }
+              },
+              "required": ["roleName", "roleCode"]
             }
             """;
     }
 
     @Override
     public boolean isSensitive() {
-        return false;
+        return true;
     }
 
     @Override
     public ToolResult execute(String argsJson, Long userId) {
         try {
-            StpUtil.checkPermission("system:role:list");
+            StpUtil.checkPermission("system:role:create");
             @SuppressWarnings("unchecked")
             Map<String, Object> args = objectMapper.readValue(argsJson, Map.class);
 
             RoleDTO dto = new RoleDTO();
             dto.setRoleName((String) args.get("roleName"));
-            dto.setPage(args.containsKey("pageNum") ? ((Number) args.get("pageNum")).intValue() : 1);
-            dto.setPageSize(args.containsKey("pageSize") ? ((Number) args.get("pageSize")).intValue() : 10);
+            dto.setRoleCode((String) args.get("roleCode"));
+            dto.setSort(args.get("sort") != null ? ((Number) args.get("sort")).intValue() : 0);
+            dto.setStatus(args.get("status") != null ? ((Number) args.get("status")).intValue() : 0);
+            dto.setRemark((String) args.get("remark"));
 
-            var result = roleService.queryPage(dto);
-            return ToolResult.success("查询成功", result);
+            roleService.create(dto);
+            return ToolResult.success("角色创建成功", Map.of("roleName", dto.getRoleName(), "roleCode", dto.getRoleCode()));
         } catch (Exception e) {
-            log.error("RoleAgentTool execute failed", e);
+            log.error("RoleCreateAgentTool execute failed", e);
             return ToolResult.error("执行失败: " + e.getMessage());
         }
     }

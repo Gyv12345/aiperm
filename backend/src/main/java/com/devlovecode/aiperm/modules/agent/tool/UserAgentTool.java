@@ -1,5 +1,6 @@
 package com.devlovecode.aiperm.modules.agent.tool;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.modules.agent.dto.ToolResult;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
 import com.devlovecode.aiperm.modules.system.service.UserService;
@@ -79,6 +80,7 @@ public class UserAgentTool implements AgentTool {
     @Override
     public ToolResult execute(String argsJson, Long userId) {
         try {
+            StpUtil.checkPermission("system:user:list");
             @SuppressWarnings("unchecked")
             Map<String, Object> args = objectMapper.readValue(argsJson, Map.class);
 

@@ -19,6 +19,13 @@ type ConfirmDataChunk = {
   data: PendingConfirm
 }
 
+type UiDataChunk = {
+  type: 'data-ui' | 'ui'
+  data?: unknown
+  payload?: unknown
+  ui?: unknown
+}
+
 const isTextPart = (part: unknown): part is { type: 'text'; text: string } =>
   !!part && typeof part === 'object' && (part as { type?: string }).type === 'text'
 
@@ -34,6 +41,9 @@ const isConfirmDataChunk = (value: unknown): value is ConfirmDataChunk =>
   && typeof value.data.actionId === 'string'
   && typeof value.data.toolName === 'string'
   && typeof value.data.message === 'string'
+
+const isUiDataChunk = (value: unknown): value is UiDataChunk =>
+  isObject(value) && (value.type === 'data-ui' || value.type === 'ui')
 
 const isUiMessageChunkLike = (value: unknown): value is UIMessageChunk =>
   isObject(value) && typeof value.type === 'string' && (
@@ -55,6 +65,7 @@ export const useAgentStore = defineStore('agent', () => {
   const isOpen = ref(false)
   const pendingConfirm = ref<PendingConfirm | null>(null)
   const messages = ref<Message[]>([])
+  const uiPayloadByMessageId = ref<Record<string, Record<string, unknown>>>({})
 
   const ensureSession = async () => {
     if (sessionId.value) return
@@ -69,6 +80,46 @@ export const useAgentStore = defineStore('agent', () => {
       parts: [{ type: 'text', text: content || '' }]
     }
     chat.messages = [...chat.messages, uiMessage]
+  }
+
+  const getUiPayloadFromChunk = (event: UiDataChunk): Record<string, unknown> | null => {
+    const candidates = [event.data, event.payload, event.ui]
+    for (const item of candidates) {
+      if (isObject(item)) {
+        return item
+      }
+    }
+    return null
+  }
+
+  const payloadToText = (payload: Record<string, unknown>): string => {
+    const markdown = payload.markdown
+    if (typeof markdown === 'string' && markdown.trim()) return markdown
+
+    const text = payload.text
+    if (typeof text === 'string' && text.trim()) return text
+
+    const title = typeof payload.title === 'string' ? payload.title : ''
+    const description = typeof payload.description === 'string' ? payload.description : ''
+    if (title || description) return [title, description].filter(Boolean).join('\n')
+
+    return '收到结构化 UI 数据'
+  }
+
+  const appendAssistantUiMessage = (payload: Record<string, unknown>) => {
+    const id = generateMessageId()
+    uiPayloadByMessageId.value = {
+      ...uiPayloadByMessageId.value,
+      [id]: payload
+    }
+    chat.messages = [
+      ...chat.messages,
+      {
+        id,
+        role: 'assistant',
+        parts: [{ type: 'text', text: payloadToText(payload) }]
+      }
+    ]
   }
 
   const parseSseEvents = (
@@ -176,6 +227,14 @@ export const useAgentStore = defineStore('agent', () => {
               return
             }
 
+            if (isUiDataChunk(event)) {
+              const payload = getUiPayloadFromChunk(event)
+              if (payload) {
+                appendAssistantUiMessage(payload)
+              }
+              return
+            }
+
             if (isUiMessageChunkLike(event)) {
               controller.enqueue(event)
               return
@@ -250,7 +309,8 @@ export const useAgentStore = defineStore('agent', () => {
         role: m.role === 'assistant' ? 'assistant' : 'user',
         content: (m.parts ?? []).filter(isTextPart).map(p => p.text).join(''),
         timestamp: new Date(),
-        read: m.role === 'assistant' ? (prevReadMap.get(m.id) ?? false) : true
+        read: m.role === 'assistant' ? (prevReadMap.get(m.id) ?? false) : true,
+        uiPayload: uiPayloadByMessageId.value[m.id]
       }))
     },
     { immediate: true, deep: true }
@@ -290,6 +350,14 @@ export const useAgentStore = defineStore('agent', () => {
     await parseSseEvents(response, event => {
       if (isConfirmDataChunk(event)) {
         pendingConfirm.value = event.data
+        return
+      }
+
+      if (isUiDataChunk(event)) {
+        const payload = getUiPayloadFromChunk(event)
+        if (payload) {
+          appendAssistantUiMessage(payload)
+        }
         return
       }
 
@@ -346,6 +414,7 @@ export const useAgentStore = defineStore('agent', () => {
     }
     sessionId.value = ''
     pendingConfirm.value = null
+    uiPayloadByMessageId.value = {}
     chat.messages = []
   }
 

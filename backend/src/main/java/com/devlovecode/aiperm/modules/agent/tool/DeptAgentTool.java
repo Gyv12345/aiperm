@@ -1,14 +1,12 @@
 package com.devlovecode.aiperm.modules.agent.tool;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.modules.agent.dto.ToolResult;
 import com.devlovecode.aiperm.modules.system.service.DeptService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 /**
  * 部门管理工具
@@ -20,7 +18,6 @@ public class DeptAgentTool implements AgentTool {
 
     private final ToolRegistry toolRegistry;
     private final DeptService deptService;
-    private final ObjectMapper objectMapper;
 
     @PostConstruct
     public void init() {
@@ -55,6 +52,7 @@ public class DeptAgentTool implements AgentTool {
     @Override
     public ToolResult execute(String argsJson, Long userId) {
         try {
+            StpUtil.checkPermission("system:dept:list");
             var result = deptService.getDeptTree();
             return ToolResult.success("查询成功", result);
         } catch (Exception e) {

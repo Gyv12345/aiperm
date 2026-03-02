@@ -6,7 +6,12 @@
     </div>
 
     <div class="content">
-      <div class="text" v-html="formattedContent"></div>
+      <div class="text markdown-body" v-html="formattedContent"></div>
+      <div v-if="message.uiPayload" class="ui-payload">
+        <div v-if="uiTitle" class="ui-title">{{ uiTitle }}</div>
+        <div v-if="uiDescription" class="ui-description">{{ uiDescription }}</div>
+        <pre class="ui-json">{{ uiJson }}</pre>
+      </div>
       <div v-if="message.toolName" class="tool-info">
         <el-tag size="small" type="info">{{ message.toolName }}</el-tag>
       </div>
@@ -22,17 +27,29 @@
 import { computed } from 'vue'
 import { User, Cpu } from '@element-plus/icons-vue'
 import type { Message } from '@/api/agent'
+import { renderMarkdown } from '@/utils/markdown'
 
 const props = defineProps<{
   message: Message
 }>()
 
 const formattedContent = computed(() => {
-  // 简单的换行处理
-  return props.message.content
-    .replace(/\n/g, '<br>')
-    .replace(/ /g, '&nbsp;')
+  return renderMarkdown(props.message.content || '')
 })
+
+const uiPayload = computed(() => props.message.uiPayload ?? {})
+
+const uiTitle = computed(() => {
+  const value = uiPayload.value.title ?? uiPayload.value.name ?? uiPayload.value.type
+  return typeof value === 'string' ? value : ''
+})
+
+const uiDescription = computed(() => {
+  const value = uiPayload.value.description ?? uiPayload.value.text ?? uiPayload.value.markdown
+  return typeof value === 'string' ? value : ''
+})
+
+const uiJson = computed(() => JSON.stringify(uiPayload.value, null, 2))
 </script>
 
 <style scoped>
@@ -82,6 +99,59 @@ const formattedContent = computed(() => {
 .text {
   line-height: 1.5;
   word-break: break-word;
+}
+
+.markdown-body :deep(p) {
+  margin: 0 0 8px;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 0 0 8px 18px;
+  padding: 0;
+}
+
+.markdown-body :deep(pre) {
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+}
+
+.markdown-body :deep(code) {
+  font-family: Menlo, Monaco, Consolas, monospace;
+}
+
+.markdown-body :deep(a) {
+  color: #2563eb;
+}
+
+.ui-payload {
+  margin-top: 10px;
+  border-top: 1px dashed #dcdfe6;
+  padding-top: 8px;
+}
+
+.ui-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ui-description {
+  color: #606266;
+  margin-bottom: 6px;
+}
+
+.ui-json {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 6px;
+  padding: 8px;
+  background: #f5f7fa;
+  font-size: 12px;
 }
 
 .tool-info {

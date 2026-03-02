@@ -90,8 +90,6 @@ public class AgentService {
         }
     }
 
-    private List<ChatMessage> messages;
-
     /**
      * 处理工具调用
      */
