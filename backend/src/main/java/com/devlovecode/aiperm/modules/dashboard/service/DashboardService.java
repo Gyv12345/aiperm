@@ -43,13 +43,12 @@ public class DashboardService {
 
     /**
      * 获取在线用户数
-     * 从 Sa-Token 的会话列表中获取当前在线用户数量
+     * 当前 Sa-Token 版本不支持按 loginId 直接检索，这里按 token 数量统计在线会话数
      */
     private Long getOnlineCount() {
         try {
-            // 获取所有已登录的会话
-            List<String> sessionList = StpUtil.searchTokenSessionId("", 0, -1, false);
-            return (long) sessionList.size();
+            List<String> tokenList = StpUtil.searchTokenValue("", 0, -1, false);
+            return tokenList == null ? 0L : (long) tokenList.size();
         } catch (Exception e) {
             log.warn("获取在线用户数失败: {}", e.getMessage());
             return 0L;
