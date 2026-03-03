@@ -137,8 +137,8 @@ const frontendStack = shallowRef([
 
 // 后端技术栈
 const backendStack = shallowRef([
-  { name: 'Spring Boot 3.5', desc: 'Java 微服务框架', color: 'green' },
-  { name: 'Java 21', desc: 'LTS 版本，虚拟线程支持', color: 'orange' },
+  { name: 'Spring Boot 4.0', desc: 'Java 微服务框架', color: 'green' },
+  { name: 'Java 25', desc: '最新平台版本', color: 'orange' },
   { name: 'Sa-Token', desc: '轻量级权限认证框架', color: 'red' },
   { name: 'Spring JdbcClient', desc: '现代化数据库操作', color: 'teal' },
   { name: 'MySQL 8.0', desc: '关系型数据库', color: 'blue' },

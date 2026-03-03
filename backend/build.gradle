@@ -10,9 +10,10 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.11'
+    id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.flywaydb.flyway' version '11.7.2'
+    id 'org.graalvm.buildtools.native' version '0.10.6'
 }
 
 group = 'com.devlovecode'
@@ -21,7 +22,18 @@ description = 'aiperm'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+graalvmNative {
+    toolchainDetection = true
+    binaries {
+        main {
+            imageName = 'aiperm'
+            mainClass = 'com.devlovecode.aiperm.AipermApplication'
+            fallback = false
+        }
     }
 }
 
@@ -41,17 +53,19 @@ ext {
     set('saTokenVersion', '1.44.0')
     set('hutoolVersion', '5.8.34')
     set('fastExcelVersion', '1.3.0')
-    set('springDocVersion', '2.8.3')
+    set('springDocVersion', '3.0.1')
     set('langChain4jVersion', '1.5.0')
     set('sms4jVersion', '3.3.3')
 }
 
 dependencies {
     // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-aspectj'
 
     // LangChain4j
     implementation "dev.langchain4j:langchain4j:${langChain4jVersion}"
@@ -61,7 +75,6 @@ dependencies {
     // Sa-Token 权限认证
     implementation "cn.dev33:sa-token-spring-boot3-starter:${saTokenVersion}"
     implementation "cn.dev33:sa-token-redis-jackson:${saTokenVersion}"
-    implementation "cn.dev33:sa-token-alone-redis:${saTokenVersion}"
 
     // JDBC（JdbcClient）
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
@@ -82,8 +95,11 @@ dependencies {
     // Database Driver
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Apache Commons Pool2（Sa-Token alone-redis 需要）
+    // Apache Commons Pool2（Redis 连接池）
     implementation 'org.apache.commons:commons-pool2'
+
+    // Prometheus 指标导出（Actuator /prometheus）
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
     // Flyway 数据库版本管理
     implementation 'org.flywaydb:flyway-core'

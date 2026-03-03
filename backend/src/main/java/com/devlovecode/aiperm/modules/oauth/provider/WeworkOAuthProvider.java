@@ -33,7 +33,7 @@ public class WeworkOAuthProvider extends AbstractOAuthProvider {
     public String getAuthorizationUrl(String state) {
         SysOauthConfig config = getConfig();
         return UriComponentsBuilder
-                .fromHttpUrl("https://open.weixin.qq.com/connect/oauth2/authorize")
+                .fromUriString("https://open.weixin.qq.com/connect/oauth2/authorize")
                 .queryParam("appid", config.getCorpId())
                 .queryParam("redirect_uri", config.getCallbackUrl())
                 .queryParam("response_type", "code")

@@ -2,10 +2,6 @@ server:
   port: 8080
   servlet:
     context-path: /
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
   tomcat:
     # 修复 macOS 上的 SO_LINGER socket 选项问题
     connection-timeout: 20s
@@ -14,41 +10,21 @@ server:
 spring:
   application:
     name: aiperm
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 1
-    validate-on-migrate: false
-    clean-disabled: false
-  # 数据源配置 - 使用环境变量
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL:jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
-
-  # Redis配置 - 使用环境变量
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DATABASE:0}
-      timeout: 10s
-      lettuce:
-        pool:
-          min-idle: 0
-          max-idle: 8
-          max-active: 8
-          max-wait: -1ms
+  threads:
+    virtual:
+      enabled: true
+  main:
+    keep-alive: true
 
   # Jackson配置
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
-    serialization:
-      write-dates-as-timestamps: false
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 # Sa-Token配置
 sa-token:
@@ -59,19 +35,6 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
-  jwt-secret-key: ${SA_TOKEN_JWT_SECRET:change-this-to-random-string}
-  alone-redis:
-    database: 1
-    host: ${spring.data.redis.host}
-    port: ${spring.data.redis.port}
-    password: ${spring.data.redis.password}
-    timeout: ${spring.data.redis.timeout}
-    lettuce:
-      pool:
-        min-idle: 0
-        max-idle: 8
-        max-active: 8
-        max-wait: -1ms
 
 # SpringDoc API文档配置
 springdoc:
@@ -85,33 +48,8 @@ springdoc:
     operations-sorter: alpha
   info:
     title: AiPerm RBAC权限系统API
-    description: 基于Spring Boot 3 + Sa-Token + MyBatis-Plus的RBAC权限管理系统
+    description: 基于Spring Boot 4 + Sa-Token + JdbcClient的RBAC权限管理系统
     version: 1.0.0
     contact:
       name: DevLoveCode
   packages-to-scan: com.devlovecode.aiperm.modules
-
-# 日志配置
-logging:
-  level:
-    com.devlovecode.aiperm: debug
-    org.springframework.jdbc.core.JdbcTemplate: debug
-    org.springframework.jdbc.core.StatementCreatorUtils: trace
-
-# 认证配置
-auth:
-  captcha:
-    enabled: false  # 开发环境关闭验证码，方便测试
-
-# OSS 文件存储配置
-oss:
-  storage-type: local
-  local:
-    path: ./uploads
-    access-url: http://localhost:8080/files
-  aliyun:
-    endpoint: oss-cn-hangzhou.aliyuncs.com
-    access-key-id: your-access-key-id
-    access-key-secret: your-access-key-secret
-    bucket-name: your-bucket-name
-    access-url: https://your-bucket.oss-cn-hangzhou.aliyuncs.com

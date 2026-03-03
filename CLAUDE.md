@@ -9,7 +9,7 @@
 
 | 层级 | 技术栈 |
 |------|--------|
-| 后端 | Spring Boot 3.5.11 + Java 21 + Sa-Token + MySQL + Redis |
+| 后端 | Spring Boot 4.0.3 + Java 25 + Sa-Token + MySQL + Redis |
 | 前端 | Vue 3 + TypeScript + Vite 7 + Element Plus + Pinia |
 
 ## Quick Navigation

@@ -6,14 +6,14 @@
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| Java | 21 | 编程语言 |
-| Spring Boot | 3.5.11 | 基础框架 |
+| Java | 25 | 编程语言 |
+| Spring Boot | 4.0.3 | 基础框架 |
 | Sa-Token | 1.44.0 | 权限认证 |
 | Spring JdbcClient | - | 数据库操作（替代 MyBatis-Plus） |
 | MySQL | 8.x | 关系数据库 |
 | Redis | 7.x | 缓存/Session |
 | Flyway | - | 数据库版本管理 |
-| SpringDoc | 2.8.3 | API 文档 |
+| SpringDoc | 3.0.1 | API 文档 |
 | Hutool | 5.8.34 | 工具类 |
 
 ## 目录结构

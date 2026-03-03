@@ -89,7 +89,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .info(new Info()
                         .title("AiPerm RBAC权限系统API")
                         .version("1.0.0")
-                        .description("基于Spring Boot 3 + Sa-Token的RBAC权限管理系统")
+                        .description("基于Spring Boot 4 + Sa-Token的RBAC权限管理系统")
                         .contact(new Contact()
                                 .name("DevLoveCode")
                                 .email("dev@lovecode.com"))

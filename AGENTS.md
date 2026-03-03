@@ -24,7 +24,7 @@
 - 后端接口变更后重新生成前端 API：`cd frontend && pnpm run generate:api`
 
 ## 编码风格与命名规范
-- Java 使用 4 空格缩进，基于 Java 21，优先构造器注入（`@RequiredArgsConstructor`）。
+- Java 使用 4 空格缩进，基于 Java 25，优先构造器注入（`@RequiredArgsConstructor`）。
 - 后端分层命名：`SysXxx`（Entity）、`XxxRepository`、`XxxService`、`SysXxxController`、`XxxDTO`、`XxxVO`。
 - Vue/TypeScript 使用 2 空格缩进，采用 `<script setup lang="ts">`，组件文件使用 PascalCase，组合式函数以 `use` 开头。
 - 提交前执行 ESLint（`frontend/eslint.config.js`）；已生成 API 存在时，避免手写重复请求代码。
