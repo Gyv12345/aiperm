@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "generate:api": "orval --config orval.config.ts",
     "type-check": "vue-tsc --noEmit",
-    "lint": "eslint . --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "pnpm run lint:fix",
+    "check": "pnpm run type-check && pnpm run lint && pnpm run build"
   },
   "dependencies": {
     "@ai-sdk/vue": "^2.0.141",

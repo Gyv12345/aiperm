@@ -122,74 +122,62 @@ export const useAgentStore = defineStore('agent', () => {
     ]
   }
 
-  const parseSseEvents = (
+  const parseSseEvents = async (
     response: Response,
     onEvent: (event: unknown) => void
-  ): Promise<void> =>
-    new Promise(async (resolve, reject) => {
-      const contentType = response.headers.get('content-type') || ''
-      if (contentType.includes('application/json')) {
-        try {
-          const event = await response.json() as unknown
-          onEvent(event)
-          resolve()
-        } catch (e) {
-          reject(e)
-        }
-        return
-      }
+  ): Promise<void> => {
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const event = await response.json() as unknown
+      onEvent(event)
+      return
+    }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        reject(new Error('No reader available'))
-        return
-      }
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No reader available')
+    }
 
-      const decoder = new TextDecoder()
-      let buffer = ''
-      const separator = /\r?\n\r?\n/
+    const decoder = new TextDecoder()
+    let buffer = ''
+    const separator = /\r?\n\r?\n/
 
-      const emitBlock = (rawBlock: string) => {
-        const payload = rawBlock
-          .split(/\r?\n/)
-          .map(line => line.trimEnd())
-          .filter(line => line.startsWith('data:'))
-          .map(line => line.slice(5).trim())
-          .join('\n')
+    const emitBlock = (rawBlock: string) => {
+      const payload = rawBlock
+        .split(/\r?\n/)
+        .map(line => line.trimEnd())
+        .filter(line => line.startsWith('data:'))
+        .map(line => line.slice(5).trim())
+        .join('\n')
 
-        if (!payload) return
-        try {
-          onEvent(JSON.parse(payload) as unknown)
-        } catch (e) {
-          // ignore malformed chunks but keep stream alive
-          console.error('Failed to parse SSE payload:', payload, e)
-        }
-      }
-
+      if (!payload) return
       try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-          let match = buffer.match(separator)
-          while (match && match.index !== undefined) {
-            const block = buffer.slice(0, match.index)
-            buffer = buffer.slice(match.index + match[0].length)
-            emitBlock(block)
-            match = buffer.match(separator)
-          }
-        }
-
-        const remaining = buffer.trim()
-        if (remaining) {
-          emitBlock(remaining)
-        }
-        resolve()
+        onEvent(JSON.parse(payload) as unknown)
       } catch (e) {
-        reject(e)
+        // ignore malformed chunks but keep stream alive
+        console.error('Failed to parse SSE payload:', payload, e)
       }
-    })
+    }
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      let match = buffer.match(separator)
+      while (match && match.index !== undefined) {
+        const block = buffer.slice(0, match.index)
+        buffer = buffer.slice(match.index + match[0].length)
+        emitBlock(block)
+        match = buffer.match(separator)
+      }
+    }
+
+    const remaining = buffer.trim()
+    if (remaining) {
+      emitBlock(remaining)
+    }
+  }
 
   const transport: ChatTransport<UIMessage> = {
     async sendMessages({ messages: uiMessages, abortSignal }) {
