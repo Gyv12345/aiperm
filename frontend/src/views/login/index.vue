@@ -255,26 +255,56 @@ onMounted(() => {
     <div class="login-brand">
       <div class="brand-content">
         <div class="brand-logo">
-          <img src="/logo.png" alt="爱编程" class="logo-img">
+          <img
+            src="/logo.png"
+            alt="爱编程"
+            class="logo-img"
+          >
         </div>
-        <h1 class="brand-title">AIPerm 权限管理系统</h1>
-        <p class="brand-subtitle">专业的企业级 RBAC 权限管理解决方案</p>
+        <h1 class="brand-title">
+          AIPerm 权限管理系统
+        </h1>
+        <p class="brand-subtitle">
+          专业的企业级 RBAC 权限管理解决方案
+        </p>
         <div class="brand-features">
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span>安全可靠</span>
           </div>
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
             <span>高效便捷</span>
           </div>
           <div class="feature-item">
-            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
+            <svg
+              class="feature-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
               <path d="M12 6v6l4 2" />
             </svg>
             <span>实时响应</span>
@@ -293,12 +323,20 @@ onMounted(() => {
       <div class="login-form-container">
         <!-- 移动端 Logo -->
         <div class="mobile-logo">
-          <img src="/logo.png" alt="爱编程" class="logo-img-mobile">
+          <img
+            src="/logo.png"
+            alt="爱编程"
+            class="logo-img-mobile"
+          >
         </div>
 
         <div class="login-header">
-          <h2 class="login-title">欢迎登录</h2>
-          <p class="login-subtitle">请输入您的账号信息</p>
+          <h2 class="login-title">
+            欢迎登录
+          </h2>
+          <p class="login-subtitle">
+            请输入您的账号信息
+          </p>
         </div>
 
         <!-- 登录方式 Tab -->
@@ -368,14 +406,23 @@ onMounted(() => {
                   clearable
                   class="captcha-input"
                 />
-                <div class="captcha-box" title="点击刷新验证码" @click="fetchCaptcha">
+                <div
+                  class="captcha-box"
+                  title="点击刷新验证码"
+                  @click="fetchCaptcha"
+                >
                   <img
                     v-if="captchaData.captchaImage"
                     :src="captchaData.captchaImage"
                     alt="验证码"
                     class="captcha-img"
                   >
-                  <div v-else class="captcha-loading">点击刷新</div>
+                  <div
+                    v-else
+                    class="captcha-loading"
+                  >
+                    点击刷新
+                  </div>
                 </div>
               </div>
             </el-form-item>
@@ -446,13 +493,23 @@ onMounted(() => {
           </template>
 
           <el-form-item>
-            <el-button type="primary" :loading="loading" class="login-btn" @click="handleLogin">
+            <el-button
+              type="primary"
+              :loading="loading"
+              class="login-btn"
+              @click="handleLogin"
+            >
               {{ loading ? '登录中...' : '登 录' }}
             </el-button>
           </el-form-item>
 
           <el-form-item>
-            <el-button class="reset-btn" @click="resetForm">重 置</el-button>
+            <el-button
+              class="reset-btn"
+              @click="resetForm"
+            >
+              重 置
+            </el-button>
           </el-form-item>
         </el-form>
 
@@ -463,8 +520,15 @@ onMounted(() => {
       </div>
 
       <div class="login-footer">
-        <p class="company-name">河南爱编程网络科技有限公司</p>
-        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="icp-link">
+        <p class="company-name">
+          河南爱编程网络科技有限公司
+        </p>
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="icp-link"
+        >
           豫ICP备2024074107号-2
         </a>
       </div>

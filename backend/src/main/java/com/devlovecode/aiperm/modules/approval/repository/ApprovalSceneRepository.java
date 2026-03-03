@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -89,5 +90,28 @@ public class ApprovalSceneRepository extends BaseRepository<SysApprovalScene> {
                 .whereIf(platform != null && !platform.isBlank(), "platform = ?", platform)
                 .whereIf(enabled != null, "enabled = ?", enabled);
         return queryPage(sb.getWhereClause(), sb.getParams(), page, pageSize);
+    }
+
+    public int countEnabledByPlatform(String platform) {
+        String sql = """
+            SELECT COUNT(*) FROM sys_approval_scene
+            WHERE platform = :platform AND enabled = 1 AND deleted = 0
+            """;
+        Integer count = db.sql(sql).param("platform", platform).query(Integer.class).single();
+        return count == null ? 0 : count;
+    }
+
+    public Optional<String> findOneEnabledSceneCodeByPlatform(String platform) {
+        String sql = """
+            SELECT scene_code FROM sys_approval_scene
+            WHERE platform = :platform AND enabled = 1 AND deleted = 0
+            ORDER BY update_time DESC, id DESC
+            LIMIT 1
+            """;
+        List<String> result = db.sql(sql).param("platform", platform).query(String.class).list();
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(result.getFirst());
     }
 }

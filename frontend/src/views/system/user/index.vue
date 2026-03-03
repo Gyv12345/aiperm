@@ -491,7 +491,10 @@ onMounted(() => {
           @click="searchCollapsed = !searchCollapsed"
         >
           {{ searchCollapsed ? '展开' : '收起' }}
-          <el-icon class="ml-1 transition-transform duration-300" :class="{ 'rotate-180': searchCollapsed }">
+          <el-icon
+            class="ml-1 transition-transform duration-300"
+            :class="{ 'rotate-180': searchCollapsed }"
+          >
             <ArrowUp />
           </el-icon>
         </el-button>
@@ -504,7 +507,12 @@ onMounted(() => {
             class="search-form grid-filter-form"
           >
             <el-row :gutter="12">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+              >
                 <el-form-item label="用户名">
                   <el-input
                     v-model="queryForm.username"
@@ -515,7 +523,12 @@ onMounted(() => {
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+              >
                 <el-form-item label="昵称">
                   <el-input
                     v-model="queryForm.nickname"
@@ -526,7 +539,12 @@ onMounted(() => {
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+              >
                 <el-form-item label="手机号">
                   <el-input
                     v-model="queryForm.phone"
@@ -537,7 +555,12 @@ onMounted(() => {
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+              >
                 <el-form-item label="状态">
                   <DictSelect
                     v-model="queryForm.status"
@@ -548,7 +571,12 @@ onMounted(() => {
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="24" :lg="6">
+              <el-col
+                :xs="24"
+                :sm="12"
+                :md="24"
+                :lg="6"
+              >
                 <el-form-item class="filter-actions">
                   <el-button
                     type="primary"
@@ -631,7 +659,9 @@ onMounted(() => {
                 :src="row.avatar"
                 class="user-avatar"
               >
-                <el-icon :size="20"><User /></el-icon>
+                <el-icon :size="20">
+                  <User />
+                </el-icon>
               </el-avatar>
               <div class="user-detail ml-3">
                 <div class="username-row flex items-center">
@@ -680,10 +710,16 @@ onMounted(() => {
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <span v-if="row.roleNames" class="role-text">
+            <span
+              v-if="row.roleNames"
+              class="role-text"
+            >
               {{ row.roleNames }}
             </span>
-            <span v-else class="text-gray-400">-</span>
+            <span
+              v-else
+              class="text-gray-400"
+            >-</span>
           </template>
         </el-table-column>
 
@@ -694,13 +730,22 @@ onMounted(() => {
         >
           <template #default="{ row }">
             <div class="contact-info">
-              <div v-if="row.phone" class="flex items-center text-sm mb-1">
+              <div
+                v-if="row.phone"
+                class="flex items-center text-sm mb-1"
+              >
                 <span class="text-gray-500 dark:text-gray-400">{{ row.phone }}</span>
               </div>
-              <div v-if="row.email" class="flex items-center text-sm">
+              <div
+                v-if="row.email"
+                class="flex items-center text-sm"
+              >
                 <span class="text-gray-500 dark:text-gray-400">{{ row.email }}</span>
               </div>
-              <span v-if="!row.phone && !row.email" class="text-gray-400">-</span>
+              <span
+                v-if="!row.phone && !row.email"
+                class="text-gray-400"
+              >-</span>
             </div>
           </template>
         </el-table-column>
@@ -713,13 +758,24 @@ onMounted(() => {
           align="center"
         >
           <template #default="{ row }">
-            <el-icon v-if="row.gender === 1" class="text-blue-500" :size="18">
+            <el-icon
+              v-if="row.gender === 1"
+              class="text-blue-500"
+              :size="18"
+            >
               <Male />
             </el-icon>
-            <el-icon v-else-if="row.gender === 2" class="text-pink-500" :size="18">
+            <el-icon
+              v-else-if="row.gender === 2"
+              class="text-pink-500"
+              :size="18"
+            >
               <Female />
             </el-icon>
-            <span v-else class="text-gray-400">-</span>
+            <span
+              v-else
+              class="text-gray-400"
+            >-</span>
           </template>
         </el-table-column>
 
@@ -763,28 +819,30 @@ onMounted(() => {
                   size="small"
                 >
                   更多
-                  <el-icon class="ml-1"><MoreFilled /></el-icon>
+                  <el-icon class="ml-1">
+                    <MoreFilled />
+                  </el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                  <el-dropdown-item :command="'status'">
-                    {{ row.status === 1 ? '停用' : '启用' }}
-                  </el-dropdown-item>
-                  <el-dropdown-item :command="'resetPwd'">
-                    <el-icon><Key /></el-icon>
-                    <span class="ml-1">重置密码</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    :command="'delete'"
-                    divided
-                    class="text-red-500"
-                  >
-                    <el-icon><Delete /></el-icon>
-                    <span class="ml-1">删除</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+                    <el-dropdown-item :command="'status'">
+                      {{ row.status === 1 ? '停用' : '启用' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item :command="'resetPwd'">
+                      <el-icon><Key /></el-icon>
+                      <span class="ml-1">重置密码</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      :command="'delete'"
+                      divided
+                      class="text-red-500"
+                    >
+                      <el-icon><Delete /></el-icon>
+                      <span class="ml-1">删除</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -866,11 +924,15 @@ onMounted(() => {
               <el-form-item label="性别">
                 <el-radio-group v-model="formData.gender">
                   <el-radio :value="1">
-                    <el-icon class="text-blue-500 align-middle"><Male /></el-icon>
+                    <el-icon class="text-blue-500 align-middle">
+                      <Male />
+                    </el-icon>
                     <span class="ml-1">男</span>
                   </el-radio>
                   <el-radio :value="2">
-                    <el-icon class="text-pink-500 align-middle"><Female /></el-icon>
+                    <el-icon class="text-pink-500 align-middle">
+                      <Female />
+                    </el-icon>
                     <span class="ml-1">女</span>
                   </el-radio>
                   <el-radio :value="0">
@@ -979,8 +1041,12 @@ onMounted(() => {
             <el-col :span="12">
               <el-form-item label="状态">
                 <el-radio-group v-model="formData.status">
-                  <el-radio :value="0">正常</el-radio>
-                  <el-radio :value="1">停用</el-radio>
+                  <el-radio :value="0">
+                    正常
+                  </el-radio>
+                  <el-radio :value="1">
+                    停用
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>

@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class MessageLogRepository extends BaseRepository<SysMessageLog> {
@@ -71,5 +73,22 @@ public class MessageLogRepository extends BaseRepository<SysMessageLog> {
                 .whereIf(platform != null && !platform.isBlank(), "platform = ?", platform)
                 .whereIf(status != null && !status.isBlank(), "status = ?", status);
         return queryPage(sb.getWhereClause(), sb.getParams(), page, pageSize);
+    }
+
+    public Optional<SysMessageLog> findLatestByPlatform(String platform) {
+        String sql = """
+            SELECT * FROM sys_message_log
+            WHERE platform = :platform AND deleted = 0
+            ORDER BY send_time DESC, update_time DESC, id DESC
+            LIMIT 1
+            """;
+        List<SysMessageLog> result = db.sql(sql)
+                .param("platform", platform)
+                .query(SysMessageLog.class)
+                .list();
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.getFirst());
     }
 }

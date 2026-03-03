@@ -85,22 +85,46 @@ onMounted(() => {
 
     <el-tabs v-model="activeTab">
       <!-- 短信配置 -->
-      <el-tab-pane label="短信（SMS）" name="SMS">
-        <el-form :model="smsForm" label-width="140px" v-loading="loading">
+      <el-tab-pane
+        label="短信（SMS）"
+        name="SMS"
+      >
+        <el-form
+          v-loading="loading"
+          :model="smsForm"
+          label-width="140px"
+        >
           <el-form-item label="启用短信服务">
-            <el-switch v-model="smsForm.enabled" :active-value="1" :inactive-value="0" />
+            <el-switch
+              v-model="smsForm.enabled"
+              :active-value="1"
+              :inactive-value="0"
+            />
           </el-form-item>
           <el-form-item label="服务商">
             <el-select v-model="smsForm.smsProvider">
-              <el-option label="阿里云" value="ALIYUN" />
-              <el-option label="腾讯云" value="TENCENT" />
+              <el-option
+                label="阿里云"
+                value="ALIYUN"
+              />
+              <el-option
+                label="腾讯云"
+                value="TENCENT"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="AccessKey">
-            <el-input v-model="smsForm.smsAccessKey" placeholder="前4位+****（修改时重新输入完整值）" />
+            <el-input
+              v-model="smsForm.smsAccessKey"
+              placeholder="前4位+****（修改时重新输入完整值）"
+            />
           </el-form-item>
           <el-form-item label="SecretKey">
-            <el-input v-model="smsForm.smsSecretKey" type="password" placeholder="修改时输入新值，不修改留空" />
+            <el-input
+              v-model="smsForm.smsSecretKey"
+              type="password"
+              placeholder="修改时输入新值，不修改留空"
+            />
           </el-form-item>
           <el-form-item label="签名名称">
             <el-input v-model="smsForm.smsSignName" />
@@ -109,16 +133,32 @@ onMounted(() => {
             <el-input v-model="smsForm.smsTemplateCode" />
           </el-form-item>
           <el-form-item label="验证码长度">
-            <el-input-number v-model="smsForm.codeLength" :min="4" :max="8" />
+            <el-input-number
+              v-model="smsForm.codeLength"
+              :min="4"
+              :max="8"
+            />
           </el-form-item>
           <el-form-item label="过期时间（分钟）">
-            <el-input-number v-model="smsForm.expireMinutes" :min="1" :max="30" />
+            <el-input-number
+              v-model="smsForm.expireMinutes"
+              :min="1"
+              :max="30"
+            />
           </el-form-item>
           <el-form-item label="每日发送上限">
-            <el-input-number v-model="smsForm.dailyLimit" :min="1" :max="100" />
+            <el-input-number
+              v-model="smsForm.dailyLimit"
+              :min="1"
+              :max="100"
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :loading="saveLoading" @click="saveConfig('SMS')">
+            <el-button
+              type="primary"
+              :loading="saveLoading"
+              @click="saveConfig('SMS')"
+            >
               保存配置
             </el-button>
           </el-form-item>
@@ -126,40 +166,81 @@ onMounted(() => {
       </el-tab-pane>
 
       <!-- 邮件配置 -->
-      <el-tab-pane label="邮件（EMAIL）" name="EMAIL">
-        <el-form :model="emailForm" label-width="140px" v-loading="loading">
+      <el-tab-pane
+        label="邮件（EMAIL）"
+        name="EMAIL"
+      >
+        <el-form
+          v-loading="loading"
+          :model="emailForm"
+          label-width="140px"
+        >
           <el-form-item label="启用邮件服务">
-            <el-switch v-model="emailForm.enabled" :active-value="1" :inactive-value="0" />
+            <el-switch
+              v-model="emailForm.enabled"
+              :active-value="1"
+              :inactive-value="0"
+            />
           </el-form-item>
           <el-form-item label="SMTP 服务器">
-            <el-input v-model="emailForm.emailHost" placeholder="smtp.example.com" />
+            <el-input
+              v-model="emailForm.emailHost"
+              placeholder="smtp.example.com"
+            />
           </el-form-item>
           <el-form-item label="SMTP 端口">
-            <el-input-number v-model="emailForm.emailPort" :min="1" :max="65535" />
+            <el-input-number
+              v-model="emailForm.emailPort"
+              :min="1"
+              :max="65535"
+            />
           </el-form-item>
           <el-form-item label="邮箱账号">
             <el-input v-model="emailForm.emailUsername" />
           </el-form-item>
           <el-form-item label="密码/授权码">
-            <el-input v-model="emailForm.emailPassword" type="password" placeholder="修改时输入新值，不修改留空" />
+            <el-input
+              v-model="emailForm.emailPassword"
+              type="password"
+              placeholder="修改时输入新值，不修改留空"
+            />
           </el-form-item>
           <el-form-item label="发件人地址">
             <el-input v-model="emailForm.emailFrom" />
           </el-form-item>
           <el-form-item label="发件人名称">
-            <el-input v-model="emailForm.emailFromName" placeholder="AIPerm" />
+            <el-input
+              v-model="emailForm.emailFromName"
+              placeholder="AIPerm"
+            />
           </el-form-item>
           <el-form-item label="验证码长度">
-            <el-input-number v-model="emailForm.codeLength" :min="4" :max="8" />
+            <el-input-number
+              v-model="emailForm.codeLength"
+              :min="4"
+              :max="8"
+            />
           </el-form-item>
           <el-form-item label="过期时间（分钟）">
-            <el-input-number v-model="emailForm.expireMinutes" :min="1" :max="30" />
+            <el-input-number
+              v-model="emailForm.expireMinutes"
+              :min="1"
+              :max="30"
+            />
           </el-form-item>
           <el-form-item label="每日发送上限">
-            <el-input-number v-model="emailForm.dailyLimit" :min="1" :max="100" />
+            <el-input-number
+              v-model="emailForm.dailyLimit"
+              :min="1"
+              :max="100"
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :loading="saveLoading" @click="saveConfig('EMAIL')">
+            <el-button
+              type="primary"
+              :loading="saveLoading"
+              @click="saveConfig('EMAIL')"
+            >
               保存配置
             </el-button>
           </el-form-item>

@@ -5,52 +5,116 @@
       <template #header>
         <div class="card-header">
           <span>LLM 提供商管理</span>
-          <el-button type="primary" @click="handleAdd">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
             <el-icon><Plus /></el-icon>
             新增
           </el-button>
         </div>
       </template>
 
-      <el-table :data="providers" v-loading="loading" stripe>
-        <el-table-column prop="displayName" label="名称" width="150" />
-        <el-table-column prop="name" label="标识" width="120" />
-        <el-table-column prop="protocol" label="协议" width="110">
+      <el-table
+        v-loading="loading"
+        :data="providers"
+        stripe
+      >
+        <el-table-column
+          prop="displayName"
+          label="名称"
+          width="150"
+        />
+        <el-table-column
+          prop="name"
+          label="标识"
+          width="120"
+        />
+        <el-table-column
+          prop="protocol"
+          label="协议"
+          width="110"
+        >
           <template #default="{ row }">
-            <el-tag size="small" type="info">{{ row.protocol }}</el-tag>
+            <el-tag
+              size="small"
+              type="info"
+            >
+              {{ row.protocol }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="model" label="模型" width="150" />
-        <el-table-column prop="baseUrl" label="API 地址" min-width="200" show-overflow-tooltip />
-        <el-table-column label="默认" width="80" align="center">
+        <el-table-column
+          prop="model"
+          label="模型"
+          width="150"
+        />
+        <el-table-column
+          prop="baseUrl"
+          label="API 地址"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="默认"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag v-if="row.isDefault" type="success" size="small">默认</el-tag>
+            <el-tag
+              v-if="row.isDefault"
+              type="success"
+              size="small"
+            >
+              默认
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column
+          label="状态"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="row.status === 0 ? 'success' : 'danger'"
+              size="small"
+            >
               {{ row.status === 0 ? '启用' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          width="180"
+        />
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button
               link
               type="primary"
-              @click="handleSetDefault(row)"
+              @click="handleEdit(row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              link
+              type="primary"
               :disabled="row.isDefault"
+              @click="handleSetDefault(row)"
             >
               设为默认
             </el-button>
             <el-button
               link
               type="danger"
-              @click="handleDelete(row)"
               :disabled="row.isDefault"
+              @click="handleDelete(row)"
             >
               删除
             </el-button>
@@ -65,24 +129,68 @@
       :title="editId ? '编辑提供商' : '新增提供商'"
       width="500px"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="标识" prop="name" v-if="!editId">
-          <el-select v-model="form.name" placeholder="选择提供商" @change="handleProviderChange">
-            <el-option label="DeepSeek" value="deepseek" />
-            <el-option label="通义千问" value="qwen" />
-            <el-option label="OpenAI" value="openai" />
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="100px"
+      >
+        <el-form-item
+          v-if="!editId"
+          label="标识"
+          prop="name"
+        >
+          <el-select
+            v-model="form.name"
+            placeholder="选择提供商"
+            @change="handleProviderChange"
+          >
+            <el-option
+              label="DeepSeek"
+              value="deepseek"
+            />
+            <el-option
+              label="通义千问"
+              value="qwen"
+            />
+            <el-option
+              label="OpenAI"
+              value="openai"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="显示名称" prop="displayName">
-          <el-input v-model="form.displayName" placeholder="显示名称" />
+        <el-form-item
+          label="显示名称"
+          prop="displayName"
+        >
+          <el-input
+            v-model="form.displayName"
+            placeholder="显示名称"
+          />
         </el-form-item>
-        <el-form-item label="协议" prop="protocol">
-          <el-select v-model="form.protocol" placeholder="选择协议" @change="handleProtocolChange">
-            <el-option label="OpenAI Compatible" value="openai" />
-            <el-option label="Anthropic" value="anthropic" />
+        <el-form-item
+          label="协议"
+          prop="protocol"
+        >
+          <el-select
+            v-model="form.protocol"
+            placeholder="选择协议"
+            @change="handleProtocolChange"
+          >
+            <el-option
+              label="OpenAI Compatible"
+              value="openai"
+            />
+            <el-option
+              label="Anthropic"
+              value="anthropic"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="API Key" prop="apiKey">
+        <el-form-item
+          label="API Key"
+          prop="apiKey"
+        >
           <el-input
             v-model="form.apiKey"
             type="password"
@@ -90,25 +198,53 @@
             show-password
           />
         </el-form-item>
-        <el-form-item label="API 地址" prop="baseUrl">
-          <el-input v-model="form.baseUrl" placeholder="API 地址" />
+        <el-form-item
+          label="API 地址"
+          prop="baseUrl"
+        >
+          <el-input
+            v-model="form.baseUrl"
+            placeholder="API 地址"
+          />
         </el-form-item>
-        <el-form-item label="模型" prop="model">
-          <el-input v-model="form.model" placeholder="模型名称" />
+        <el-form-item
+          label="模型"
+          prop="model"
+        >
+          <el-input
+            v-model="form.model"
+            placeholder="模型名称"
+          />
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="form.status" :active-value="0" :inactive-value="1" />
+          <el-switch
+            v-model="form.status"
+            :active-value="0"
+            :inactive-value="1"
+          />
         </el-form-item>
         <el-form-item label="设为默认">
           <el-switch v-model="form.isDefault" />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="2" />
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="2"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >
+          确定
+        </el-button>
       </template>
     </el-dialog>
   </div>

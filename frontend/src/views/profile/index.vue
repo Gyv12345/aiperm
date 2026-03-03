@@ -224,10 +224,19 @@ onMounted(() => {
         </div>
       </template>
 
-      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+      <el-tabs
+        v-model="activeTab"
+        @tab-change="handleTabChange"
+      >
         <!-- 基本信息 Tab -->
-        <el-tab-pane label="基本信息" name="info">
-          <el-skeleton :loading="loading" animated>
+        <el-tab-pane
+          label="基本信息"
+          name="info"
+        >
+          <el-skeleton
+            :loading="loading"
+            animated
+          >
             <el-form
               ref="formRef"
               :model="profileForm"
@@ -236,39 +245,78 @@ onMounted(() => {
               class="max-w-2xl mt-4"
             >
               <el-form-item label="用户名">
-                <el-input :model-value="profile?.username" disabled />
+                <el-input
+                  :model-value="profile?.username"
+                  disabled
+                />
               </el-form-item>
 
-              <el-form-item label="昵称" prop="nickname">
-                <el-input v-model="profileForm.nickname" placeholder="请输入昵称" />
+              <el-form-item
+                label="昵称"
+                prop="nickname"
+              >
+                <el-input
+                  v-model="profileForm.nickname"
+                  placeholder="请输入昵称"
+                />
               </el-form-item>
 
-              <el-form-item label="真实姓名" prop="realName">
-                <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />
+              <el-form-item
+                label="真实姓名"
+                prop="realName"
+              >
+                <el-input
+                  v-model="profileForm.realName"
+                  placeholder="请输入真实姓名"
+                />
               </el-form-item>
 
-              <el-form-item label="邮箱" prop="email">
-                <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
+              <el-form-item
+                label="邮箱"
+                prop="email"
+              >
+                <el-input
+                  v-model="profileForm.email"
+                  placeholder="请输入邮箱"
+                />
               </el-form-item>
 
-              <el-form-item label="手机号" prop="phone">
-                <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
+              <el-form-item
+                label="手机号"
+                prop="phone"
+              >
+                <el-input
+                  v-model="profileForm.phone"
+                  placeholder="请输入手机号"
+                />
               </el-form-item>
 
               <el-form-item label="性别">
                 <el-radio-group v-model="profileForm.gender">
-                  <el-radio :value="0">未知</el-radio>
-                  <el-radio :value="1">男</el-radio>
-                  <el-radio :value="2">女</el-radio>
+                  <el-radio :value="0">
+                    未知
+                  </el-radio>
+                  <el-radio :value="1">
+                    男
+                  </el-radio>
+                  <el-radio :value="2">
+                    女
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
 
               <el-form-item label="部门">
-                <el-input :model-value="profile?.deptName || '-'" disabled />
+                <el-input
+                  :model-value="profile?.deptName || '-'"
+                  disabled
+                />
               </el-form-item>
 
               <el-form-item label="岗位">
-                <el-input :model-value="profile?.postName || '-'" disabled />
+                <el-input
+                  :model-value="profile?.postName || '-'"
+                  disabled
+                />
               </el-form-item>
 
               <el-form-item label="角色">
@@ -283,7 +331,10 @@ onMounted(() => {
               </el-form-item>
 
               <el-form-item label="状态">
-                <DictTag :options="sys_status" :value="profile?.status" />
+                <DictTag
+                  :options="sys_status"
+                  :value="profile?.status"
+                />
               </el-form-item>
 
               <el-form-item label="创建时间">
@@ -291,7 +342,11 @@ onMounted(() => {
               </el-form-item>
 
               <el-form-item>
-                <el-button type="primary" :loading="saving" @click="handleSaveProfile">
+                <el-button
+                  type="primary"
+                  :loading="saving"
+                  @click="handleSaveProfile"
+                >
                   保存修改
                 </el-button>
               </el-form-item>
@@ -300,7 +355,10 @@ onMounted(() => {
         </el-tab-pane>
 
         <!-- 修改密码 Tab -->
-        <el-tab-pane label="修改密码" name="password">
+        <el-tab-pane
+          label="修改密码"
+          name="password"
+        >
           <el-form
             ref="passwordFormRef"
             :model="passwordForm"
@@ -308,7 +366,10 @@ onMounted(() => {
             label-width="100px"
             class="max-w-md mt-4"
           >
-            <el-form-item label="旧密码" prop="oldPassword">
+            <el-form-item
+              label="旧密码"
+              prop="oldPassword"
+            >
               <el-input
                 v-model="passwordForm.oldPassword"
                 type="password"
@@ -317,7 +378,10 @@ onMounted(() => {
               />
             </el-form-item>
 
-            <el-form-item label="新密码" prop="newPassword">
+            <el-form-item
+              label="新密码"
+              prop="newPassword"
+            >
               <el-input
                 v-model="passwordForm.newPassword"
                 type="password"
@@ -326,7 +390,10 @@ onMounted(() => {
               />
             </el-form-item>
 
-            <el-form-item label="确认密码" prop="confirmPassword">
+            <el-form-item
+              label="确认密码"
+              prop="confirmPassword"
+            >
               <el-input
                 v-model="passwordForm.confirmPassword"
                 type="password"
@@ -336,7 +403,11 @@ onMounted(() => {
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" :loading="passwordSaving" @click="handleChangePassword">
+              <el-button
+                type="primary"
+                :loading="passwordSaving"
+                @click="handleChangePassword"
+              >
                 修改密码
               </el-button>
             </el-form-item>
@@ -344,30 +415,69 @@ onMounted(() => {
         </el-tab-pane>
 
         <!-- 登录日志 Tab -->
-        <el-tab-pane label="登录日志" name="logs">
-          <el-table :data="logs" v-loading="logsLoading" class="mt-4">
-            <el-table-column prop="loginTime" label="登录时间" width="180" />
-            <el-table-column prop="ip" label="登录IP" width="140" />
-            <el-table-column prop="location" label="登录地点" />
-            <el-table-column prop="browser" label="浏览器" />
-            <el-table-column prop="os" label="操作系统" />
-            <el-table-column label="状态" width="80">
+        <el-tab-pane
+          label="登录日志"
+          name="logs"
+        >
+          <el-table
+            v-loading="logsLoading"
+            :data="logs"
+            class="mt-4"
+          >
+            <el-table-column
+              prop="loginTime"
+              label="登录时间"
+              width="180"
+            />
+            <el-table-column
+              prop="ip"
+              label="登录IP"
+              width="140"
+            />
+            <el-table-column
+              prop="location"
+              label="登录地点"
+            />
+            <el-table-column
+              prop="browser"
+              label="浏览器"
+            />
+            <el-table-column
+              prop="os"
+              label="操作系统"
+            />
+            <el-table-column
+              label="状态"
+              width="80"
+            >
               <template #default="{ row }">
                 <el-tag :type="row.status === 1 ? 'success' : 'danger'">
                   {{ row.status === 1 ? '成功' : '失败' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="msg" label="提示消息" />
+            <el-table-column
+              prop="msg"
+              label="提示消息"
+            />
           </el-table>
         </el-tab-pane>
 
         <!-- 安全设置 Tab -->
-        <el-tab-pane label="安全设置" name="mfa">
-          <el-card shadow="never" class="max-w-2xl mt-4" v-loading="mfaLoading">
+        <el-tab-pane
+          label="安全设置"
+          name="mfa"
+        >
+          <el-card
+            v-loading="mfaLoading"
+            shadow="never"
+            class="max-w-2xl mt-4"
+          >
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <div class="font-medium text-base mb-2">双因素认证（2FA）</div>
+                <div class="font-medium text-base mb-2">
+                  双因素认证（2FA）
+                </div>
                 <div class="text-sm text-gray-500 leading-6">
                   绑定后，登录和敏感操作会要求输入 Authenticator 动态验证码，提升账号安全性。
                 </div>

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -82,5 +83,24 @@ public class ApprovalInstanceRepository extends BaseRepository<SysApprovalInstan
                 .whereIf(sceneCode != null && !sceneCode.isBlank(), "scene_code = ?", sceneCode)
                 .whereIf(status != null && !status.isBlank(), "status = ?", status);
         return queryPage(sb.getWhereClause(), sb.getParams(), page, pageSize);
+    }
+
+    public Optional<SysApprovalInstance> findLatestFinishedByPlatform(String platform) {
+        String sql = """
+            SELECT * FROM sys_approval_instance
+            WHERE platform = :platform
+              AND status IN ('APPROVED', 'REJECTED', 'CANCELED')
+              AND deleted = 0
+            ORDER BY result_time DESC, update_time DESC, id DESC
+            LIMIT 1
+            """;
+        List<SysApprovalInstance> result = db.sql(sql)
+                .param("platform", platform)
+                .query(SysApprovalInstance.class)
+                .list();
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.getFirst());
     }
 }

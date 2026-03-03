@@ -1,23 +1,53 @@
 <!-- frontend/src/components/agent/AgentMessage.vue -->
 <template>
   <div :class="['message-bubble', message.role]">
-    <div v-if="message.role === 'user'" class="avatar user-avatar">
+    <div
+      v-if="message.role === 'user'"
+      class="avatar user-avatar"
+    >
       <el-icon><User /></el-icon>
     </div>
 
     <div class="content">
-      <div class="text markdown-body" v-html="formattedContent"></div>
-      <div v-if="message.uiPayload" class="ui-payload">
-        <div v-if="uiTitle" class="ui-title">{{ uiTitle }}</div>
-        <div v-if="uiDescription" class="ui-description">{{ uiDescription }}</div>
+      <div
+        class="text markdown-body"
+        v-html="formattedContent"
+      />
+      <div
+        v-if="message.uiPayload"
+        class="ui-payload"
+      >
+        <div
+          v-if="uiTitle"
+          class="ui-title"
+        >
+          {{ uiTitle }}
+        </div>
+        <div
+          v-if="uiDescription"
+          class="ui-description"
+        >
+          {{ uiDescription }}
+        </div>
         <pre class="ui-json">{{ uiJson }}</pre>
       </div>
-      <div v-if="message.toolName" class="tool-info">
-        <el-tag size="small" type="info">{{ message.toolName }}</el-tag>
+      <div
+        v-if="message.toolName"
+        class="tool-info"
+      >
+        <el-tag
+          size="small"
+          type="info"
+        >
+          {{ message.toolName }}
+        </el-tag>
       </div>
     </div>
 
-    <div v-if="message.role === 'assistant'" class="avatar assistant-avatar">
+    <div
+      v-if="message.role === 'assistant'"
+      class="avatar assistant-avatar"
+    >
       <el-icon><Cpu /></el-icon>
     </div>
   </div>

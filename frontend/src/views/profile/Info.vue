@@ -74,7 +74,10 @@ onMounted(() => {
 
 <template>
   <div class="profile-info p-6">
-    <el-card shadow="never" class="max-w-3xl">
+    <el-card
+      shadow="never"
+      class="max-w-3xl"
+    >
       <template #header>
         <div class="flex items-center gap-2">
           <el-icon class="text-blue-500">
@@ -84,7 +87,10 @@ onMounted(() => {
         </div>
       </template>
 
-      <el-skeleton :loading="loading" animated>
+      <el-skeleton
+        :loading="loading"
+        animated
+      >
         <el-form
           ref="formRef"
           :model="form"
@@ -93,39 +99,78 @@ onMounted(() => {
           class="mt-4"
         >
           <el-form-item label="用户名">
-            <el-input :model-value="profile?.username" disabled />
+            <el-input
+              :model-value="profile?.username"
+              disabled
+            />
           </el-form-item>
 
-          <el-form-item label="昵称" prop="nickname">
-            <el-input v-model="form.nickname" placeholder="请输入昵称" />
+          <el-form-item
+            label="昵称"
+            prop="nickname"
+          >
+            <el-input
+              v-model="form.nickname"
+              placeholder="请输入昵称"
+            />
           </el-form-item>
 
-          <el-form-item label="真实姓名" prop="realName">
-            <el-input v-model="form.realName" placeholder="请输入真实姓名" />
+          <el-form-item
+            label="真实姓名"
+            prop="realName"
+          >
+            <el-input
+              v-model="form.realName"
+              placeholder="请输入真实姓名"
+            />
           </el-form-item>
 
-          <el-form-item label="邮箱" prop="email">
-            <el-input v-model="form.email" placeholder="请输入邮箱" />
+          <el-form-item
+            label="邮箱"
+            prop="email"
+          >
+            <el-input
+              v-model="form.email"
+              placeholder="请输入邮箱"
+            />
           </el-form-item>
 
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入手机号" />
+          <el-form-item
+            label="手机号"
+            prop="phone"
+          >
+            <el-input
+              v-model="form.phone"
+              placeholder="请输入手机号"
+            />
           </el-form-item>
 
           <el-form-item label="性别">
             <el-radio-group v-model="form.gender">
-              <el-radio :value="0">未知</el-radio>
-              <el-radio :value="1">男</el-radio>
-              <el-radio :value="2">女</el-radio>
+              <el-radio :value="0">
+                未知
+              </el-radio>
+              <el-radio :value="1">
+                男
+              </el-radio>
+              <el-radio :value="2">
+                女
+              </el-radio>
             </el-radio-group>
           </el-form-item>
 
           <el-form-item label="部门">
-            <el-input :model-value="profile?.deptName || '-'" disabled />
+            <el-input
+              :model-value="profile?.deptName || '-'"
+              disabled
+            />
           </el-form-item>
 
           <el-form-item label="岗位">
-            <el-input :model-value="profile?.postName || '-'" disabled />
+            <el-input
+              :model-value="profile?.postName || '-'"
+              disabled
+            />
           </el-form-item>
 
           <el-form-item label="角色">
@@ -140,7 +185,10 @@ onMounted(() => {
           </el-form-item>
 
           <el-form-item label="状态">
-            <DictTag :options="sys_status" :value="profile?.status" />
+            <DictTag
+              :options="sys_status"
+              :value="profile?.status"
+            />
           </el-form-item>
 
           <el-form-item label="创建时间">
@@ -148,7 +196,11 @@ onMounted(() => {
           </el-form-item>
 
           <el-form-item>
-            <el-button type="primary" :loading="saving" @click="handleSave">
+            <el-button
+              type="primary"
+              :loading="saving"
+              @click="handleSave"
+            >
               保存修改
             </el-button>
           </el-form-item>

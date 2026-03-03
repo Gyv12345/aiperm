@@ -3,16 +3,30 @@
   <div class="confirm-container">
     <div class="confirm-card">
       <div class="confirm-header">
-        <el-icon :size="20" color="#e6a23c"><WarningFilled /></el-icon>
+        <el-icon
+          :size="20"
+          color="#e6a23c"
+        >
+          <WarningFilled />
+        </el-icon>
         <span>操作确认</span>
       </div>
       <div class="confirm-body">
         <p>{{ message }}</p>
-        <p class="tool-name">工具: {{ toolName }}</p>
+        <p class="tool-name">
+          工具: {{ toolName }}
+        </p>
       </div>
       <div class="confirm-actions">
-        <el-button @click="$emit('cancel')">取消</el-button>
-        <el-button type="primary" @click="$emit('confirm')">确认执行</el-button>
+        <el-button @click="$emit('cancel')">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          @click="$emit('confirm')"
+        >
+          确认执行
+        </el-button>
       </div>
     </div>
   </div>

@@ -66,19 +66,32 @@ watch(() => props.visible, (val) => {
   >
     <div class="mfa-bind-content">
       <!-- 步骤说明 -->
-      <el-steps :active="step" finish-status="success" class="steps">
+      <el-steps
+        :active="step"
+        finish-status="success"
+        class="steps"
+      >
         <el-step title="扫描二维码" />
         <el-step title="输入验证码" />
       </el-steps>
 
-      <div v-if="qrcodeData" class="qr-section">
+      <div
+        v-if="qrcodeData"
+        class="qr-section"
+      >
         <p class="step-desc">
           1. 打开 <strong>Google Authenticator</strong> 或 <strong>Microsoft Authenticator</strong>
         </p>
-        <p class="step-desc">2. 扫描下方二维码，或手动输入密钥：</p>
+        <p class="step-desc">
+          2. 扫描下方二维码，或手动输入密钥：
+        </p>
 
         <div class="qrcode-wrapper">
-          <img :src="getTotpQrUrl(qrcodeData.totpUri)" alt="2FA QR Code" class="qrcode-img">
+          <img
+            :src="getTotpQrUrl(qrcodeData.totpUri)"
+            alt="2FA QR Code"
+            class="qrcode-img"
+          >
         </div>
 
         <div class="secret-key">
@@ -88,7 +101,9 @@ watch(() => props.visible, (val) => {
 
         <el-divider />
 
-        <p class="step-desc">3. 输入 App 显示的 <strong>6位验证码</strong>：</p>
+        <p class="step-desc">
+          3. 输入 App 显示的 <strong>6位验证码</strong>：
+        </p>
         <el-input
           v-model="verifyCode"
           placeholder="000000"
@@ -100,8 +115,14 @@ watch(() => props.visible, (val) => {
     </div>
 
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="confirmBind">
+      <el-button @click="emit('update:visible', false)">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="confirmBind"
+      >
         确认绑定
       </el-button>
     </template>

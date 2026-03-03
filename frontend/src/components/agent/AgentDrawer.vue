@@ -8,8 +8,14 @@
         <span>智能助手</span>
       </div>
       <div class="actions">
-        <el-tooltip content="清空对话" placement="bottom">
-          <el-button text @click="handleClear">
+        <el-tooltip
+          content="清空对话"
+          placement="bottom"
+        >
+          <el-button
+            text
+            @click="handleClear"
+          >
             <el-icon><Delete /></el-icon>
           </el-button>
         </el-tooltip>
@@ -17,9 +23,20 @@
     </div>
 
     <!-- 对话区域 -->
-    <div class="chat-container" ref="chatContainer">
-      <div v-if="agentStore.messages.length === 0" class="empty-state">
-        <el-icon :size="48" color="#c0c4cc"><ChatDotRound /></el-icon>
+    <div
+      ref="chatContainer"
+      class="chat-container"
+    >
+      <div
+        v-if="agentStore.messages.length === 0"
+        class="empty-state"
+      >
+        <el-icon
+          :size="48"
+          color="#c0c4cc"
+        >
+          <ChatDotRound />
+        </el-icon>
         <p>你好！我是智能助手，有什么可以帮你的？</p>
       </div>
 
@@ -32,9 +49,12 @@
       </div>
 
       <!-- 加载中 -->
-      <div v-if="agentStore.loading" class="message assistant">
+      <div
+        v-if="agentStore.loading"
+        class="message assistant"
+      >
         <div class="typing-indicator">
-          <span></span><span></span><span></span>
+          <span /><span /><span />
         </div>
       </div>
     </div>

@@ -437,7 +437,12 @@ onMounted(() => {
           class="grid-filter-form dict-type-search-form"
         >
           <el-row :gutter="8">
-            <el-col :xs="24" :sm="12" :md="24" :lg="24">
+            <el-col
+              :xs="24"
+              :sm="12"
+              :md="24"
+              :lg="24"
+            >
               <el-form-item>
                 <el-input
                   v-model="searchForm.dictName"
@@ -449,7 +454,12 @@ onMounted(() => {
                 />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="12" :md="24" :lg="24">
+            <el-col
+              :xs="24"
+              :sm="12"
+              :md="24"
+              :lg="24"
+            >
               <el-form-item>
                 <el-input
                   v-model="searchForm.dictType"
@@ -461,7 +471,12 @@ onMounted(() => {
                 />
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :sm="24" :md="24" :lg="24">
+            <el-col
+              :xs="24"
+              :sm="24"
+              :md="24"
+              :lg="24"
+            >
               <el-form-item class="filter-actions">
                 <el-button
                   type="primary"

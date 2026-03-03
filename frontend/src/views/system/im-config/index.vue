@@ -42,28 +42,66 @@ onMounted(fetchList)
   <div class="p-4">
     <el-card>
       <template #header>
-        <div class="font-semibold">IM 平台配置</div>
+        <div class="font-semibold">
+          IM 平台配置
+        </div>
       </template>
-      <el-table v-loading="loading" :data="list" border>
-        <el-table-column prop="platform" label="平台" width="120" />
-        <el-table-column label="启用" width="90">
+      <el-table
+        v-loading="loading"
+        :data="list"
+        border
+      >
+        <el-table-column
+          prop="platform"
+          label="平台"
+          width="120"
+        />
+        <el-table-column
+          label="启用"
+          width="90"
+        >
           <template #default="{ row }">
-            <el-switch v-model="row.enabled" :active-value="1" :inactive-value="0" />
+            <el-switch
+              v-model="row.enabled"
+              :active-value="1"
+              :inactive-value="0"
+            />
           </template>
         </el-table-column>
-        <el-table-column prop="appId" label="应用ID">
+        <el-table-column
+          prop="appId"
+          label="应用ID"
+        >
           <template #default="{ row }">
-            <el-input v-model="row.appId" placeholder="App ID" />
+            <el-input
+              v-model="row.appId"
+              placeholder="App ID"
+            />
           </template>
         </el-table-column>
-        <el-table-column prop="corpId" label="企业ID">
+        <el-table-column
+          prop="corpId"
+          label="企业ID"
+        >
           <template #default="{ row }">
-            <el-input v-model="row.corpId" placeholder="Corp ID" />
+            <el-input
+              v-model="row.corpId"
+              placeholder="Corp ID"
+            />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column
+          label="操作"
+          width="120"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link :loading="saving" @click="handleSave(row)">
+            <el-button
+              type="primary"
+              link
+              :loading="saving"
+              @click="handleSave(row)"
+            >
               保存
             </el-button>
           </template>

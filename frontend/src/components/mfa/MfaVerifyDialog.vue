@@ -48,7 +48,9 @@ watch(() => props.visible, (val) => {
     @update:model-value="emit('update:visible', $event)"
   >
     <div class="mfa-verify-content">
-      <p class="desc">此操作需要二次验证，请打开 Authenticator App 输入当前验证码：</p>
+      <p class="desc">
+        此操作需要二次验证，请打开 Authenticator App 输入当前验证码：
+      </p>
       <el-input
         v-model="code"
         placeholder="000000"
@@ -59,8 +61,14 @@ watch(() => props.visible, (val) => {
     </div>
 
     <template #footer>
-      <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleVerify">
+      <el-button @click="emit('update:visible', false)">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleVerify"
+      >
         确认验证
       </el-button>
     </template>

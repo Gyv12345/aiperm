@@ -57,36 +57,71 @@ onMounted(() => {
         </div>
       </template>
 
-      <el-table :data="tableData" v-loading="loading" stripe>
-        <el-table-column prop="ip" label="登录IP" width="140" />
-        <el-table-column prop="location" label="登录地点" min-width="120">
+      <el-table
+        v-loading="loading"
+        :data="tableData"
+        stripe
+      >
+        <el-table-column
+          prop="ip"
+          label="登录IP"
+          width="140"
+        />
+        <el-table-column
+          prop="location"
+          label="登录地点"
+          min-width="120"
+        >
           <template #default="{ row }">
             {{ row.location || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="browser" label="浏览器" width="120">
+        <el-table-column
+          prop="browser"
+          label="浏览器"
+          width="120"
+        >
           <template #default="{ row }">
             {{ row.browser || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="os" label="操作系统" width="120">
+        <el-table-column
+          prop="os"
+          label="操作系统"
+          width="120"
+        >
           <template #default="{ row }">
             {{ row.os || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="80"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="row.status === 0 ? 'success' : 'danger'"
+              size="small"
+            >
               {{ row.status === 0 ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="msg" label="提示消息" min-width="120">
+        <el-table-column
+          prop="msg"
+          label="提示消息"
+          min-width="120"
+        >
           <template #default="{ row }">
             {{ row.msg || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="loginTime" label="登录时间" width="180" />
+        <el-table-column
+          prop="loginTime"
+          label="登录时间"
+          width="180"
+        />
       </el-table>
 
       <div class="mt-4 flex justify-end">

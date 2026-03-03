@@ -226,7 +226,12 @@ onMounted(() => {
         class="grid-filter-form"
       >
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="部门名称">
               <el-input
                 v-model="queryForm.deptName"
@@ -237,7 +242,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="状态">
               <el-select
                 v-model="queryForm.status"
@@ -256,7 +266,12 @@ onMounted(() => {
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="24"
+            :lg="6"
+          >
             <el-form-item class="filter-actions">
               <el-button
                 type="primary"

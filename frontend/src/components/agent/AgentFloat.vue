@@ -6,8 +6,14 @@
     class="agent-float"
     @click="agentStore.toggleDrawer"
   >
-    <el-badge :value="agentStore.unreadCount" :hidden="!agentStore.unreadCount" :max="99">
-      <el-icon :size="28"><ChatDotRound /></el-icon>
+    <el-badge
+      :value="agentStore.unreadCount"
+      :hidden="!agentStore.unreadCount"
+      :max="99"
+    >
+      <el-icon :size="28">
+        <ChatDotRound />
+      </el-icon>
     </el-badge>
   </div>
 

@@ -387,7 +387,12 @@ onMounted(() => {
         class="grid-filter-form"
       >
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="角色名称">
               <el-input
                 v-model="queryForm.roleName"
@@ -398,7 +403,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="角色编码">
               <el-input
                 v-model="queryForm.roleCode"
@@ -409,7 +419,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="状态">
               <DictSelect
                 v-model="queryForm.status"
@@ -420,7 +435,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="24"
+            :lg="6"
+          >
             <el-form-item class="filter-actions">
               <el-button
                 type="primary"

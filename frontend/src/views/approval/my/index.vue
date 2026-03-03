@@ -55,26 +55,69 @@ onMounted(fetchList)
 <template>
   <div class="p-4">
     <el-card class="mb-4">
-      <el-form :model="queryForm" class="grid-filter-form" label-width="72px">
+      <el-form
+        :model="queryForm"
+        class="grid-filter-form"
+        label-width="72px"
+      >
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="场景编码">
-              <el-input v-model="queryForm.sceneCode" class="filter-control" clearable />
+              <el-input
+                v-model="queryForm.sceneCode"
+                class="filter-control"
+                clearable
+              />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="状态">
-              <el-select v-model="queryForm.status" class="filter-control" clearable>
-                <el-option label="待审批" value="PENDING" />
-                <el-option label="已通过" value="APPROVED" />
-                <el-option label="已拒绝" value="REJECTED" />
+              <el-select
+                v-model="queryForm.status"
+                class="filter-control"
+                clearable
+              >
+                <el-option
+                  label="待审批"
+                  value="PENDING"
+                />
+                <el-option
+                  label="已通过"
+                  value="APPROVED"
+                />
+                <el-option
+                  label="已拒绝"
+                  value="REJECTED"
+                />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="24"
+            :lg="6"
+          >
             <el-form-item class="filter-actions">
-              <el-button type="primary" @click="fetchList">搜索</el-button>
-              <el-button @click="openSubmitDialog">发起审批</el-button>
+              <el-button
+                type="primary"
+                @click="fetchList"
+              >
+                搜索
+              </el-button>
+              <el-button @click="openSubmitDialog">
+                发起审批
+              </el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -82,26 +125,83 @@ onMounted(fetchList)
     </el-card>
 
     <el-card>
-      <el-table v-loading="loading" :data="tableData" border>
-        <el-table-column prop="sceneCode" label="场景编码" min-width="140" />
-        <el-table-column prop="businessType" label="业务类型" width="120" />
-        <el-table-column prop="businessId" label="业务ID" width="120" />
-        <el-table-column prop="platform" label="平台" width="100" />
-        <el-table-column prop="status" label="状态" width="100" />
-        <el-table-column prop="createTime" label="发起时间" width="180" />
-        <el-table-column prop="resultTime" label="结果时间" width="180" />
+      <el-table
+        v-loading="loading"
+        :data="tableData"
+        border
+      >
+        <el-table-column
+          prop="sceneCode"
+          label="场景编码"
+          min-width="140"
+        />
+        <el-table-column
+          prop="businessType"
+          label="业务类型"
+          width="120"
+        />
+        <el-table-column
+          prop="businessId"
+          label="业务ID"
+          width="120"
+        />
+        <el-table-column
+          prop="platform"
+          label="平台"
+          width="100"
+        />
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        />
+        <el-table-column
+          prop="createTime"
+          label="发起时间"
+          width="180"
+        />
+        <el-table-column
+          prop="resultTime"
+          label="结果时间"
+          width="180"
+        />
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="发起审批" width="520px">
-      <el-form :model="submitForm" label-width="100px">
-        <el-form-item label="场景编码"><el-input v-model="submitForm.sceneCode" /></el-form-item>
-        <el-form-item label="业务类型"><el-input v-model="submitForm.businessType" /></el-form-item>
-        <el-form-item label="业务ID"><el-input-number v-model="submitForm.businessId" :min="1" style="width: 100%" /></el-form-item>
+    <el-dialog
+      v-model="dialogVisible"
+      title="发起审批"
+      width="520px"
+    >
+      <el-form
+        :model="submitForm"
+        label-width="100px"
+      >
+        <el-form-item label="场景编码">
+          <el-input v-model="submitForm.sceneCode" />
+        </el-form-item>
+        <el-form-item label="业务类型">
+          <el-input v-model="submitForm.businessType" />
+        </el-form-item>
+        <el-form-item label="业务ID">
+          <el-input-number
+            v-model="submitForm.businessId"
+            :min="1"
+            style="width: 100%"
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitApproval">提交</el-button>
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="submitApproval"
+        >
+          提交
+        </el-button>
       </template>
     </el-dialog>
   </div>

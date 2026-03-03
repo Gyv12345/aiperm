@@ -87,49 +87,119 @@ onMounted(loadData)
   <div class="page-container">
     <div class="page-header">
       <h2>2FA 策略配置</h2>
-      <el-button type="primary" @click="openCreate">新增策略</el-button>
+      <el-button
+        type="primary"
+        @click="openCreate"
+      >
+        新增策略
+      </el-button>
     </div>
 
-    <el-table :data="tableData" v-loading="loading" border>
-      <el-table-column prop="name" label="策略名称" />
-      <el-table-column prop="permPattern" label="权限标识匹配" />
-      <el-table-column prop="apiPattern" label="API路径匹配" />
-      <el-table-column label="状态" width="100">
+    <el-table
+      v-loading="loading"
+      :data="tableData"
+      border
+    >
+      <el-table-column
+        prop="name"
+        label="策略名称"
+      />
+      <el-table-column
+        prop="permPattern"
+        label="权限标识匹配"
+      />
+      <el-table-column
+        prop="apiPattern"
+        label="API路径匹配"
+      />
+      <el-table-column
+        label="状态"
+        width="100"
+      >
         <template #default="{ row }">
           <el-tag :type="row.enabled ? 'success' : 'info'">
             {{ row.enabled ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160">
+      <el-table-column
+        label="操作"
+        width="160"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑策略' : '新增策略'" width="500px">
-      <el-form :model="form" label-width="120px">
-        <el-form-item label="策略名称" required>
-          <el-input v-model="form.name" placeholder="如：修改密码" />
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editingId ? '编辑策略' : '新增策略'"
+      width="500px"
+    >
+      <el-form
+        :model="form"
+        label-width="120px"
+      >
+        <el-form-item
+          label="策略名称"
+          required
+        >
+          <el-input
+            v-model="form.name"
+            placeholder="如：修改密码"
+          />
         </el-form-item>
         <el-form-item label="权限标识匹配">
-          <el-input v-model="form.permPattern" placeholder="如：system:user:delete" />
-          <div class="form-tip">支持通配符 *，如：system:user:*</div>
+          <el-input
+            v-model="form.permPattern"
+            placeholder="如：system:user:delete"
+          />
+          <div class="form-tip">
+            支持通配符 *，如：system:user:*
+          </div>
         </el-form-item>
         <el-form-item label="API路径匹配">
-          <el-input v-model="form.apiPattern" placeholder="如：/system/user/*" />
-          <div class="form-tip">支持通配符 *，如：/system/user/*</div>
+          <el-input
+            v-model="form.apiPattern"
+            placeholder="如：/system/user/*"
+          />
+          <div class="form-tip">
+            支持通配符 *，如：/system/user/*
+          </div>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="form.enabled" :active-value="1" :inactive-value="0" />
+          <el-switch
+            v-model="form.enabled"
+            :active-value="1"
+            :inactive-value="0"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saveLoading" @click="handleSave">保存</el-button>
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saveLoading"
+          @click="handleSave"
+        >
+          保存
+        </el-button>
       </template>
     </el-dialog>
   </div>

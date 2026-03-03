@@ -285,7 +285,10 @@ onMounted(() => {
                     class="w-7 h-7 rounded-lg flex items-center justify-center"
                     :class="`bg-${item.color}-100 dark:bg-${item.color}-900/30`"
                   >
-                    <el-icon class="text-sm" :class="`text-${item.color}-500`">
+                    <el-icon
+                      class="text-sm"
+                      :class="`text-${item.color}-500`"
+                    >
                       <component :is="item.icon" />
                     </el-icon>
                   </div>
@@ -330,7 +333,10 @@ onMounted(() => {
                     class="w-7 h-7 rounded-lg flex items-center justify-center"
                     :class="`bg-${item.color}-100 dark:bg-${item.color}-900/30`"
                   >
-                    <el-icon class="text-sm" :class="`text-${item.color}-500`">
+                    <el-icon
+                      class="text-sm"
+                      :class="`text-${item.color}-500`"
+                    >
                       <component :is="item.icon" />
                     </el-icon>
                   </div>
@@ -346,7 +352,9 @@ onMounted(() => {
 
             <!-- 权限指令示例 -->
             <div class="mt-4 p-3 rounded-lg bg-slate-100/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">权限指令示例：</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                权限指令示例：
+              </p>
               <code class="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">
                 v-permission="'system:user:create'"
               </code>

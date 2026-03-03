@@ -58,7 +58,10 @@ const handleSubmit = async () => {
 
 <template>
   <div class="profile-password p-6">
-    <el-card shadow="never" class="max-w-xl">
+    <el-card
+      shadow="never"
+      class="max-w-xl"
+    >
       <template #header>
         <div class="flex items-center gap-2">
           <el-icon class="text-orange-500">
@@ -85,7 +88,10 @@ const handleSubmit = async () => {
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="旧密码" prop="oldPassword">
+        <el-form-item
+          label="旧密码"
+          prop="oldPassword"
+        >
           <el-input
             v-model="form.oldPassword"
             type="password"
@@ -94,7 +100,10 @@ const handleSubmit = async () => {
           />
         </el-form-item>
 
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item
+          label="新密码"
+          prop="newPassword"
+        >
           <el-input
             v-model="form.newPassword"
             type="password"
@@ -103,7 +112,10 @@ const handleSubmit = async () => {
           />
         </el-form-item>
 
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item
+          label="确认密码"
+          prop="confirmPassword"
+        >
           <el-input
             v-model="confirmPassword"
             type="password"
@@ -113,7 +125,11 @@ const handleSubmit = async () => {
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :loading="saving" @click="handleSubmit">
+          <el-button
+            type="primary"
+            :loading="saving"
+            @click="handleSubmit"
+          >
             确认修改
           </el-button>
         </el-form-item>

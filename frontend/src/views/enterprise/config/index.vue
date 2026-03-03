@@ -265,7 +265,12 @@ onMounted(() => {
         class="grid-filter-form"
       >
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="配置键">
               <el-input
                 v-model="queryForm.configKey"
@@ -276,7 +281,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
             <el-form-item label="配置类型">
               <el-input
                 v-model="queryForm.configType"
@@ -287,7 +297,12 @@ onMounted(() => {
               />
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="24" :lg="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="24"
+            :lg="6"
+          >
             <el-form-item class="filter-actions">
               <el-button
                 type="primary"
