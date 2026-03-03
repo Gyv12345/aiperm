@@ -82,6 +82,10 @@ public class DeptService {
         SysDept entity = deptRepo.findById(id)
                 .orElseThrow(() -> new BusinessException("部门不存在"));
 
+        if (isRootDept(entity) && dto.getStatus() != null && !dto.getStatus().equals(entity.getStatus())) {
+            throw new BusinessException("顶级部门状态不能修改");
+        }
+
         // 校验部门名称是否重复
         if (deptRepo.existsByDeptNameAndParentIdExcludeId(dto.getDeptName(), dto.getParentId(), id)) {
             throw new BusinessException("同级部门名称已存在");
@@ -110,8 +114,10 @@ public class DeptService {
      */
     @Transactional
     public void delete(Long id) {
-        if (!deptRepo.existsById(id)) {
-            throw new BusinessException("部门不存在");
+        SysDept entity = deptRepo.findById(id)
+                .orElseThrow(() -> new BusinessException("部门不存在"));
+        if (isRootDept(entity)) {
+            throw new BusinessException("顶级部门不能删除");
         }
         if (deptRepo.hasChildren(id)) {
             throw new BusinessException("存在子部门，不能删除");
@@ -167,6 +173,10 @@ public class DeptService {
             }
         }
         return false;
+    }
+
+    private boolean isRootDept(SysDept dept) {
+        return dept.getParentId() != null && dept.getParentId() == 0L;
     }
 
     private String getCurrentUsername() {

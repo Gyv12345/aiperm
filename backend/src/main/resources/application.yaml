@@ -6,7 +6,6 @@ server:
     # 修复 macOS 上的 SO_LINGER socket 选项问题
     connection-timeout: 20s
     keep-alive-timeout: 60s
-
 spring:
   application:
     name: aiperm
@@ -25,6 +24,8 @@ spring:
       charset: UTF-8
       enabled: true
       force: true
+  profiles:
+    active: dev
 
 # Sa-Token配置
 sa-token:

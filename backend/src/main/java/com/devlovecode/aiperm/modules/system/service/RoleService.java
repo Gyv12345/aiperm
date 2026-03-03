@@ -76,8 +76,9 @@ public class RoleService {
         SysRole entity = roleRepo.findById(id)
                 .orElseThrow(() -> new BusinessException("角色不存在"));
 
-        if (roleRepo.isBuiltin(id)) {
-            throw new BusinessException("内置角色不能修改");
+        boolean isBuiltin = roleRepo.isBuiltin(id);
+        if (isBuiltin && dto.getStatus() != null && !dto.getStatus().equals(entity.getStatus())) {
+            throw new BusinessException("超级管理员角色状态不能修改");
         }
 
         if (roleRepo.existsByRoleCodeExcludeId(dto.getRoleCode(), id)) {
@@ -106,7 +107,7 @@ public class RoleService {
             throw new BusinessException("角色不存在");
         }
         if (roleRepo.isBuiltin(id)) {
-            throw new BusinessException("内置角色不能删除");
+            throw new BusinessException("超级管理员角色不能删除");
         }
         if (roleRepo.isUsedByUser(id)) {
             throw new BusinessException("角色已分配给用户，不能删除");

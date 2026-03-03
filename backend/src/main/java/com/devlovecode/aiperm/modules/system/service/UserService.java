@@ -17,7 +17,9 @@ import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -139,6 +141,19 @@ public class UserService {
 
         if (userRepo.existsByUsernameExcludeId(dto.getUsername(), id)) {
             throw new BusinessException("用户名已存在");
+        }
+
+        if (userRepo.isAdmin(id)) {
+            if (!Objects.equals(entity.getDeptId(), dto.getDeptId())) {
+                throw new BusinessException("超级管理员的部门不能修改");
+            }
+
+            if (dto.getRoleIds() != null) {
+                List<Long> currentRoleIds = userRepo.findRoleIdsByUserId(id);
+                if (!new HashSet<>(currentRoleIds).equals(new HashSet<>(dto.getRoleIds()))) {
+                    throw new BusinessException("超级管理员的角色不能修改");
+                }
+            }
         }
 
         entity.setUsername(dto.getUsername());
