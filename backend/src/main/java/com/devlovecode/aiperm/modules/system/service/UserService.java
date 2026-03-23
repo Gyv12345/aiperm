@@ -5,9 +5,6 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
-import com.devlovecode.aiperm.modules.system.entity.SysDept;
-import com.devlovecode.aiperm.modules.system.entity.SysPost;
-import com.devlovecode.aiperm.modules.system.entity.SysRole;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.DeptRepository;
 import com.devlovecode.aiperm.modules.system.repository.PostRepository;
@@ -15,12 +12,15 @@ import com.devlovecode.aiperm.modules.system.repository.RoleRepository;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -35,11 +35,11 @@ public class UserService {
      * 分页查询
      */
     public PageResult<UserVO> queryPage(UserDTO dto) {
-        PageResult<SysUser> result = userRepo.queryPage(
+        Page<SysUser> jpaPage = userRepo.queryPage(
                 dto.getUsername(), dto.getPhone(), dto.getDeptId(), dto.getStatus(),
                 dto.getPage(), dto.getPageSize()
         );
-        return result.map(this::toVO);
+        return PageResult.fromJpaPage(jpaPage).map(this::toVO);
     }
 
     /**
@@ -122,8 +122,9 @@ public class UserService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        userRepo.insert(entity);
+        userRepo.save(entity);
 
         // 创建角色关联
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
@@ -168,8 +169,9 @@ public class UserService {
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        userRepo.update(entity);
+        userRepo.save(entity);
 
         // 更新角色关联
         if (dto.getRoleIds() != null) {
@@ -188,7 +190,7 @@ public class UserService {
         if (userRepo.isAdmin(id)) {
             throw new BusinessException("不能删除管理员用户");
         }
-        userRepo.deleteById(id);
+        userRepo.softDelete(id, LocalDateTime.now());
     }
 
     /**
@@ -204,7 +206,7 @@ public class UserService {
                 .filter(id -> !userRepo.isAdmin(id))
                 .toList();
         if (!toDelete.isEmpty()) {
-            userRepo.deleteByIds(toDelete);
+            userRepo.softDeleteByIds(toDelete, LocalDateTime.now());
         }
     }
 
@@ -216,7 +218,7 @@ public class UserService {
         if (!userRepo.existsById(id)) {
             throw new BusinessException("用户不存在");
         }
-        userRepo.updatePassword(id, BCrypt.hashpw(newPassword));
+        userRepo.updatePassword(id, BCrypt.hashpw(newPassword), LocalDateTime.now());
     }
 
     /**
@@ -230,7 +232,7 @@ public class UserService {
         if (userRepo.isAdmin(id)) {
             throw new BusinessException("不能修改管理员用户状态");
         }
-        userRepo.updateStatus(id, status);
+        userRepo.updateStatus(id, status, LocalDateTime.now());
     }
 
     private String getCurrentUsername() {

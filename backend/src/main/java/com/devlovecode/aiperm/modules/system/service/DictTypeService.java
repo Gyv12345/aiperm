@@ -8,9 +8,11 @@ import com.devlovecode.aiperm.modules.system.entity.SysDictType;
 import com.devlovecode.aiperm.modules.system.repository.DictTypeRepository;
 import com.devlovecode.aiperm.modules.system.vo.DictTypeVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,11 +26,11 @@ public class DictTypeService {
      * 分页查询
      */
     public PageResult<DictTypeVO> queryPage(DictTypeDTO dto) {
-        PageResult<SysDictType> result = dictTypeRepo.queryPage(
+        Page<SysDictType> jpaPage = dictTypeRepo.queryPage(
                 dto.getDictName(), dto.getDictType(), dto.getStatus(),
                 dto.getPage(), dto.getPageSize()
         );
-        return result.map(this::toVO);
+        return PageResult.fromJpaPage(jpaPage).map(this::toVO);
     }
 
     /**
@@ -56,13 +58,12 @@ public class DictTypeService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        dictTypeRepo.insert(entity);
+        dictTypeRepo.save(entity);
 
-        // 获取自增ID
-        return dictTypeRepo.findByDictType(dto.getDictType())
-                .map(SysDictType::getId)
-                .orElse(null);
+        // JPA save 后实体 ID 已自动填充
+        return entity.getId();
     }
 
     /**
@@ -83,8 +84,9 @@ public class DictTypeService {
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        dictTypeRepo.update(entity);
+        dictTypeRepo.save(entity);
     }
 
     /**
@@ -95,14 +97,14 @@ public class DictTypeService {
         if (!dictTypeRepo.existsById(id)) {
             throw new BusinessException("字典类型不存在");
         }
-        dictTypeRepo.deleteById(id);
+        dictTypeRepo.softDelete(id, LocalDateTime.now());
     }
 
     /**
      * 查询所有启用的字典类型
      */
     public List<DictTypeVO> findAllEnabled() {
-        return dictTypeRepo.findAllEnabled().stream()
+        return dictTypeRepo.findByStatusAndDeletedOrderByCreateTimeDesc(1, 0).stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
     }

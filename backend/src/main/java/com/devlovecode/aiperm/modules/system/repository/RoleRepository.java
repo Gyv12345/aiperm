@@ -1,7 +1,11 @@
 package com.devlovecode.aiperm.modules.system.repository;
 
 import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.system.entity.SysRole;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -50,4 +54,21 @@ public interface RoleRepository extends BaseJpaRepository<SysRole> {
         ON DUPLICATE KEY UPDATE deleted = 0, create_time = :createTime
         """, nativeQuery = true)
     void insertRoleMenu(@Param("roleId") Long roleId, @Param("menuId") Long menuId, @Param("createTime") LocalDateTime createTime);
+
+    /**
+     * 检查是否为内置角色（超级管理员）
+     */
+    @Query("SELECT COUNT(r) > 0 FROM SysRole r WHERE r.id = :id AND r.roleCode = 'admin' AND r.deleted = 0")
+    boolean isBuiltin(@Param("id") Long id);
+
+    /**
+     * 分页查询
+     */
+    default Page<SysRole> queryPage(String roleName, String roleCode, Integer status, int pageNum, int pageSize) {
+        return findAll(SpecificationUtils.and(
+                SpecificationUtils.like("roleName", roleName),
+                SpecificationUtils.like("roleCode", roleCode),
+                SpecificationUtils.eq("status", status)
+        ), PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
+    }
 }

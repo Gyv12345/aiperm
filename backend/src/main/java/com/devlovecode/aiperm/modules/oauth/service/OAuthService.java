@@ -63,7 +63,7 @@ public class OAuthService {
         }
 
         StpUtil.login(user.getId());
-        userRepo.updateLoginInfo(user.getId(), "127.0.0.1");
+        userRepo.updateLoginInfo(user.getId(), "127.0.0.1", LocalDateTime.now());
         userOauthRepo.updateLastLoginTime(binding.getId(), LocalDateTime.now());
 
         LoginVO.UserInfo loginUserInfo = LoginVO.UserInfo.builder()

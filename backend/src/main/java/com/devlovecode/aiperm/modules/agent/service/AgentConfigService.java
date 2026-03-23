@@ -6,6 +6,7 @@ import com.devlovecode.aiperm.modules.agent.repository.AgentConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +25,12 @@ public class AgentConfigService {
     }
 
     public void updateConfig(String key, String value) {
-        configRepo.updateValue(key, value);
+        configRepo.updateValue(key, value, LocalDateTime.now());
     }
 
     public int getCacheCount() {
         // 简单统计，实际可以用 SQL COUNT
-        return cacheRepo.findByUserId(0L).size();
+        return cacheRepo.findByUserIdAndDeleted(0L, 0).size();
     }
 
     public void clearCache() {

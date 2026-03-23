@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class MenuService {
      * 查询菜单树
      */
     public List<SysMenu> getMenuTree() {
-        List<SysMenu> allMenus = menuRepo.findAllOrderBySort();
+        List<SysMenu> allMenus = menuRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
         return buildTree(allMenus, 0L);
     }
 
@@ -32,7 +33,7 @@ public class MenuService {
      * 查询所有菜单
      */
     public List<SysMenu> listAll() {
-        return menuRepo.findAllOrderBySort();
+        return menuRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
     }
 
     /**
@@ -47,7 +48,7 @@ public class MenuService {
      * 查询子菜单
      */
     public List<SysMenu> listByParentId(Long parentId) {
-        return menuRepo.findByParentId(parentId);
+        return menuRepo.findByParentIdOrderBySortAsc(parentId);
     }
 
     /**
@@ -76,8 +77,9 @@ public class MenuService {
         entity.setPermission(dto.getPermission());
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        menuRepo.insert(entity);
+        menuRepo.save(entity);
     }
 
     /**
@@ -113,8 +115,9 @@ public class MenuService {
         entity.setPermission(dto.getPermission());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        menuRepo.update(entity);
+        menuRepo.save(entity);
     }
 
     /**
@@ -128,7 +131,7 @@ public class MenuService {
         if (menuRepo.hasChildren(id)) {
             throw new BusinessException("存在子菜单，不能删除");
         }
-        menuRepo.deleteById(id);
+        menuRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========
@@ -162,7 +165,7 @@ public class MenuService {
         if (id.equals(targetParentId)) {
             return true;
         }
-        List<SysMenu> allMenus = menuRepo.findAllOrderBySort();
+        List<SysMenu> allMenus = menuRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
         return isChildRecursive(allMenus, id, targetParentId);
     }
 

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 @RequiredArgsConstructor
 public class EmailLoginStrategy implements LoginStrategy {
@@ -42,7 +44,7 @@ public class EmailLoginStrategy implements LoginStrategy {
         }
 
         StpUtil.login(user.getId());
-        userRepo.updateLoginInfo(user.getId(), ip);
+        userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
 
         return LoginVO.builder()
                 .token(StpUtil.getTokenValue())

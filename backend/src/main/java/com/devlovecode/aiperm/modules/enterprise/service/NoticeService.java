@@ -3,14 +3,19 @@ package com.devlovecode.aiperm.modules.enterprise.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.enterprise.dto.NoticeDTO;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysNotice;
 import com.devlovecode.aiperm.modules.enterprise.repository.NoticeRepository;
 import com.devlovecode.aiperm.modules.enterprise.vo.NoticeVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,10 +29,14 @@ public class NoticeService {
      * 分页查询
      */
     public PageResult<NoticeVO> queryPage(NoticeDTO dto) {
-        PageResult<SysNotice> result = noticeRepo.queryPage(
-                dto.getTitle(), dto.getType(), dto.getStatus(),
-                dto.getPage(), dto.getPageSize()
+        Specification<SysNotice> spec = SpecificationUtils.and(
+                SpecificationUtils.like("title", dto.getTitle()),
+                SpecificationUtils.eq("type", dto.getType()),
+                SpecificationUtils.eq("status", dto.getStatus())
         );
+        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        Page<SysNotice> page = noticeRepo.findAll(spec, pageRequest);
+        PageResult<SysNotice> result = PageResult.fromJpaPage(page);
         return result.map(this::toVO);
     }
 
@@ -44,7 +53,8 @@ public class NoticeService {
      * 查询已发布公告列表
      */
     public List<NoticeVO> findPublished(Integer type, int limit) {
-        return noticeRepo.findPublished(type, limit).stream()
+        return noticeRepo.findPublished(type).stream()
+                .limit(limit)
                 .map(this::toVO)
                 .collect(Collectors.toList());
     }
@@ -60,17 +70,11 @@ public class NoticeService {
         entity.setType(dto.getType() != null ? dto.getType() : 1);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        noticeRepo.insert(entity);
+        noticeRepo.save(entity);
 
-        // 获取自增ID
-        return noticeRepo.findById(noticeRepo.findAll().stream()
-                .filter(n -> n.getTitle().equals(dto.getTitle()))
-                .findFirst()
-                .map(SysNotice::getId)
-                .orElse(null))
-                .map(SysNotice::getId)
-                .orElse(null);
+        return entity.getId();
     }
 
     /**
@@ -86,8 +90,9 @@ public class NoticeService {
         entity.setType(dto.getType());
         entity.setStatus(dto.getStatus());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        noticeRepo.update(entity);
+        noticeRepo.save(entity);
     }
 
     /**
@@ -102,7 +107,8 @@ public class NoticeService {
             throw new BusinessException("公告已发布");
         }
 
-        noticeRepo.publish(id, getCurrentUsername());
+        LocalDateTime now = LocalDateTime.now();
+        noticeRepo.publish(id, getCurrentUsername(), now, now);
     }
 
     /**
@@ -117,7 +123,7 @@ public class NoticeService {
             throw new BusinessException("公告已是草稿状态");
         }
 
-        noticeRepo.withdraw(id, getCurrentUsername());
+        noticeRepo.withdraw(id, getCurrentUsername(), LocalDateTime.now());
     }
 
     /**
@@ -128,7 +134,7 @@ public class NoticeService {
         if (!noticeRepo.existsById(id)) {
             throw new BusinessException("公告不存在");
         }
-        noticeRepo.deleteById(id);
+        noticeRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========

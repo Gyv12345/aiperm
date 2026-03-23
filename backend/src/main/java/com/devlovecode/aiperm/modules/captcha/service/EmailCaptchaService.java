@@ -69,7 +69,7 @@ public class EmailCaptchaService implements CaptchaService {
             captchaLogRepo.save(logRecord);
             throw new BusinessException("邮件发送失败：" + e.getMessage());
         }
-        captchaLogRepo.insert(logRecord);
+        captchaLogRepo.save(logRecord);
 
         int expireMinutes = config.getExpireMinutes() != null ? config.getExpireMinutes() : 5;
         String cacheKey = CAPTCHA_KEY_PREFIX + target + ":" + scene.getCode();

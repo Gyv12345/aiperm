@@ -38,7 +38,7 @@ public class LlmProviderService {
     @Transactional
     public Long create(LlmProviderDTO dto) {
         // 检查名称是否已存在
-        if (providerRepo.findByName(dto.getName()).isPresent()) {
+        if (providerRepo.findByNameAndDeleted(dto.getName(), 0).isPresent()) {
             throw new BusinessException("提供商名称已存在");
         }
 
@@ -54,13 +54,14 @@ public class LlmProviderService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setSort(dto.getSort() != null ? dto.getSort() : 0);
         entity.setRemark(dto.getRemark());
+        entity.setCreateTime(LocalDateTime.now());
 
-        providerRepo.insert(entity);
+        providerRepo.save(entity);
 
         // 如果设为默认，清除其他默认
         if (Boolean.TRUE.equals(entity.getIsDefault())) {
-            providerRepo.clearDefault();
-            providerRepo.setDefault(entity.getId());
+            providerRepo.clearDefault(LocalDateTime.now(), 0);
+            providerRepo.setDefault(entity.getId(), LocalDateTime.now(), 0);
         }
 
         return entity.getId();
@@ -81,13 +82,14 @@ public class LlmProviderService {
         entity.setStatus(dto.getStatus());
         entity.setSort(dto.getSort());
         entity.setRemark(dto.getRemark());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        providerRepo.update(entity);
+        providerRepo.save(entity);
 
         // 处理默认设置
         if (Boolean.TRUE.equals(dto.getIsDefault()) && !Boolean.TRUE.equals(entity.getIsDefault())) {
-            providerRepo.clearDefault();
-            providerRepo.setDefault(id);
+            providerRepo.clearDefault(LocalDateTime.now(), 0);
+            providerRepo.setDefault(id, LocalDateTime.now(), 0);
         }
     }
 
@@ -100,7 +102,7 @@ public class LlmProviderService {
             throw new BusinessException("不能删除默认提供商");
         }
 
-        providerRepo.deleteById(id);
+        providerRepo.softDelete(id, LocalDateTime.now());
     }
 
     @Transactional
@@ -109,8 +111,8 @@ public class LlmProviderService {
             throw new BusinessException("提供商不存在");
         }
 
-        providerRepo.clearDefault();
-        providerRepo.setDefault(id);
+        providerRepo.clearDefault(LocalDateTime.now(), 0);
+        providerRepo.setDefault(id, LocalDateTime.now(), 0);
     }
 
     private String getDefaultBaseUrl(String name, String protocol) {

@@ -53,7 +53,8 @@ public class SessionService {
             entity.setChannel(channel);
             entity.setStatus(0);
             entity.setLastActive(java.time.LocalDateTime.now());
-            sessionRepo.insert(entity);
+            entity.setCreateTime(java.time.LocalDateTime.now());
+            sessionRepo.save(entity);
 
             log.info("Created agent session: {} for user: {}", sessionId, userId);
             return sessionId;
@@ -85,7 +86,7 @@ public class SessionService {
 
             int timeout = configRepo.getValueAsInt("session_timeout", 30);
             redis.expire(key, timeout, TimeUnit.MINUTES);
-            sessionRepo.updateLastActive(sessionId);
+            sessionRepo.updateLastActive(sessionId, java.time.LocalDateTime.now(), java.time.LocalDateTime.now());
 
             return data;
         } catch (Exception e) {
@@ -180,7 +181,7 @@ public class SessionService {
      */
     public void deleteSession(String sessionId) {
         redis.delete(SESSION_KEY_PREFIX + sessionId);
-        sessionRepo.expireSession(sessionId);
+        sessionRepo.expireSession(sessionId, java.time.LocalDateTime.now());
     }
 
     // === 内部类 ===

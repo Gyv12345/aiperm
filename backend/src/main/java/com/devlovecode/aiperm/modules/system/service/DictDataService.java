@@ -13,6 +13,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class DictDataService {
      */
     @Cacheable(key = "#dictType")
     public List<DictDataVO> listByDictType(String dictType) {
-        return dictDataRepo.findByDictType(dictType).stream()
+        return dictDataRepo.findByDictTypeAndStatusAndDeletedOrderBySortAsc(dictType, 1, 0).stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
     }
@@ -48,8 +49,9 @@ public class DictDataService {
         entity.setListClass(dto.getListClass() != null ? dto.getListClass() : "");
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        dictDataRepo.insert(entity);
+        dictDataRepo.save(entity);
     }
 
     /**
@@ -68,8 +70,9 @@ public class DictDataService {
         entity.setListClass(dto.getListClass() != null ? dto.getListClass() : "");
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        dictDataRepo.update(entity);
+        dictDataRepo.save(entity);
     }
 
     /**
@@ -81,7 +84,7 @@ public class DictDataService {
         if (!dictDataRepo.existsById(id)) {
             throw new BusinessException("字典数据不存在");
         }
-        dictDataRepo.deleteById(id);
+        dictDataRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========

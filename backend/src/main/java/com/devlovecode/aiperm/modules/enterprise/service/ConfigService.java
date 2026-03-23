@@ -3,13 +3,19 @@ package com.devlovecode.aiperm.modules.enterprise.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.enterprise.dto.ConfigDTO;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysConfig;
 import com.devlovecode.aiperm.modules.enterprise.repository.ConfigRepository;
 import com.devlovecode.aiperm.modules.enterprise.vo.ConfigVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +27,13 @@ public class ConfigService {
      * 分页查询
      */
     public PageResult<ConfigVO> queryPage(ConfigDTO dto) {
-        PageResult<SysConfig> result = configRepo.queryPage(
-                dto.getConfigKey(), dto.getConfigType(),
-                dto.getPage(), dto.getPageSize()
+        Specification<SysConfig> spec = SpecificationUtils.and(
+                SpecificationUtils.like("configKey", dto.getConfigKey()),
+                SpecificationUtils.eq("configType", dto.getConfigType())
         );
+        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        Page<SysConfig> page = configRepo.findAll(spec, pageRequest);
+        PageResult<SysConfig> result = PageResult.fromJpaPage(page);
         return result.map(this::toVO);
     }
 
@@ -62,13 +71,11 @@ public class ConfigService {
         entity.setConfigType(dto.getConfigType());
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        configRepo.insert(entity);
+        configRepo.save(entity);
 
-        // 获取自增ID
-        return configRepo.findByConfigKey(dto.getConfigKey())
-                .map(SysConfig::getId)
-                .orElse(null);
+        return entity.getId();
     }
 
     /**
@@ -89,8 +96,9 @@ public class ConfigService {
         entity.setConfigType(dto.getConfigType());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        configRepo.update(entity);
+        configRepo.save(entity);
     }
 
     /**
@@ -101,7 +109,7 @@ public class ConfigService {
         if (!configRepo.existsById(id)) {
             throw new BusinessException("系统配置不存在");
         }
-        configRepo.deleteById(id);
+        configRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========

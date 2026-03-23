@@ -112,7 +112,7 @@ public class EmbeddingService {
         if (defaultId > 0) {
             return providerRepo.findById(defaultId).orElse(null);
         }
-        return providerRepo.findDefault().orElse(null);
+        return providerRepo.findByIsDefaultAndStatusAndDeleted(true, 1, 0).orElse(null);
     }
 
     private String getEmbeddingModel(SysLlmProvider provider) {

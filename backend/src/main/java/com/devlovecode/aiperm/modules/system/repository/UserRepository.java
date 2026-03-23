@@ -1,7 +1,11 @@
 package com.devlovecode.aiperm.modules.system.repository;
 
 import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,56 +18,72 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends BaseJpaRepository<SysUser> {
 
-    /**
-     * 根据用户名查询
-     */
     Optional<SysUser> findByUsername(String username);
 
-    /**
-     * 根据手机号查询
-     */
     Optional<SysUser> findByPhone(String phone);
 
-    /**
-     * 根据邮箱查询
-     */
     Optional<SysUser> findByEmail(String email);
 
-    /**
-     * 检查用户名是否存在
-     */
     boolean existsByUsername(String username);
 
-    /**
-     * 检查用户名是否存在（排除指定ID）
-     */
     @Query("SELECT COUNT(u) > 0 FROM SysUser u WHERE u.username = :username AND u.id != :id AND u.deleted = 0")
     boolean existsByUsernameExcludeId(@Param("username") String username, @Param("id") Long excludeId);
 
-    /**
-     * 更新密码
-     */
     @Modifying
     @Query("UPDATE SysUser u SET u.password = :password, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
     int updatePassword(@Param("id") Long id, @Param("password") String newPassword, @Param("updateTime") LocalDateTime updateTime);
 
-    /**
-     * 更新状态
-     */
     @Modifying
     @Query("UPDATE SysUser u SET u.status = :status, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
     int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateTime") LocalDateTime updateTime);
 
-    /**
-     * 更新最后登录信息
-     */
     @Modifying
     @Query("UPDATE SysUser u SET u.lastLoginIp = :loginIp, u.lastLoginTime = :loginTime WHERE u.id = :id AND u.deleted = 0")
     int updateLoginInfo(@Param("id") Long id, @Param("loginIp") String loginIp, @Param("loginTime") LocalDateTime loginTime);
 
-    /**
-     * 查询用户的角色ID列表（通过用户角色关联表）
-     */
+    @Query("SELECT COUNT(u) > 0 FROM SysUser u WHERE u.id = :id AND u.username = 'admin' AND u.deleted = 0")
+    boolean isAdmin(@Param("id") Long id);
+
     @Query("SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId AND ur.deleted = 0")
     List<Long> findRoleIdsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 分页查询
+     */
+    default Page<SysUser> queryPage(String username, String phone, Long deptId, Integer status, int pageNum, int pageSize) {
+        return findAll(SpecificationUtils.and(
+                SpecificationUtils.like("username", username),
+                SpecificationUtils.like("phone", phone),
+                SpecificationUtils.eq("deptId", deptId),
+                SpecificationUtils.eq("status", status)
+        ), PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
+    }
+
+    /**
+     * 更新用户的角色关联
+     */
+    @Modifying
+    @Query(value = """
+        UPDATE sys_user_role SET deleted = 1 WHERE user_id = :userId
+        """, nativeQuery = true)
+    void softDeleteUserRoles(@Param("userId") Long userId);
+
+    @Modifying
+    @Query(value = """
+        INSERT INTO sys_user_role (user_id, role_id, deleted, create_time, create_by)
+        VALUES (:userId, :roleId, 0, :createTime, :createBy)
+        """, nativeQuery = true)
+    void insertUserRole(@Param("userId") Long userId, @Param("roleId") Long roleId,
+                        @Param("createTime") LocalDateTime createTime, @Param("createBy") String createBy);
+
+    default void updateUserRoles(Long userId, List<Long> roleIds, String createBy) {
+        softDeleteUserRoles(userId);
+        if (roleIds == null || roleIds.isEmpty()) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (Long roleId : roleIds) {
+            insertUserRole(userId, roleId, now, createBy);
+        }
+    }
 }

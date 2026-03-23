@@ -1,7 +1,11 @@
 package com.devlovecode.aiperm.modules.system.repository;
 
 import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.system.entity.SysDictType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -32,4 +36,15 @@ public interface DictTypeRepository extends BaseJpaRepository<SysDictType> {
      * 查询启用的字典类型列表
      */
     List<SysDictType> findByStatusAndDeletedOrderByCreateTimeDesc(Integer status, Integer deleted);
+
+    /**
+     * 分页查询
+     */
+    default Page<SysDictType> queryPage(String dictName, String dictType, Integer status, int pageNum, int pageSize) {
+        return findAll(SpecificationUtils.and(
+                SpecificationUtils.like("dictName", dictName),
+                SpecificationUtils.like("dictType", dictType),
+                SpecificationUtils.eq("status", status)
+        ), PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
+    }
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class DeptService {
      * 查询部门树
      */
     public List<SysDept> getDeptTree() {
-        List<SysDept> allDepts = deptRepo.findAllOrderBySort();
+        List<SysDept> allDepts = deptRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
         return buildTree(allDepts, 0L);
     }
 
@@ -32,7 +33,7 @@ public class DeptService {
      * 查询所有部门
      */
     public List<SysDept> listAll() {
-        return deptRepo.findAllOrderBySort();
+        return deptRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
     }
 
     /**
@@ -47,7 +48,7 @@ public class DeptService {
      * 查询子部门
      */
     public List<SysDept> listByParentId(Long parentId) {
-        return deptRepo.findByParentId(parentId);
+        return deptRepo.findByParentIdOrderBySortAsc(parentId);
     }
 
     /**
@@ -70,8 +71,9 @@ public class DeptService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        deptRepo.insert(entity);
+        deptRepo.save(entity);
     }
 
     /**
@@ -105,8 +107,9 @@ public class DeptService {
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        deptRepo.update(entity);
+        deptRepo.save(entity);
     }
 
     /**
@@ -122,7 +125,7 @@ public class DeptService {
         if (deptRepo.hasChildren(id)) {
             throw new BusinessException("存在子部门，不能删除");
         }
-        deptRepo.deleteById(id);
+        deptRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========
@@ -157,7 +160,7 @@ public class DeptService {
             return true;
         }
         // 收集所有子部门ID
-        List<SysDept> allDepts = deptRepo.findAllOrderBySort();
+        List<SysDept> allDepts = deptRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
         return isChildRecursive(allDepts, id, targetParentId);
     }
 

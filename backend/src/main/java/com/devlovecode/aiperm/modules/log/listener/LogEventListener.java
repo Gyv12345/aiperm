@@ -44,7 +44,7 @@ public class LogEventListener {
                 operLog.setOperUser("anonymous");
             }
 
-            operLogRepo.insert(operLog);
+            operLogRepo.save(operLog);
         } catch (Exception e) {
             log.error("保存操作日志失败", e);
         }

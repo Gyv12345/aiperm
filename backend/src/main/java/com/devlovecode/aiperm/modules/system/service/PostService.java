@@ -7,9 +7,11 @@ import com.devlovecode.aiperm.modules.system.dto.PostDTO;
 import com.devlovecode.aiperm.modules.system.entity.SysPost;
 import com.devlovecode.aiperm.modules.system.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +25,8 @@ public class PostService {
      * 分页查询
      */
     public PageResult<SysPost> queryPage(PostDTO dto) {
-        return postRepo.queryPage(dto.getPostName(), dto.getPostCode(), dto.getStatus(), dto.getPage(), dto.getPageSize());
+        Page<SysPost> jpaPage = postRepo.queryPage(dto.getPostName(), dto.getPostCode(), dto.getStatus(), dto.getPage(), dto.getPageSize());
+        return PageResult.fromJpaPage(jpaPage);
     }
 
     /**
@@ -57,8 +60,9 @@ public class PostService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        postRepo.insert(entity);
+        postRepo.save(entity);
     }
 
     /**
@@ -79,8 +83,9 @@ public class PostService {
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        postRepo.update(entity);
+        postRepo.save(entity);
     }
 
     /**
@@ -91,7 +96,7 @@ public class PostService {
         if (!postRepo.existsById(id)) {
             throw new BusinessException("岗位不存在");
         }
-        postRepo.deleteById(id);
+        postRepo.softDelete(id, LocalDateTime.now());
     }
 
     private String getCurrentUsername() {

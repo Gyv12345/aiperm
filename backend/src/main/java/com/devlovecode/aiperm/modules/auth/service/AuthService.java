@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,7 @@ public class AuthService {
         StpUtil.login(user.getId());
 
         // 更新登录信息
-        userRepo.updateLoginInfo(user.getId(), "127.0.0.1");
+        userRepo.updateLoginInfo(user.getId(), "127.0.0.1", LocalDateTime.now());
 
         // 返回登录信息
         return LoginVO.builder()

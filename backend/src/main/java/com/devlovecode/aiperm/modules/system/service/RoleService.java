@@ -7,9 +7,11 @@ import com.devlovecode.aiperm.modules.system.dto.RoleDTO;
 import com.devlovecode.aiperm.modules.system.entity.SysRole;
 import com.devlovecode.aiperm.modules.system.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,7 +24,8 @@ public class RoleService {
      * 分页查询
      */
     public PageResult<SysRole> queryPage(RoleDTO dto) {
-        return roleRepo.queryPage(dto.getRoleName(), dto.getRoleCode(), dto.getStatus(), dto.getPage(), dto.getPageSize());
+        Page<SysRole> jpaPage = roleRepo.queryPage(dto.getRoleName(), dto.getRoleCode(), dto.getStatus(), dto.getPage(), dto.getPageSize());
+        return PageResult.fromJpaPage(jpaPage);
     }
 
     /**
@@ -64,8 +67,9 @@ public class RoleService {
         entity.setDataScope(dto.getDataScope() != null ? dto.getDataScope() : 1);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        roleRepo.insert(entity);
+        roleRepo.save(entity);
     }
 
     /**
@@ -94,8 +98,9 @@ public class RoleService {
         }
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        roleRepo.update(entity);
+        roleRepo.save(entity);
     }
 
     /**
@@ -113,9 +118,9 @@ public class RoleService {
             throw new BusinessException("角色已分配给用户，不能删除");
         }
         // 删除角色菜单关联
-        roleRepo.deleteRoleMenus(id);
+        roleRepo.deleteRoleMenus(id, LocalDateTime.now());
         // 删除角色
-        roleRepo.deleteById(id);
+        roleRepo.softDelete(id, LocalDateTime.now());
     }
 
     /**
@@ -127,13 +132,15 @@ public class RoleService {
             throw new BusinessException("角色不存在");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+
         // 先删除旧的关联
-        roleRepo.deleteRoleMenus(roleId);
+        roleRepo.deleteRoleMenus(roleId, now);
 
         // 添加新的关联
         if (menuIds != null && !menuIds.isEmpty()) {
             for (Long menuId : menuIds) {
-                roleRepo.insertRoleMenu(roleId, menuId);
+                roleRepo.insertRoleMenu(roleId, menuId, now);
             }
         }
     }

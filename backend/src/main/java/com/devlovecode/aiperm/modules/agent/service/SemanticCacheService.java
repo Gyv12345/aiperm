@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +48,7 @@ public class SemanticCacheService {
         }
 
         // 查询该用户的缓存
-        List<SysAgentCache> caches = cacheRepo.findByUserId(userId);
+        List<SysAgentCache> caches = cacheRepo.findByUserIdAndDeleted(userId, 0);
 
         SysAgentCache bestMatch = null;
         double bestScore = 0;
@@ -103,8 +104,9 @@ public class SemanticCacheService {
         cache.setQuestionHash(hashQuestion(question));
         cache.setAnswer(answer);
         cache.setEmbedding(floatsToBytes(embedding));
+        cache.setCreateTime(LocalDateTime.now());
 
-        cacheRepo.insert(cache);
+        cacheRepo.save(cache);
         log.debug("Stored semantic cache for question: {}", question);
     }
 

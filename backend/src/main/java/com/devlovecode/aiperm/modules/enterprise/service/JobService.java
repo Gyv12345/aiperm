@@ -3,13 +3,19 @@ package com.devlovecode.aiperm.modules.enterprise.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.enterprise.dto.JobDTO;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysJob;
 import com.devlovecode.aiperm.modules.enterprise.repository.JobRepository;
 import com.devlovecode.aiperm.modules.enterprise.vo.JobVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +27,14 @@ public class JobService {
      * 分页查询
      */
     public PageResult<JobVO> queryPage(JobDTO dto) {
-        PageResult<SysJob> result = jobRepo.queryPage(
-                dto.getJobName(), dto.getJobGroup(), dto.getStatus(),
-                dto.getPage(), dto.getPageSize()
+        Specification<SysJob> spec = SpecificationUtils.and(
+                SpecificationUtils.like("jobName", dto.getJobName()),
+                SpecificationUtils.like("jobGroup", dto.getJobGroup()),
+                SpecificationUtils.eq("status", dto.getStatus())
         );
+        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        Page<SysJob> page = jobRepo.findAll(spec, pageRequest);
+        PageResult<SysJob> result = PageResult.fromJpaPage(page);
         return result.map(this::toVO);
     }
 
@@ -50,11 +60,11 @@ public class JobService {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        jobRepo.insert(entity);
+        jobRepo.save(entity);
 
-        // 获取自增ID
-        return jobRepo.findById(jobRepo.count()).map(SysJob::getId).orElse(null);
+        return entity.getId();
     }
 
     /**
@@ -72,8 +82,9 @@ public class JobService {
         entity.setStatus(dto.getStatus());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
+        entity.setUpdateTime(LocalDateTime.now());
 
-        jobRepo.update(entity);
+        jobRepo.save(entity);
     }
 
     /**
@@ -84,7 +95,7 @@ public class JobService {
         if (!jobRepo.existsById(id)) {
             throw new BusinessException("定时任务不存在");
         }
-        jobRepo.deleteById(id);
+        jobRepo.softDelete(id, LocalDateTime.now());
     }
 
     /**
@@ -95,7 +106,7 @@ public class JobService {
         if (!jobRepo.existsById(id)) {
             throw new BusinessException("定时任务不存在");
         }
-        jobRepo.updateStatus(id, 0, getCurrentUsername());
+        jobRepo.updateStatus(id, 0, getCurrentUsername(), LocalDateTime.now());
     }
 
     /**
@@ -106,7 +117,7 @@ public class JobService {
         if (!jobRepo.existsById(id)) {
             throw new BusinessException("定时任务不存在");
         }
-        jobRepo.updateStatus(id, 1, getCurrentUsername());
+        jobRepo.updateStatus(id, 1, getCurrentUsername(), LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========

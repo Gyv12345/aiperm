@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,7 +67,7 @@ public class ProfileService {
         user.setAvatar(dto.getAvatar());
         user.setUpdateBy(user.getUsername());
 
-        userRepo.update(user);
+        userRepo.save(user);
     }
 
     /**
@@ -89,7 +90,7 @@ public class ProfileService {
         }
 
         // 更新密码
-        userRepo.updatePassword(userId, BCrypt.hashpw(dto.getNewPassword()));
+        userRepo.updatePassword(userId, BCrypt.hashpw(dto.getNewPassword()), LocalDateTime.now());
     }
 
     /**

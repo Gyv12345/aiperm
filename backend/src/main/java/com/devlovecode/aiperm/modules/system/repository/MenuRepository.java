@@ -58,6 +58,20 @@ public interface MenuRepository extends BaseJpaRepository<SysMenu> {
     List<SysMenu> findByStatusAndDeletedOrderByParentIdAscSortAsc(Integer status, Integer deleted);
 
     /**
+     * 查询所有启用的菜单（便捷方法）
+     */
+    default List<SysMenu> findAllEnabled() {
+        return findByStatusAndDeletedOrderByParentIdAscSortAsc(1, 0);
+    }
+
+    /**
+     * 根据ID列表查询菜单（便捷方法）
+     */
+    default List<SysMenu> findByIds(List<Long> ids) {
+        return findAllById(ids);
+    }
+
+    /**
      * 获取用户角色标识
      */
     @Query(value = """

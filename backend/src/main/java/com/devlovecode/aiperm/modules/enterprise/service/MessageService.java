@@ -3,14 +3,19 @@ package com.devlovecode.aiperm.modules.enterprise.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.enterprise.dto.MessageDTO;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysMessage;
 import com.devlovecode.aiperm.modules.enterprise.repository.MessageRepository;
 import com.devlovecode.aiperm.modules.enterprise.vo.MessageVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,10 +30,13 @@ public class MessageService {
      */
     public PageResult<MessageVO> queryPage(MessageDTO dto) {
         Long receiverId = getCurrentUserId();
-        PageResult<SysMessage> result = messageRepo.queryPage(
-                receiverId, dto.getIsRead(),
-                dto.getPage(), dto.getPageSize()
+        Specification<SysMessage> spec = SpecificationUtils.and(
+                SpecificationUtils.eq("receiverId", receiverId),
+                SpecificationUtils.eq("isRead", dto.getIsRead())
         );
+        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        Page<SysMessage> page = messageRepo.findAll(spec, pageRequest);
+        PageResult<SysMessage> result = PageResult.fromJpaPage(page);
         return result.map(this::toVO);
     }
 
@@ -46,7 +54,7 @@ public class MessageService {
      */
     public int getUnreadCount() {
         Long userId = getCurrentUserId();
-        return messageRepo.countUnread(userId);
+        return (int) messageRepo.countUnread(userId);
     }
 
     /**
@@ -61,15 +69,11 @@ public class MessageService {
         entity.setContent(dto.getContent());
         entity.setIsRead(0);
         entity.setCreateBy(getCurrentUsername());
+        entity.setCreateTime(LocalDateTime.now());
 
-        messageRepo.insert(entity);
+        messageRepo.save(entity);
 
-        // 返回消息ID（简化处理，通过查询获取）
-        return messageRepo.findByReceiverId(dto.getReceiverId()).stream()
-                .filter(m -> m.getTitle().equals(dto.getTitle()))
-                .findFirst()
-                .map(SysMessage::getId)
-                .orElse(null);
+        return entity.getId();
     }
 
     /**
@@ -86,7 +90,8 @@ public class MessageService {
             throw new BusinessException("无权操作此消息");
         }
 
-        messageRepo.markAsRead(id);
+        LocalDateTime now = LocalDateTime.now();
+        messageRepo.markAsRead(id, now, now);
     }
 
     /**
@@ -95,7 +100,8 @@ public class MessageService {
     @Transactional
     public int markAllAsRead() {
         Long userId = getCurrentUserId();
-        return messageRepo.markAllAsRead(userId);
+        LocalDateTime now = LocalDateTime.now();
+        return messageRepo.markAllAsRead(userId, now, now);
     }
 
     /**
@@ -106,7 +112,8 @@ public class MessageService {
         if (ids == null || ids.isEmpty()) {
             return 0;
         }
-        return messageRepo.markAsReadByIds(ids);
+        LocalDateTime now = LocalDateTime.now();
+        return messageRepo.markAsReadByIds(ids, now, now);
     }
 
     /**
@@ -123,7 +130,7 @@ public class MessageService {
             throw new BusinessException("无权操作此消息");
         }
 
-        messageRepo.deleteById(id);
+        messageRepo.softDelete(id, LocalDateTime.now());
     }
 
     // ========== 私有方法 ==========
