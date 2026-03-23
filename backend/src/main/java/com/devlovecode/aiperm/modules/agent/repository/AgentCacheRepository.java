@@ -1,50 +1,36 @@
 package com.devlovecode.aiperm.modules.agent.repository;
 
-import com.devlovecode.aiperm.common.repository.BaseRepository;
+import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
 import com.devlovecode.aiperm.modules.agent.entity.SysAgentCache;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Agent 语义缓存仓储
+ */
 @Repository
-public class AgentCacheRepository extends BaseRepository<SysAgentCache> {
+public interface AgentCacheRepository extends BaseJpaRepository<SysAgentCache> {
 
-    public AgentCacheRepository(JdbcClient db) {
-        super(db, "sys_agent_cache", SysAgentCache.class);
-    }
+    /**
+     * 根据用户ID查询缓存
+     */
+    List<SysAgentCache> findByUserIdAndDeleted(Long userId, Integer deleted);
 
-    public List<SysAgentCache> findByUserId(Long userId) {
-        String sql = "SELECT * FROM sys_agent_cache WHERE user_id = :userId AND deleted = 0";
-        return db.sql(sql).param("userId", userId).query(SysAgentCache.class).list();
-    }
+    /**
+     * 增加命中次数
+     */
+    @Modifying
+    @Query("UPDATE SysAgentCache c SET c.hitCount = c.hitCount + 1 WHERE c.id = :id")
+    int incrementHitCount(@Param("id") Long id);
 
-    public void insert(SysAgentCache cache) {
-        String sql = """
-            INSERT INTO sys_agent_cache (user_id, question_hash, question, answer, embedding, hit_count, deleted, version, create_time, create_by, update_time, update_by)
-            VALUES (:userId, :questionHash, :question, :answer, :embedding, 0, 0, 0, :createTime, :createBy, :updateTime, :updateBy)
-            """;
-        db.sql(sql)
-            .param("userId", cache.getUserId())
-            .param("questionHash", cache.getQuestionHash())
-            .param("question", cache.getQuestion())
-            .param("answer", cache.getAnswer())
-            .param("embedding", cache.getEmbedding())
-            .param("createTime", LocalDateTime.now())
-            .param("createBy", cache.getCreateBy())
-            .param("updateTime", LocalDateTime.now())
-            .param("updateBy", cache.getUpdateBy())
-            .update();
-    }
-
-    public void incrementHitCount(Long id) {
-        String sql = "UPDATE sys_agent_cache SET hit_count = hit_count + 1 WHERE id = :id";
-        db.sql(sql).param("id", id).update();
-    }
-
-    public int deleteStale(int daysUnused) {
-        String sql = "DELETE FROM sys_agent_cache WHERE hit_count = 0 AND create_time < DATE_SUB(NOW(), INTERVAL :days DAY)";
-        return db.sql(sql).param("days", daysUnused).update();
-    }
+    /**
+     * 删除陈旧缓存（未使用且超过指定天数）
+     */
+    @Modifying
+    @Query("DELETE FROM SysAgentCache c WHERE c.hitCount = 0 AND c.createTime < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)")
+    int deleteStale(@Param("days") int days);
 }

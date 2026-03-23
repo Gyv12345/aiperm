@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.approval.service;
 
 import com.devlovecode.aiperm.modules.approval.entity.SysApprovalInstance;
+import com.devlovecode.aiperm.modules.approval.entity.SysApprovalScene;
 import com.devlovecode.aiperm.modules.approval.repository.ApprovalInstanceRepository;
 import com.devlovecode.aiperm.modules.approval.repository.ApprovalSceneRepository;
 import com.devlovecode.aiperm.modules.approval.vo.ApprovalTodoOverviewVO;
@@ -35,10 +36,10 @@ public class ApprovalTodoOverviewService {
         SysImConfig config = imConfigRepo.findByPlatform(focusPlatform).orElse(null);
 
         boolean platformEnabled = config != null && config.getEnabled() != null && config.getEnabled() == 1;
-        boolean oauthBound = userOauthRepo.findByUserId(userId).stream()
+        boolean oauthBound = userOauthRepo.findByUserIdAndStatus(userId, 1).stream()
                 .map(SysUserOauth::getPlatform)
                 .anyMatch(p -> focusPlatform.equalsIgnoreCase(p));
-        int enabledSceneCount = approvalSceneRepo.countEnabledByPlatform(focusPlatform);
+        int enabledSceneCount = approvalSceneRepo.countByPlatformAndEnabled(focusPlatform, 1);
 
         ApprovalTodoDecision.Output decision = ApprovalTodoDecision.resolve(
                 new ApprovalTodoDecision.Input(platformEnabled, oauthBound, enabledSceneCount)
@@ -135,16 +136,18 @@ public class ApprovalTodoOverviewService {
         for (String platform : PLATFORM_ORDER) {
             ApprovalTodoOverviewVO.SceneCheck check = new ApprovalTodoOverviewVO.SceneCheck();
             check.setPlatform(platform);
-            int count = approvalSceneRepo.countEnabledByPlatform(platform);
+            int count = approvalSceneRepo.countByPlatformAndEnabled(platform, 1);
             check.setEnabledSceneCount(count);
-            check.setSampleSceneCode(approvalSceneRepo.findOneEnabledSceneCodeByPlatform(platform).orElse(null));
+            check.setSampleSceneCode(approvalSceneRepo.findFirstByPlatformAndEnabledOrderByUpdateTimeDescIdDesc(platform, 1)
+                    .map(SysApprovalScene::getSceneCode).orElse(null));
             checks.add(check);
         }
         return checks;
     }
 
     private ApprovalTodoOverviewVO.LatestApprovalCallback buildLatestApprovalCallback(String platform) {
-        Optional<SysApprovalInstance> optional = approvalInstanceRepo.findLatestFinishedByPlatform(platform);
+        Optional<SysApprovalInstance> optional = approvalInstanceRepo.findFirstByPlatformAndStatusInOrderByResultTimeDescUpdateTimeDescIdDesc(
+                platform, List.of("APPROVED", "REJECTED", "CANCELED"));
         if (optional.isEmpty()) {
             return null;
         }
@@ -159,7 +162,7 @@ public class ApprovalTodoOverviewService {
     }
 
     private ApprovalTodoOverviewVO.LatestMessagePush buildLatestMessagePush(String platform) {
-        Optional<SysMessageLog> optional = messageLogRepo.findLatestByPlatform(platform);
+        Optional<SysMessageLog> optional = messageLogRepo.findFirstByPlatformOrderBySendTimeDescUpdateTimeDescIdDesc(platform);
         if (optional.isEmpty()) {
             return null;
         }

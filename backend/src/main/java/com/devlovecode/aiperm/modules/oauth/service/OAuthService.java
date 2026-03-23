@@ -64,7 +64,7 @@ public class OAuthService {
 
         StpUtil.login(user.getId());
         userRepo.updateLoginInfo(user.getId(), "127.0.0.1");
-        userOauthRepo.updateLastLoginTime(binding.getId());
+        userOauthRepo.updateLastLoginTime(binding.getId(), LocalDateTime.now());
 
         LoginVO.UserInfo loginUserInfo = LoginVO.UserInfo.builder()
                 .id(user.getId())
@@ -105,24 +105,26 @@ public class OAuthService {
         oauth.setNickname(userInfo.getNickname());
         oauth.setAvatar(userInfo.getAvatar());
         oauth.setLastLoginTime(LocalDateTime.now());
+        oauth.setStatus(1);
+        oauth.setCreateTime(LocalDateTime.now());
         oauth.setCreateBy(StpUtil.getLoginIdAsString());
-        userOauthRepo.insert(oauth);
+        userOauthRepo.save(oauth);
     }
 
     /** 解绑第三方账号 */
     @Transactional
     public void unbind(String platform) {
         Long userId = StpUtil.getLoginIdAsLong();
-        int rows = userOauthRepo.unbind(userId, platform);
-        if (rows == 0) {
-            throw new BusinessException("您未绑定该平台账号");
-        }
+        userOauthRepo.findByUserIdAndPlatform(userId, platform).ifPresentOrElse(
+            oauth -> userOauthRepo.softDelete(oauth.getId(), LocalDateTime.now()),
+            () -> { throw new BusinessException("您未绑定该平台账号"); }
+        );
     }
 
     /** 获取用户已绑定的第三方账号列表 */
     public List<OauthBindingVO> getBindings() {
         Long userId = StpUtil.getLoginIdAsLong();
-        return userOauthRepo.findByUserId(userId).stream()
+        return userOauthRepo.findByUserIdAndStatus(userId, 1).stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
     }

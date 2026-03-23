@@ -1,67 +1,44 @@
 package com.devlovecode.aiperm.modules.agent.repository;
 
 import com.devlovecode.aiperm.modules.agent.entity.SysAgentSession;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Agent 会话仓储
+ */
 @Repository
-public class AgentSessionRepository {
+public interface AgentSessionRepository extends JpaRepository<SysAgentSession, String> {
 
-    private final JdbcClient db;
+    /**
+     * 根据用户ID查询活跃会话
+     */
+    List<SysAgentSession> findByUserIdAndStatusOrderByLastActiveDesc(Long userId, Integer status);
 
-    public AgentSessionRepository(JdbcClient db) {
-        this.db = db;
-    }
+    /**
+     * 更新会话最后活跃时间
+     */
+    @Modifying
+    @Query("UPDATE SysAgentSession s SET s.lastActive = :lastActive, s.updateTime = :updateTime WHERE s.id = :id")
+    int updateLastActive(@Param("id") String id, @Param("lastActive") LocalDateTime lastActive, @Param("updateTime") LocalDateTime updateTime);
 
-    public Optional<SysAgentSession> findById(String sessionId) {
-        String sql = "SELECT * FROM sys_agent_session WHERE id = :id";
-        return db.sql(sql).param("id", sessionId).query(SysAgentSession.class).optional();
-    }
+    /**
+     * 使会话过期
+     */
+    @Modifying
+    @Query("UPDATE SysAgentSession s SET s.status = 1, s.updateTime = :updateTime WHERE s.id = :id")
+    int expireSession(@Param("id") String id, @Param("updateTime") LocalDateTime updateTime);
 
-    public List<SysAgentSession> findByUserId(Long userId) {
-        String sql = "SELECT * FROM sys_agent_session WHERE user_id = :userId AND status = 0 ORDER BY last_active DESC";
-        return db.sql(sql).param("userId", userId).query(SysAgentSession.class).list();
-    }
-
-    public void insert(SysAgentSession session) {
-        String sql = """
-            INSERT INTO sys_agent_session (id, user_id, channel, status, last_active, create_time, update_time)
-            VALUES (:id, :userId, :channel, :status, :lastActive, :createTime, :updateTime)
-            """;
-        db.sql(sql)
-            .param("id", session.getId())
-            .param("userId", session.getUserId())
-            .param("channel", session.getChannel())
-            .param("status", session.getStatus())
-            .param("lastActive", session.getLastActive())
-            .param("createTime", LocalDateTime.now())
-            .param("updateTime", LocalDateTime.now())
-            .update();
-    }
-
-    public void updateLastActive(String sessionId) {
-        String sql = "UPDATE sys_agent_session SET last_active = :lastActive, update_time = :updateTime WHERE id = :id";
-        db.sql(sql)
-            .param("id", sessionId)
-            .param("lastActive", LocalDateTime.now())
-            .param("updateTime", LocalDateTime.now())
-            .update();
-    }
-
-    public void expireSession(String sessionId) {
-        String sql = "UPDATE sys_agent_session SET status = 1, update_time = :updateTime WHERE id = :id";
-        db.sql(sql)
-            .param("id", sessionId)
-            .param("updateTime", LocalDateTime.now())
-            .update();
-    }
-
-    public int deleteByUserId(Long userId) {
-        String sql = "DELETE FROM sys_agent_session WHERE user_id = :userId";
-        return db.sql(sql).param("userId", userId).update();
-    }
+    /**
+     * 根据用户ID删除会话
+     */
+    @Modifying
+    @Query("DELETE FROM SysAgentSession s WHERE s.userId = :userId")
+    int deleteByUserId(@Param("userId") Long userId);
 }

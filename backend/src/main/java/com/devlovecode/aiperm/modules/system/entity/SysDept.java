@@ -2,6 +2,8 @@ package com.devlovecode.aiperm.modules.system.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,6 +17,8 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "sys_dept")
 public class SysDept extends BaseEntity {
 
     private String deptName;

@@ -3,12 +3,18 @@ package com.devlovecode.aiperm.modules.notification.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.notification.dto.MessageTemplateDTO;
 import com.devlovecode.aiperm.modules.notification.entity.SysMessageTemplate;
 import com.devlovecode.aiperm.modules.notification.repository.MessageTemplateRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +23,14 @@ public class MessageTemplateService {
     private final MessageTemplateRepository templateRepo;
 
     public PageResult<SysMessageTemplate> queryPage(MessageTemplateDTO dto) {
-        return templateRepo.queryPage(dto.getTemplateCode(), dto.getCategory(), dto.getPlatform(), dto.getPage(), dto.getPageSize());
+        Specification<SysMessageTemplate> spec = SpecificationUtils.and(
+                SpecificationUtils.like("templateCode", dto.getTemplateCode()),
+                SpecificationUtils.eq("category", dto.getCategory()),
+                SpecificationUtils.eq("platform", dto.getPlatform())
+        );
+        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        Page<SysMessageTemplate> page = templateRepo.findAll(spec, pageRequest);
+        return PageResult.fromJpaPage(page);
     }
 
     public SysMessageTemplate findById(Long id) {
@@ -36,14 +49,15 @@ public class MessageTemplateService {
         entity.setPlatform(dto.getPlatform());
         entity.setTitle(dto.getTitle());
         entity.setContent(dto.getContent());
+        entity.setCreateTime(LocalDateTime.now());
         entity.setCreateBy(getCurrentUsername());
-        templateRepo.insert(entity);
+        templateRepo.save(entity);
     }
 
     @Transactional
     public void update(Long id, MessageTemplateDTO dto) {
         SysMessageTemplate entity = templateRepo.findById(id).orElseThrow(() -> new BusinessException("模板不存在"));
-        if (templateRepo.existsByTemplateCodeExcludeId(dto.getTemplateCode(), id)) {
+        if (templateRepo.existsByTemplateCodeAndIdNot(dto.getTemplateCode(), id)) {
             throw new BusinessException("模板编码已存在");
         }
         entity.setTemplateCode(dto.getTemplateCode());
@@ -53,7 +67,8 @@ public class MessageTemplateService {
         entity.setTitle(dto.getTitle());
         entity.setContent(dto.getContent());
         entity.setUpdateBy(getCurrentUsername());
-        templateRepo.update(entity);
+        entity.setUpdateTime(LocalDateTime.now());
+        templateRepo.save(entity);
     }
 
     @Transactional
@@ -61,7 +76,7 @@ public class MessageTemplateService {
         if (!templateRepo.existsById(id)) {
             throw new BusinessException("模板不存在");
         }
-        templateRepo.deleteById(id);
+        templateRepo.softDelete(id, LocalDateTime.now());
     }
 
     private String getCurrentUsername() {

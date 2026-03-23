@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 /**
  * OAuth 配置服务
  */
@@ -43,8 +45,9 @@ public class OauthConfigService {
         config.setCallbackUrl(dto.getCallbackUrl());
         config.setRemark(dto.getRemark());
         config.setUpdateBy(StpUtil.getLoginIdAsString());
+        config.setUpdateTime(LocalDateTime.now());
 
-        oauthConfigRepo.update(config);
+        oauthConfigRepo.save(config);
     }
 
     private OauthConfigVO toVO(SysOauthConfig entity) {

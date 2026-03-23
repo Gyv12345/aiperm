@@ -1,6 +1,8 @@
 package com.devlovecode.aiperm.common.domain;
 
+import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -13,11 +15,15 @@ import java.time.LocalDateTime;
  * @author devlovecode
  */
 @Data
+@MappedSuperclass
+@SQLRestriction("deleted = 0")
 public class BaseEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private LocalDateTime createTime;
@@ -30,5 +36,6 @@ public class BaseEntity implements Serializable {
 
     private Integer deleted;
 
+    @Version
     private Integer version;
 }

@@ -97,8 +97,8 @@ public class ProfileService {
      */
     public PageResult<LoginLogVO> getLoginLogs(int pageNum, int pageSize) {
         Long userId = StpUtil.getLoginIdAsLong();
-        PageResult<SysLoginLog> result = loginLogRepo.queryPageByUserId(userId, pageNum, pageSize);
-        return result.map(this::toLogVO);
+        org.springframework.data.domain.Page<SysLoginLog> jpaPage = loginLogRepo.queryPageByUserId(userId, pageNum, pageSize);
+        return PageResult.fromJpaPage(jpaPage).map(this::toLogVO);
     }
 
     /**

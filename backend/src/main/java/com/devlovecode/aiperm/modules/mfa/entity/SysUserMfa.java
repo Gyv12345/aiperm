@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.mfa.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,6 +10,8 @@ import java.time.LocalDateTime;
 /**
  * 用户2FA绑定记录实体
  */
+@Entity
+@Table(name = "sys_user_mfa")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysUserMfa extends BaseEntity {

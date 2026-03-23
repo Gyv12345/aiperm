@@ -1,11 +1,14 @@
 package com.devlovecode.aiperm.modules.notification.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "sys_message_log")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysMessageLog extends BaseEntity {

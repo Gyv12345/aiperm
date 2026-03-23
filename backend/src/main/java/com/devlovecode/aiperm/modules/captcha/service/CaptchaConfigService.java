@@ -57,7 +57,7 @@ public class CaptchaConfigService {
         config.setDailyLimit(dto.getDailyLimit());
         config.setUpdateBy(StpUtil.getLoginIdAsString());
 
-        captchaConfigRepo.update(config);
+        captchaConfigRepo.save(config);
     }
 
     private CaptchaConfigVO toVO(SysCaptchaConfig entity) {

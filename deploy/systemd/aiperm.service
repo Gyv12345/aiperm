@@ -1,0 +1,31 @@
+[Unit]
+Description=AiPerm Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=aiperm
+Group=aiperm
+WorkingDirectory=/opt/aiperm
+
+# 默认以生产环境启动，可在 /etc/aiperm/aiperm.env 覆盖
+Environment=SPRING_PROFILES_ACTIVE=prod
+EnvironmentFile=-/etc/aiperm/aiperm.env
+
+# 推荐将 native 二进制部署到 /opt/aiperm/aiperm
+ExecStart=/opt/aiperm/aiperm
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+
+# 自动准备 /var/log/aiperm 目录，供 logging.file.name 写入
+LogsDirectory=aiperm
+
+NoNewPrivileges=true
+LimitNOFILE=65535
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

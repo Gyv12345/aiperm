@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.oauth.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,6 +10,8 @@ import java.time.LocalDateTime;
 /**
  * 用户第三方账号绑定实体
  */
+@Entity
+@Table(name = "sys_user_oauth")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysUserOauth extends BaseEntity {

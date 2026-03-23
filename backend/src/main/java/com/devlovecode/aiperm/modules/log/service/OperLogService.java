@@ -4,6 +4,7 @@ import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.modules.log.entity.SysOperLog;
 import com.devlovecode.aiperm.modules.log.repository.OperLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +18,8 @@ public class OperLogService {
      * 分页查询
      */
     public PageResult<SysOperLog> queryPage(String title, Integer status, int page, int pageSize) {
-        return operLogRepo.queryPage(title, status, page, pageSize);
+        Page<SysOperLog> jpaPage = operLogRepo.queryPage(title, status, page, pageSize);
+        return PageResult.fromJpaPage(jpaPage);
     }
 
     /**

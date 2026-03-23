@@ -40,7 +40,7 @@ public class MfaInterceptor implements HandlerInterceptor {
         String requestUri = request.getRequestURI();
 
         // 检查当前 API 是否在2FA策略中
-        List<SysMfaPolicy> policies = mfaPolicyRepo.findAllEnabled();
+        List<SysMfaPolicy> policies = mfaPolicyRepo.findByEnabled(1);
         boolean requiresMfa = policies.stream()
                 .anyMatch(p -> matchPattern(requestUri, p.getApiPattern()));
 

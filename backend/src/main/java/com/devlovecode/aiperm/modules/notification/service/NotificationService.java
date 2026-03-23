@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,15 +65,18 @@ public class NotificationService {
         logEntity.setPlatformUserId(binding.platformUserId());
         logEntity.setTitle(title);
         logEntity.setContent(content);
+        logEntity.setStatus("PENDING");
+        logEntity.setCreateTime(LocalDateTime.now());
         logEntity.setCreateBy("system");
-        Long logId = messageLogRepo.insertPending(logEntity);
+        SysMessageLog saved = messageLogRepo.save(logEntity);
+        Long logId = saved.getId();
 
         try {
             ImPlatformAdapter adapter = adapterFactory.getAdapter(binding.platform());
             adapter.sendMessage(binding.platformUserId(), title, content);
-            messageLogRepo.markSuccess(logId);
+            messageLogRepo.markSuccess(logId, LocalDateTime.now(), LocalDateTime.now());
         } catch (Exception e) {
-            messageLogRepo.markFailed(logId, e.getMessage());
+            messageLogRepo.markFailed(logId, e.getMessage(), LocalDateTime.now());
             log.warn("发送IM消息失败, platform={}, receiverId={}, err={}", binding.platform(), receiverId, e.getMessage());
         }
     }

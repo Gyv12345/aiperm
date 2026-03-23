@@ -1,179 +1,93 @@
 package com.devlovecode.aiperm.modules.system.repository;
 
-import com.devlovecode.aiperm.common.repository.BaseRepository;
+import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
 import com.devlovecode.aiperm.modules.system.entity.SysMenu;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public class MenuRepository extends BaseRepository<SysMenu> {
-
-    public MenuRepository(JdbcClient db) {
-        super(db, "sys_menu", SysMenu.class);
-    }
-
-    /**
-     * 插入菜单
-     */
-    public void insert(SysMenu entity) {
-        String sql = """
-            INSERT INTO sys_menu (menu_name, parent_id, menu_type, sort, path, component, perms, icon,
-                is_external, is_cache, visible, status, permission, remark, deleted, version, create_time, create_by)
-            VALUES (:menuName, :parentId, :menuType, :sort, :path, :component, :perms, :icon,
-                :isExternal, :isCache, :visible, :status, :permission, :remark, 0, 0, :createTime, :createBy)
-            """;
-        db.sql(sql)
-                .param("menuName", entity.getMenuName())
-                .param("parentId", entity.getParentId())
-                .param("menuType", entity.getMenuType())
-                .param("sort", entity.getSort())
-                .param("path", entity.getPath())
-                .param("component", entity.getComponent())
-                .param("perms", entity.getPerms())
-                .param("icon", entity.getIcon())
-                .param("isExternal", entity.getIsExternal())
-                .param("isCache", entity.getIsCache())
-                .param("visible", entity.getVisible())
-                .param("status", entity.getStatus())
-                .param("permission", entity.getPermission())
-                .param("remark", entity.getRemark())
-                .param("createTime", LocalDateTime.now())
-                .param("createBy", entity.getCreateBy())
-                .update();
-    }
-
-    /**
-     * 更新菜单
-     */
-    public int update(SysMenu entity) {
-        String sql = """
-            UPDATE sys_menu
-            SET menu_name = :menuName, parent_id = :parentId, menu_type = :menuType, sort = :sort,
-                path = :path, component = :component, perms = :perms, icon = :icon,
-                is_external = :isExternal, is_cache = :isCache, visible = :visible, status = :status,
-                permission = :permission, remark = :remark,
-                update_time = :updateTime, update_by = :updateBy
-            WHERE id = :id AND deleted = 0
-            """;
-        return db.sql(sql)
-                .param("menuName", entity.getMenuName())
-                .param("parentId", entity.getParentId())
-                .param("menuType", entity.getMenuType())
-                .param("sort", entity.getSort())
-                .param("path", entity.getPath())
-                .param("component", entity.getComponent())
-                .param("perms", entity.getPerms())
-                .param("icon", entity.getIcon())
-                .param("isExternal", entity.getIsExternal())
-                .param("isCache", entity.getIsCache())
-                .param("visible", entity.getVisible())
-                .param("status", entity.getStatus())
-                .param("permission", entity.getPermission())
-                .param("remark", entity.getRemark())
-                .param("updateTime", LocalDateTime.now())
-                .param("updateBy", entity.getUpdateBy())
-                .param("id", entity.getId())
-                .update();
-    }
+public interface MenuRepository extends BaseJpaRepository<SysMenu> {
 
     /**
      * 根据父ID查询子菜单
      */
-    public List<SysMenu> findByParentId(Long parentId) {
-        String sql = "SELECT * FROM sys_menu WHERE parent_id = :parentId AND deleted = 0 ORDER BY sort ASC";
-        return db.sql(sql).param("parentId", parentId).query(SysMenu.class).list();
-    }
+    List<SysMenu> findByParentIdOrderBySortAsc(Long parentId);
 
     /**
-     * 查询所有菜单（按排序）
+     * 查询所有菜单（按父ID和排序）
      */
-    public List<SysMenu> findAllOrderBySort() {
-        String sql = "SELECT * FROM sys_menu WHERE deleted = 0 ORDER BY parent_id ASC, sort ASC";
-        return db.sql(sql).query(SysMenu.class).list();
-    }
+    List<SysMenu> findAllByDeletedOrderByParentIdAscSortAsc(Integer deleted);
 
     /**
      * 检查是否有子菜单
      */
-    public boolean hasChildren(Long parentId) {
-        String sql = "SELECT COUNT(*) FROM sys_menu WHERE parent_id = :parentId AND deleted = 0";
-        Integer count = db.sql(sql).param("parentId", parentId).query(Integer.class).single();
-        return count != null && count > 0;
-    }
+    @Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.parentId = :parentId AND m.deleted = 0")
+    boolean hasChildren(@Param("parentId") Long parentId);
 
     /**
      * 检查菜单名称是否重复（同父级下）
      */
-    public boolean existsByMenuNameAndParentId(String menuName, Long parentId) {
-        String sql = "SELECT COUNT(*) FROM sys_menu WHERE menu_name = :menuName AND parent_id = :parentId AND deleted = 0";
-        Integer count = db.sql(sql)
-                .param("menuName", menuName)
-                .param("parentId", parentId)
-                .query(Integer.class)
-                .single();
-        return count != null && count > 0;
-    }
+    @Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId AND m.deleted = 0")
+    boolean existsByMenuNameAndParentId(@Param("menuName") String menuName, @Param("parentId") Long parentId);
 
     /**
      * 检查菜单名称是否重复（同父级下，排除指定ID）
      */
-    public boolean existsByMenuNameAndParentIdExcludeId(String menuName, Long parentId, Long excludeId) {
-        String sql = "SELECT COUNT(*) FROM sys_menu WHERE menu_name = :menuName AND parent_id = :parentId AND id != :id AND deleted = 0";
-        Integer count = db.sql(sql)
-                .param("menuName", menuName)
-                .param("parentId", parentId)
-                .param("id", excludeId)
-                .query(Integer.class)
-                .single();
-        return count != null && count > 0;
-    }
+    @Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId AND m.id != :id AND m.deleted = 0")
+    boolean existsByMenuNameAndParentIdExcludeId(@Param("menuName") String menuName, @Param("parentId") Long parentId, @Param("id") Long excludeId);
 
     /**
      * 根据用户ID查询菜单ID列表（通过角色关联）
      */
-    public List<Long> findMenuIdsByUserId(Long userId) {
-        String sql = """
-            SELECT DISTINCT rm.menu_id
-            FROM sys_role_menu rm
-            INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
-            WHERE ur.user_id = :userId
-            """;
-        return db.sql(sql)
-                .param("userId", userId)
-                .query(Long.class)
-                .list();
-    }
-
-    /**
-     * 根据菜单ID列表查询菜单（启用状态）
-     */
-    public List<SysMenu> findByIds(List<Long> menuIds) {
-        if (menuIds == null || menuIds.isEmpty()) {
-            return List.of();
-        }
-        String placeholders = String.join(",", menuIds.stream().map(String::valueOf).toArray(String[]::new));
-        String sql = String.format(
-                "SELECT * FROM sys_menu WHERE id IN (%s) AND status = 1 AND deleted = 0 ORDER BY parent_id ASC, sort ASC",
-                placeholders
-        );
-        return db.sql(sql).query(SysMenu.class).list();
-    }
+    @Query("""
+        SELECT DISTINCT rm.menuId
+        FROM SysRoleMenu rm
+        WHERE rm.roleId IN (
+            SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId AND ur.deleted = 0
+        )
+        AND rm.deleted = 0
+        """)
+    List<Long> findMenuIdsByUserId(@Param("userId") Long userId);
 
     /**
      * 查询所有启用的菜单（用于超级管理员）
      */
-    public List<SysMenu> findAllEnabled() {
-        String sql = "SELECT * FROM sys_menu WHERE status = 1 AND deleted = 0 ORDER BY parent_id ASC, sort ASC";
-        return db.sql(sql).query(SysMenu.class).list();
-    }
+    List<SysMenu> findByStatusAndDeletedOrderByParentIdAscSortAsc(Integer status, Integer deleted);
 
     /**
-     * 获取 JdbcClient（供其他服务使用）
+     * 获取用户角色标识
      */
-    public JdbcClient getJdbcClient() {
-        return this.db;
-    }
+    @Query(value = """
+        SELECT r.role_key
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = :userId AND r.status = 1 AND r.deleted = 0
+        """, nativeQuery = true)
+    List<String> findRoleKeysByUserId(@Param("userId") Long userId);
+
+    /**
+     * 获取用户权限标识
+     */
+    @Query(value = """
+        SELECT DISTINCT m.perms
+        FROM sys_menu m
+        INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+        INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+        WHERE ur.user_id = :userId AND m.perms IS NOT NULL AND m.perms != ''
+          AND m.status = 1 AND m.deleted = 0
+        """, nativeQuery = true)
+    List<String> findPermissionsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 获取所有启用的权限标识（超级管理员使用）
+     */
+    @Query(value = """
+        SELECT DISTINCT perms
+        FROM sys_menu
+        WHERE perms IS NOT NULL AND perms != '' AND status = 1 AND deleted = 0
+        """, nativeQuery = true)
+    List<String> findAllEnabledPermissions();
 }

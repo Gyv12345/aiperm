@@ -2,8 +2,11 @@ package com.devlovecode.aiperm.common.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.enums.DataScopeEnum;
+import com.devlovecode.aiperm.modules.system.entity.SysUser;
+import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataScopeService {
 
-    private final JdbcClient db;
+    private final EntityManager em;
+    private final UserRepository userRepo;
 
     /**
      * 构建当前用户的数据权限 SQL
@@ -28,14 +32,11 @@ public class DataScopeService {
      * @return SQL 片段
      */
     public String buildDataScopeSql(String deptAlias, String userAlias) {
-        // 未登录则无限制
         if (!StpUtil.isLogin()) {
             return "";
         }
 
         Long userId = StpUtil.getLoginIdAsLong();
-
-        // 获取用户角色中最大的数据权限范围（数字越小权限越大）
         Integer dataScope = getMaxDataScope(userId);
         DataScopeEnum scopeEnum = DataScopeEnum.of(dataScope);
 
@@ -60,55 +61,39 @@ public class DataScopeService {
         };
     }
 
-    /**
-     * 获取用户最大的数据权限范围（数字越小权限越大）
-     */
     private Integer getMaxDataScope(Long userId) {
-        String sql = """
-            SELECT MIN(r.data_scope)
-            FROM sys_role r
-            JOIN sys_user_role ur ON r.id = ur.role_id
-            WHERE ur.user_id = ? AND r.deleted = 0 AND r.status = 1
-            """;
-        Integer result = db.sql(sql)
-                .param(userId)
-                .query(Integer.class)
-                .optional()
-                .orElse(null);
-        return result != null ? result : DataScopeEnum.ALL.getCode();
+        Query query = em.createNativeQuery("""
+                SELECT MIN(r.data_scope)
+                FROM sys_role r
+                JOIN sys_user_role ur ON r.id = ur.role_id
+                WHERE ur.user_id = ? AND r.deleted = 0 AND r.status = 1
+                """);
+        query.setParameter(1, userId);
+        Object result = query.getSingleResult();
+        return result != null ? ((Number) result).intValue() : DataScopeEnum.ALL.getCode();
     }
 
-    /**
-     * 获取用户的部门 ID
-     */
     private Long getUserDeptId(Long userId) {
-        String sql = "SELECT dept_id FROM sys_user WHERE id = ? AND deleted = 0";
-        return db.sql(sql)
-                .param(userId)
-                .query(Long.class)
-                .optional()
+        return userRepo.findById(userId)
+                .map(SysUser::getDeptId)
                 .orElse(0L);
     }
 
-    /**
-     * 获取用户部门及所有子部门 ID
-     */
     private List<Long> getDeptAndChildIds(Long userId) {
         Long deptId = getUserDeptId(userId);
         if (deptId == null || deptId == 0) {
             return List.of();
         }
 
-        // 查询部门及所有子部门（使用 ancestors 字段）
-        String sql = """
-            SELECT id FROM sys_dept
-            WHERE deleted = 0 AND status = 1
-            AND (id = ? OR FIND_IN_SET(?, ancestors))
-            """;
-        return db.sql(sql)
-                .param(deptId)
-                .param(deptId)
-                .query(Long.class)
-                .list();
+        Query query = em.createNativeQuery("""
+                SELECT id FROM sys_dept
+                WHERE deleted = 0 AND status = 1
+                AND (id = ? OR FIND_IN_SET(?, ancestors))
+                """);
+        query.setParameter(1, deptId);
+        query.setParameter(2, deptId);
+        @SuppressWarnings("unchecked")
+        List<Number> results = query.getResultList();
+        return results.stream().map(Number::longValue).collect(Collectors.toList());
     }
 }

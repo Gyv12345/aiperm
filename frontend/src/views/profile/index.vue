@@ -107,10 +107,13 @@ async function handleSaveProfile() {
     fetchProfile()
     // 更新 userStore
     if (profileForm.value.nickname) {
-      userStore.setUserInfo({
-        ...userStore.userInfo,
-        nickname: profileForm.value.nickname,
-      })
+      const currentUserInfo = userStore.userInfo
+      if (currentUserInfo) {
+        userStore.setUserInfo({
+          ...currentUserInfo,
+          nickname: profileForm.value.nickname,
+        })
+      }
     }
   } catch (error) {
     console.error('保存失败:', error)

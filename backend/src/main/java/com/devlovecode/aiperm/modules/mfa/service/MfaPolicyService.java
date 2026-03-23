@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,7 @@ public class MfaPolicyService {
     private final MfaPolicyRepository mfaPolicyRepo;
 
     public List<MfaPolicyVO> listAll() {
-        return mfaPolicyRepo.findAll().stream().map(this::toVO).collect(Collectors.toList());
+        return mfaPolicyRepo.findByEnabled(1).stream().map(this::toVO).collect(Collectors.toList());
     }
 
     @Transactional
@@ -33,8 +34,9 @@ public class MfaPolicyService {
         policy.setPermPattern(dto.getPermPattern());
         policy.setApiPattern(dto.getApiPattern());
         policy.setEnabled(dto.getEnabled() != null ? dto.getEnabled() : 1);
+        policy.setCreateTime(LocalDateTime.now());
         policy.setCreateBy(StpUtil.getLoginIdAsString());
-        mfaPolicyRepo.insert(policy);
+        mfaPolicyRepo.save(policy);
     }
 
     @Transactional
@@ -45,13 +47,14 @@ public class MfaPolicyService {
         policy.setPermPattern(dto.getPermPattern());
         policy.setApiPattern(dto.getApiPattern());
         policy.setEnabled(dto.getEnabled());
+        policy.setUpdateTime(LocalDateTime.now());
         policy.setUpdateBy(StpUtil.getLoginIdAsString());
-        mfaPolicyRepo.update(policy);
+        mfaPolicyRepo.save(policy);
     }
 
     @Transactional
     public void delete(Long id) {
-        mfaPolicyRepo.deleteById(id);
+        mfaPolicyRepo.softDelete(id, LocalDateTime.now());
     }
 
     private MfaPolicyVO toVO(SysMfaPolicy entity) {

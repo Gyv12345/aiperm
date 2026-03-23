@@ -3,6 +3,7 @@ package com.devlovecode.aiperm.modules.approval.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.approval.dto.ApprovalSubmitDTO;
 import com.devlovecode.aiperm.modules.approval.entity.SysApprovalInstance;
 import com.devlovecode.aiperm.modules.approval.entity.SysApprovalScene;
@@ -16,9 +17,13 @@ import com.devlovecode.aiperm.modules.oauth.entity.SysUserOauth;
 import com.devlovecode.aiperm.modules.oauth.repository.UserOauthRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,7 +46,7 @@ public class ApprovalService {
             return;
         }
 
-        if (instanceRepo.existsPending(dto.getBusinessType(), dto.getBusinessId())) {
+        if (instanceRepo.existsByBusinessTypeAndBusinessIdAndStatus(dto.getBusinessType(), dto.getBusinessId(), "PENDING")) {
             throw new BusinessException("该业务已有审批进行中");
         }
 
@@ -61,8 +66,9 @@ public class ApprovalService {
         entity.setPlatformInstanceId(platformInstanceId);
         entity.setStatus("PENDING");
         entity.setFormData(writeJson(dto.getFormData()));
+        entity.setCreateTime(LocalDateTime.now());
         entity.setCreateBy(StpUtil.getLoginIdAsString());
-        instanceRepo.insert(entity);
+        instanceRepo.save(entity);
 
         Map<String, Object> vars = new HashMap<>();
         vars.put("businessType", dto.getBusinessType());
@@ -72,14 +78,14 @@ public class ApprovalService {
 
     public PageResult<ApprovalInstanceVO> queryMyInstances(String sceneCode, String status, Integer page, Integer pageSize) {
         Long userId = StpUtil.getLoginIdAsLong();
-        PageResult<SysApprovalInstance> result = instanceRepo.queryPage(
-                userId,
-                sceneCode,
-                status,
-                page == null ? 1 : page,
-                pageSize == null ? 10 : pageSize
+        Specification<SysApprovalInstance> spec = SpecificationUtils.and(
+                SpecificationUtils.eq("initiatorId", userId),
+                SpecificationUtils.eq("sceneCode", sceneCode),
+                SpecificationUtils.eq("status", status)
         );
-        return result.map(this::toVO);
+        PageRequest pageRequest = PageRequest.of((page == null ? 1 : page) - 1, pageSize == null ? 10 : pageSize);
+        Page<SysApprovalInstance> jpaPage = instanceRepo.findAll(spec, pageRequest);
+        return PageResult.fromJpaPage(jpaPage).map(this::toVO);
     }
 
     private ApprovalInstanceVO toVO(SysApprovalInstance entity) {

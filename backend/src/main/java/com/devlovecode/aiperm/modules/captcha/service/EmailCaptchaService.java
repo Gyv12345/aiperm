@@ -14,6 +14,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +45,7 @@ public class EmailCaptchaService implements CaptchaService {
         }
 
         int dailyLimit = config.getDailyLimit() != null ? config.getDailyLimit() : 10;
-        if (captchaLogRepo.countTodayByTarget(target) >= dailyLimit) {
+        if (captchaLogRepo.countTodayByTarget(target, LocalDate.now().atStartOfDay()) >= dailyLimit) {
             throw new BusinessException("今日发送次数已达上限");
         }
 
@@ -65,7 +66,7 @@ public class EmailCaptchaService implements CaptchaService {
             log.error("邮件发送失败，target={}", target, e);
             logRecord.setStatus(0);
             logRecord.setFailReason(e.getMessage());
-            captchaLogRepo.insert(logRecord);
+            captchaLogRepo.save(logRecord);
             throw new BusinessException("邮件发送失败：" + e.getMessage());
         }
         captchaLogRepo.insert(logRecord);

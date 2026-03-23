@@ -1,10 +1,10 @@
 package com.devlovecode.aiperm.modules.system.repository;
 
-import com.devlovecode.aiperm.common.domain.PageResult;
-import com.devlovecode.aiperm.common.repository.BaseRepository;
-import com.devlovecode.aiperm.common.repository.SqlBuilder;
+import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -12,209 +12,58 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class UserRepository extends BaseRepository<SysUser> {
-
-    public UserRepository(JdbcClient db) {
-        super(db, "sys_user", SysUser.class);
-    }
-
-    /**
-     * 插入用户
-     */
-    public void insert(SysUser entity) {
-        String sql = """
-            INSERT INTO sys_user (username, password, nickname, real_name, email, phone, gender, avatar,
-                dept_id, post_id, is_admin, status, remark, deleted, version, create_time, create_by)
-            VALUES (:username, :password, :nickname, :realName, :email, :phone, :gender, :avatar,
-                :deptId, :postId, :isAdmin, :status, :remark, 0, 0, :createTime, :createBy)
-            """;
-        db.sql(sql)
-                .param("username", entity.getUsername())
-                .param("password", entity.getPassword())
-                .param("nickname", entity.getNickname())
-                .param("realName", entity.getRealName())
-                .param("email", entity.getEmail())
-                .param("phone", entity.getPhone())
-                .param("gender", entity.getGender())
-                .param("avatar", entity.getAvatar())
-                .param("deptId", entity.getDeptId())
-                .param("postId", entity.getPostId())
-                .param("isAdmin", entity.getIsAdmin())
-                .param("status", entity.getStatus())
-                .param("remark", entity.getRemark())
-                .param("createTime", LocalDateTime.now())
-                .param("createBy", entity.getCreateBy())
-                .update();
-    }
-
-    /**
-     * 更新用户
-     */
-    public int update(SysUser entity) {
-        String sql = """
-            UPDATE sys_user
-            SET nickname = :nickname, real_name = :realName, email = :email, phone = :phone,
-                gender = :gender, avatar = :avatar, dept_id = :deptId, post_id = :postId,
-                is_admin = :isAdmin, status = :status, remark = :remark,
-                update_time = :updateTime, update_by = :updateBy
-            WHERE id = :id AND deleted = 0
-            """;
-        return db.sql(sql)
-                .param("nickname", entity.getNickname())
-                .param("realName", entity.getRealName())
-                .param("email", entity.getEmail())
-                .param("phone", entity.getPhone())
-                .param("gender", entity.getGender())
-                .param("avatar", entity.getAvatar())
-                .param("deptId", entity.getDeptId())
-                .param("postId", entity.getPostId())
-                .param("isAdmin", entity.getIsAdmin())
-                .param("status", entity.getStatus())
-                .param("remark", entity.getRemark())
-                .param("updateTime", LocalDateTime.now())
-                .param("updateBy", entity.getUpdateBy())
-                .param("id", entity.getId())
-                .update();
-    }
+public interface UserRepository extends BaseJpaRepository<SysUser> {
 
     /**
      * 根据用户名查询
      */
-    public Optional<SysUser> findByUsername(String username) {
-        String sql = "SELECT * FROM sys_user WHERE username = :username AND deleted = 0";
-        return db.sql(sql).param("username", username).query(SysUser.class).optional();
-    }
+    Optional<SysUser> findByUsername(String username);
 
     /**
      * 根据手机号查询
      */
-    public Optional<SysUser> findByPhone(String phone) {
-        String sql = "SELECT * FROM sys_user WHERE phone = :phone AND deleted = 0";
-        return db.sql(sql).param("phone", phone).query(SysUser.class).optional();
-    }
+    Optional<SysUser> findByPhone(String phone);
 
     /**
      * 根据邮箱查询
      */
-    public Optional<SysUser> findByEmail(String email) {
-        String sql = "SELECT * FROM sys_user WHERE email = :email AND deleted = 0";
-        return db.sql(sql).param("email", email).query(SysUser.class).optional();
-    }
+    Optional<SysUser> findByEmail(String email);
 
     /**
      * 检查用户名是否存在
      */
-    public boolean existsByUsername(String username) {
-        String sql = "SELECT COUNT(*) FROM sys_user WHERE username = :username AND deleted = 0";
-        Integer count = db.sql(sql).param("username", username).query(Integer.class).single();
-        return count != null && count > 0;
-    }
+    boolean existsByUsername(String username);
 
     /**
      * 检查用户名是否存在（排除指定ID）
      */
-    public boolean existsByUsernameExcludeId(String username, Long excludeId) {
-        String sql = "SELECT COUNT(*) FROM sys_user WHERE username = :username AND id != :id AND deleted = 0";
-        Integer count = db.sql(sql)
-                .param("username", username)
-                .param("id", excludeId)
-                .query(Integer.class)
-                .single();
-        return count != null && count > 0;
-    }
-
-    /**
-     * 分页查询
-     */
-    public PageResult<SysUser> queryPage(String username, String phone, Long deptId, Integer status, int pageNum, int pageSize) {
-        SqlBuilder sb = new SqlBuilder();
-        sb.likeIf(username != null && !username.isBlank(), "username", username)
-          .likeIf(phone != null && !phone.isBlank(), "phone", phone)
-          .whereIf(deptId != null, "dept_id = ?", deptId)
-          .whereIf(status != null, "status = ?", status);
-
-        return queryPage(sb.getWhereClause(), sb.getParams(), pageNum, pageSize);
-    }
+    @Query("SELECT COUNT(u) > 0 FROM SysUser u WHERE u.username = :username AND u.id != :id AND u.deleted = 0")
+    boolean existsByUsernameExcludeId(@Param("username") String username, @Param("id") Long excludeId);
 
     /**
      * 更新密码
      */
-    public int updatePassword(Long id, String newPassword) {
-        String sql = "UPDATE sys_user SET password = :password, update_time = :updateTime WHERE id = :id AND deleted = 0";
-        return db.sql(sql)
-                .param("password", newPassword)
-                .param("updateTime", LocalDateTime.now())
-                .param("id", id)
-                .update();
-    }
+    @Modifying
+    @Query("UPDATE SysUser u SET u.password = :password, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
+    int updatePassword(@Param("id") Long id, @Param("password") String newPassword, @Param("updateTime") LocalDateTime updateTime);
 
     /**
      * 更新状态
      */
-    public int updateStatus(Long id, Integer status) {
-        String sql = "UPDATE sys_user SET status = :status, update_time = :updateTime WHERE id = :id AND deleted = 0";
-        return db.sql(sql)
-                .param("status", status)
-                .param("updateTime", LocalDateTime.now())
-                .param("id", id)
-                .update();
-    }
+    @Modifying
+    @Query("UPDATE SysUser u SET u.status = :status, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
+    int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateTime") LocalDateTime updateTime);
 
     /**
      * 更新最后登录信息
      */
-    public int updateLoginInfo(Long id, String loginIp) {
-        String sql = "UPDATE sys_user SET last_login_ip = :loginIp, last_login_time = :loginTime WHERE id = :id AND deleted = 0";
-        return db.sql(sql)
-                .param("loginIp", loginIp)
-                .param("loginTime", LocalDateTime.now())
-                .param("id", id)
-                .update();
-    }
+    @Modifying
+    @Query("UPDATE SysUser u SET u.lastLoginIp = :loginIp, u.lastLoginTime = :loginTime WHERE u.id = :id AND u.deleted = 0")
+    int updateLoginInfo(@Param("id") Long id, @Param("loginIp") String loginIp, @Param("loginTime") LocalDateTime loginTime);
 
     /**
-     * 检查是否为管理员
+     * 查询用户的角色ID列表（通过用户角色关联表）
      */
-    public boolean isAdmin(Long id) {
-        String sql = "SELECT username FROM sys_user WHERE id = :id AND deleted = 0";
-        String username = db.sql(sql).param("id", id).query(String.class).single();
-        return "admin".equals(username);
-    }
-
-    /**
-     * 查询用户的角色ID列表
-     */
-    public List<Long> findRoleIdsByUserId(Long userId) {
-        String sql = "SELECT role_id FROM sys_user_role WHERE user_id = :userId AND deleted = 0";
-        return db.sql(sql).param("userId", userId).query(Long.class).list();
-    }
-
-    /**
-     * 更新用户的角色关联
-     * 先软删除旧关联，再插入新关联
-     */
-    public void updateUserRoles(Long userId, List<Long> roleIds, String createBy) {
-        // 1. 软删除所有旧的角色关联
-        String deleteSql = "UPDATE sys_user_role SET deleted = 1 WHERE user_id = :userId";
-        db.sql(deleteSql).param("userId", userId).update();
-
-        // 2. 如果没有新角色，直接返回
-        if (roleIds == null || roleIds.isEmpty()) {
-            return;
-        }
-
-        // 3. 插入新的角色关联
-        String insertSql = """
-            INSERT INTO sys_user_role (user_id, role_id, deleted, create_time, create_by)
-            VALUES (:userId, :roleId, 0, :createTime, :createBy)
-            """;
-        for (Long roleId : roleIds) {
-            db.sql(insertSql)
-                    .param("userId", userId)
-                    .param("roleId", roleId)
-                    .param("createTime", LocalDateTime.now())
-                    .param("createBy", createBy)
-                    .update();
-        }
-    }
+    @Query("SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId AND ur.deleted = 0")
+    List<Long> findRoleIdsByUserId(@Param("userId") Long userId);
 }

@@ -2,6 +2,8 @@ package com.devlovecode.aiperm.modules.system.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,6 +16,8 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "sys_user")
 public class SysUser extends BaseEntity {
 
     private String username;

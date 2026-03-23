@@ -55,7 +55,7 @@ public class ApprovalCallbackService {
             return "success";
         }
 
-        instanceRepo.updateStatus(instance.getId(), status, LocalDateTime.now(), "callback:" + platform);
+        instanceRepo.updateStatus(instance.getId(), status, LocalDateTime.now(), LocalDateTime.now(), "callback:" + platform);
 
         SysApprovalScene scene = sceneRepo.findBySceneCode(instance.getSceneCode()).orElse(null);
         ApprovalHandler handler = resolveHandler(scene);

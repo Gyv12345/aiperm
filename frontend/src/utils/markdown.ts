@@ -60,6 +60,8 @@ export const renderMarkdown = (raw: string): string => {
 
     const ulMatch = /^\s*[-*]\s+(.+)$/.exec(line)
     if (ulMatch) {
+      const ulContent = ulMatch[1]
+      if (!ulContent) continue
       if (!inUl) {
         if (inOl) {
           blocks.push('</ol>')
@@ -68,12 +70,14 @@ export const renderMarkdown = (raw: string): string => {
         blocks.push('<ul>')
         inUl = true
       }
-      blocks.push(`<li>${parseInline(ulMatch[1])}</li>`)
+      blocks.push(`<li>${parseInline(ulContent)}</li>`)
       continue
     }
 
     const olMatch = /^\s*\d+\.\s+(.+)$/.exec(line)
     if (olMatch) {
+      const olContent = olMatch[1]
+      if (!olContent) continue
       if (!inOl) {
         if (inUl) {
           blocks.push('</ul>')
@@ -82,7 +86,7 @@ export const renderMarkdown = (raw: string): string => {
         blocks.push('<ol>')
         inOl = true
       }
-      blocks.push(`<li>${parseInline(olMatch[1])}</li>`)
+      blocks.push(`<li>${parseInline(olContent)}</li>`)
       continue
     }
 
@@ -90,8 +94,11 @@ export const renderMarkdown = (raw: string): string => {
 
     const hMatch = /^(#{1,6})\s+(.+)$/.exec(line)
     if (hMatch) {
-      const level = hMatch[1].length
-      blocks.push(`<h${level}>${parseInline(hMatch[2])}</h${level}>`)
+      const hashes = hMatch[1]
+      const headingContent = hMatch[2]
+      if (!hashes || !headingContent) continue
+      const level = hashes.length
+      blocks.push(`<h${level}>${parseInline(headingContent)}</h${level}>`)
       continue
     }
 

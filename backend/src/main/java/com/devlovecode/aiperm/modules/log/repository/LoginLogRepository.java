@@ -1,45 +1,21 @@
 package com.devlovecode.aiperm.modules.log.repository;
 
-import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.modules.log.entity.SysLoginLog;
-import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-/**
- * 登录日志 Repository
- */
 @Repository
-public class LoginLogRepository {
+public interface LoginLogRepository extends JpaRepository<SysLoginLog, Long> {
 
-    private final JdbcClient db;
-    private static final String TABLE_NAME = "sys_login_log";
+    @Query("SELECT l FROM SysLoginLog l WHERE l.userId = :userId ORDER BY l.loginTime DESC")
+    Page<SysLoginLog> queryPageByUserId(@Param("userId") Long userId, org.springframework.data.domain.Pageable pageable);
 
-    public LoginLogRepository(JdbcClient db) {
-        this.db = db;
-    }
-
-    /**
-     * 根据用户ID分页查询登录日志
-     */
-    public PageResult<SysLoginLog> queryPageByUserId(Long userId, int pageNum, int pageSize) {
-        // 查总数
-        String countSql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE user_id = ?";
-        Long total = db.sql(countSql).param(userId).query(Long.class).single();
-
-        if (total == null || total == 0) {
-            return PageResult.empty((long) pageNum, (long) pageSize);
-        }
-
-        // 查列表
-        String listSql = "SELECT * FROM " + TABLE_NAME +
-                " WHERE user_id = ? ORDER BY login_time DESC LIMIT ? OFFSET ?";
-        List<SysLoginLog> list = db.sql(listSql)
-                .params(userId, pageSize, (pageNum - 1) * pageSize)
-                .query(SysLoginLog.class)
-                .list();
-
-        return PageResult.of(total, list, (long) pageNum, (long) pageSize);
+    default Page<SysLoginLog> queryPageByUserId(Long userId, int pageNum, int pageSize) {
+        return queryPageByUserId(userId, PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "loginTime")));
     }
 }

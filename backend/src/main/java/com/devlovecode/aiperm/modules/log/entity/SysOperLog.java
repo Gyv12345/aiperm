@@ -1,12 +1,17 @@
 package com.devlovecode.aiperm.modules.log.entity;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "sys_oper_log")
 @Data
 public class SysOperLog {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String title;

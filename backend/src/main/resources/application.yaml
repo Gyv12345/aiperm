@@ -24,6 +24,14 @@ spring:
       charset: UTF-8
       enabled: true
       force: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
   profiles:
     active: dev
 
@@ -49,7 +57,7 @@ springdoc:
     operations-sorter: alpha
   info:
     title: AiPerm RBAC权限系统API
-    description: 基于Spring Boot 4 + Sa-Token + JdbcClient的RBAC权限管理系统
+    description: 基于Spring Boot 4 + Sa-Token + JPA的RBAC权限管理系统
     version: 1.0.0
     contact:
       name: DevLoveCode

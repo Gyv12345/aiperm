@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.mfa.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -8,6 +9,8 @@ import lombok.EqualsAndHashCode;
  * 2FA策略配置实体
  * 定义哪些API需要2FA验证
  */
+@Entity
+@Table(name = "sys_mfa_policy")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysMfaPolicy extends BaseEntity {

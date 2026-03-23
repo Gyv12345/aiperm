@@ -38,8 +38,8 @@ spring:
 logging:
   level:
     com.devlovecode.aiperm: debug
-    org.springframework.jdbc.core.JdbcTemplate: debug
-    org.springframework.jdbc.core.StatementCreatorUtils: trace
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
 
 management:
   endpoint:

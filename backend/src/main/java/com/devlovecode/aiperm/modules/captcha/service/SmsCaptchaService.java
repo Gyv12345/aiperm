@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -41,7 +42,7 @@ public class SmsCaptchaService implements CaptchaService {
         }
 
         int dailyLimit = config.getDailyLimit() != null ? config.getDailyLimit() : 10;
-        if (captchaLogRepo.countTodayByTarget(target) >= dailyLimit) {
+        if (captchaLogRepo.countTodayByTarget(target, LocalDate.now().atStartOfDay()) >= dailyLimit) {
             throw new BusinessException("今日发送次数已达上限");
         }
 
@@ -62,7 +63,7 @@ public class SmsCaptchaService implements CaptchaService {
             log.error("短信发送失败，target={}", target, e);
             logRecord.setStatus(0);
             logRecord.setFailReason(e.getMessage());
-            captchaLogRepo.insert(logRecord);
+            captchaLogRepo.save(logRecord);
             throw new BusinessException("短信发送失败：" + e.getMessage());
         }
         captchaLogRepo.insert(logRecord);

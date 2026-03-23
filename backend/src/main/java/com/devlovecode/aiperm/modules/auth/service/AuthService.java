@@ -312,49 +312,21 @@ public class AuthService {
      * 获取用户角色
      */
     public List<String> getUserRoles(Long userId) {
-        String sql = """
-            SELECT r.role_key
-            FROM sys_role r
-            INNER JOIN sys_user_role ur ON r.id = ur.role_id
-            WHERE ur.user_id = :userId AND r.status = 1 AND r.deleted = 0
-            """;
-        return menuRepo.getJdbcClient().sql(sql)
-                .param("userId", userId)
-                .query(String.class)
-                .list();
+        return menuRepo.findRoleKeysByUserId(userId);
     }
 
     /**
      * 获取用户权限
      */
     public List<String> getUserPermissions(Long userId) {
-        // 获取用户所有角色的权限标识
-        String sql = """
-            SELECT DISTINCT m.perms
-            FROM sys_menu m
-            INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
-            INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
-            WHERE ur.user_id = :userId AND m.perms IS NOT NULL AND m.perms != ''
-              AND m.status = 1 AND m.deleted = 0
-            """;
-        return menuRepo.getJdbcClient().sql(sql)
-                .param("userId", userId)
-                .query(String.class)
-                .list();
+        return menuRepo.findPermissionsByUserId(userId);
     }
 
     /**
      * 获取所有启用的权限（超级管理员使用）
      */
     public List<String> getAllPermissions() {
-        String sql = """
-            SELECT DISTINCT perms
-            FROM sys_menu
-            WHERE perms IS NOT NULL AND perms != '' AND status = 1 AND deleted = 0
-            """;
-        return menuRepo.getJdbcClient().sql(sql)
-                .query(String.class)
-                .list();
+        return menuRepo.findAllEnabledPermissions();
     }
 
     /**

@@ -1,11 +1,15 @@
 package com.devlovecode.aiperm.modules.captcha.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "sys_captcha_config")
 public class SysCaptchaConfig extends BaseEntity {
     private String type;              // SMS/EMAIL
     private Integer enabled;          // 是否启用

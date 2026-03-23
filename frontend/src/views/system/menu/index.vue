@@ -22,13 +22,15 @@ const menuTypeOptions = [
 ]
 
 // 获取菜单类型标签
-function getMenuTypeLabel(type: number | string) {
+function getMenuTypeLabel(type: number | string | undefined) {
+  if (type === undefined || type === null || type === '') return '未知'
   const numType = typeof type === 'string' ? parseInt(type) : type
   return menuTypeOptions.find(o => o.value === numType)?.label || '未知'
 }
 
 // 获取菜单类型 tag 类型
-function getMenuTypeTagType(type: number | string) {
+function getMenuTypeTagType(type: number | string | undefined) {
+  if (type === undefined || type === null || type === '') return 'info'
   const numType = typeof type === 'string' ? parseInt(type) : type
   if (numType === 1) return 'info'
   if (numType === 2) return 'primary'
@@ -36,13 +38,15 @@ function getMenuTypeTagType(type: number | string) {
 }
 
 // 判断是否为按钮类型
-function isButtonType(type: number | string) {
+function isButtonType(type: number | string | undefined) {
+  if (type === undefined || type === null || type === '') return false
   const numType = typeof type === 'string' ? parseInt(type) : type
   return numType === 3
 }
 
 // 判断是否为菜单类型
-function isMenuType(type: number | string) {
+function isMenuType(type: number | string | undefined) {
+  if (type === undefined || type === null || type === '') return false
   const numType = typeof type === 'string' ? parseInt(type) : type
   return numType === 2
 }

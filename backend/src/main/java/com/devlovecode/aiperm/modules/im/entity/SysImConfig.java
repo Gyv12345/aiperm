@@ -1,9 +1,12 @@
 package com.devlovecode.aiperm.modules.im.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@Entity
+@Table(name = "sys_im_config")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysImConfig extends BaseEntity {

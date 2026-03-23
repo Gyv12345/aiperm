@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.springframework.data.domain.Page;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
@@ -60,6 +62,18 @@ public class PageResult<T> implements Serializable {
      */
     public static <T> PageResult<T> empty(Long pageNum, Long pageSize) {
         return of(0L, Collections.emptyList(), pageNum, pageSize);
+    }
+
+    /**
+     * 从 Spring Data JPA Page 转换（JPA 页码从 0 开始，前端从 1 开始）
+     */
+    public static <T> PageResult<T> fromJpaPage(Page<T> page) {
+        return of(
+                page.getTotalElements(),
+                page.getContent(),
+                (long) page.getNumber() + 1,
+                (long) page.getSize()
+        );
     }
 
     /**

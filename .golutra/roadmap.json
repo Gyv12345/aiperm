@@ -1,0 +1,26 @@
+{
+  "_roadmapMeta": {
+    "updatedAt": 1773650768407
+  },
+  "roadmap": {
+    "objective": "",
+    "tasks": [
+      {
+        "id": 1,
+        "number": "01",
+        "pinned": false,
+        "sortOrder": 1,
+        "status": "in-progress",
+        "title": "优化项目"
+      },
+      {
+        "id": 2,
+        "number": "02",
+        "pinned": false,
+        "sortOrder": 2,
+        "status": "pending",
+        "title": "继续优化项目"
+      }
+    ]
+  }
+}

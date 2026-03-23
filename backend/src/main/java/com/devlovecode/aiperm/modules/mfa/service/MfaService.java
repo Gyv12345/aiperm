@@ -109,7 +109,7 @@ public class MfaService {
         redisTemplate.delete(tempKey);
 
         // 删除旧绑定（如有）
-        userMfaRepo.deleteByUserId(userId);
+        userMfaRepo.findByUserId(userId).ifPresent(old -> userMfaRepo.softDelete(old.getId(), LocalDateTime.now()));
 
         // 写入绑定记录
         SysUserMfa mfa = new SysUserMfa();
@@ -118,8 +118,9 @@ public class MfaService {
         mfa.setSecretKey(secretKey);
         mfa.setBindTime(LocalDateTime.now());
         mfa.setStatus(1);
+        mfa.setCreateTime(LocalDateTime.now());
         mfa.setCreateBy(StpUtil.getLoginIdAsString());
-        userMfaRepo.insert(mfa);
+        userMfaRepo.save(mfa);
     }
 
     /**
@@ -142,7 +143,7 @@ public class MfaService {
             throw new BusinessException("验证码错误");
         }
 
-        userMfaRepo.deleteByUserId(userId);
+        userMfaRepo.softDelete(mfa.getId(), LocalDateTime.now());
         redisTemplate.delete(MFA_VERIFIED_PREFIX + userId);
     }
 
