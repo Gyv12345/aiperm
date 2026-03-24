@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { postApi, type PostVO, type PostDTO } from '@/api/system/post'
-import type { PageResult, TableColumn } from '@/types'
-import { useDict } from '@/composables/useDict'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {postApi, type PostDTO, type PostVO} from '@/api/system/post'
+import type {PageResult, TableColumn} from '@/types'
+import {useDict} from '@/composables/useDict'
 
 // 字典
 const dictData = useDict('sys_status')
@@ -229,6 +229,8 @@ async function handleSubmit() {
     if (dialogType.value === 'create') {
       await postApi.create(submitData)
       ElMessage.success('创建成功')
+      // 新增后回到第一页，避免当前页不是第一页时看不到最新数据
+      pagination.page = 1
     }
     else {
       await postApi.update(currentId.value, submitData)

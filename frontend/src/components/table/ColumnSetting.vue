@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Setting } from '@element-plus/icons-vue'
-import type { TableColumn } from '@/types'
+import {Setting} from '@element-plus/icons-vue'
+import type {TableColumn} from '@/types'
 
 /**
  * 列显示设置组件
@@ -20,37 +20,50 @@ const model = defineModel<TableColumn[]>({ required: true })
 </script>
 
 <template>
-  <el-popover
-    placement="bottom-end"
-    :width="180"
+  <el-dropdown
     trigger="click"
+    placement="bottom-end"
+    :hide-on-click="false"
   >
-    <template #reference>
-      <el-tooltip content="列设置">
-        <el-button
-          :icon="Setting"
-          circle
-        />
-      </el-tooltip>
-    </template>
+    <el-button
+      :icon="Setting"
+      circle
+      title="列设置"
+      @click.stop
+    />
 
-    <div>
-      <div class="text-sm font-medium text-gray-700 mb-2 pb-2 border-b">
-        列显示设置
-      </div>
-      <div class="space-y-1">
-        <div
-          v-for="col in model"
-          :key="col.key"
-          class="flex items-center"
-        >
-          <el-checkbox
-            v-model="col.visible"
-            :disabled="!!col.fixed"
-            :label="col.label"
-          />
+    <template #dropdown>
+      <el-dropdown-menu class="column-setting-menu">
+        <div class="column-setting-content">
+          <div class="text-sm font-medium text-gray-700 mb-2 pb-2 border-b">
+            列显示设置
+          </div>
+          <div class="space-y-1">
+            <div
+              v-for="col in model"
+              :key="col.key"
+              class="flex items-center"
+            >
+              <el-checkbox
+                v-model="col.visible"
+                :disabled="!!col.fixed"
+                :label="col.label"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </el-popover>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
 </template>
+
+<style scoped>
+.column-setting-menu {
+  min-width: 190px;
+  padding: 0;
+}
+
+.column-setting-content {
+  padding: 10px 12px;
+}
+</style>
