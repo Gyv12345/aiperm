@@ -21,6 +21,9 @@ public class MessageVO {
     @Schema(description = "接收人ID")
     private Long receiverId;
 
+    @Schema(description = "接收人名称")
+    private String receiverName;
+
     @Schema(description = "标题")
     private String title;
 

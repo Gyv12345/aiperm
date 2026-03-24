@@ -45,6 +45,10 @@ public class MessageDTO {
     @Schema(description = "是否已读：0-未读 1-已读")
     private Integer isRead;
 
+    @JsonView(Views.Query.class)
+    @Schema(description = "消息箱体：1-收件箱 2-发件箱")
+    private Integer boxType = 1;
+
     // ========== 批量操作参数 ==========
 
     @Schema(description = "消息ID列表（用于批量已读）")

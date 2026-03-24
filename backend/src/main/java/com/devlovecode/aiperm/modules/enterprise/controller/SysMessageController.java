@@ -9,6 +9,7 @@ import com.devlovecode.aiperm.common.domain.Views;
 import com.devlovecode.aiperm.common.enums.OperType;
 import com.devlovecode.aiperm.modules.enterprise.dto.MessageDTO;
 import com.devlovecode.aiperm.modules.enterprise.service.MessageService;
+import com.devlovecode.aiperm.modules.enterprise.vo.MessageReceiverVO;
 import com.devlovecode.aiperm.modules.enterprise.vo.MessageVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,6 +49,13 @@ public class SysMessageController {
     @GetMapping("/unread-count")
     public R<Integer> unreadCount() {
         return R.ok(messageService.getUnreadCount());
+    }
+
+    @Operation(summary = "获取消息接收人列表")
+    @SaCheckPermission("enterprise:message:send")
+    @GetMapping("/receivers")
+    public R<List<MessageReceiverVO>> receivers() {
+        return R.ok(messageService.listReceivers());
     }
 
     @Operation(summary = "发送消息")

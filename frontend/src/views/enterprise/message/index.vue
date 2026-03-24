@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Delete, Plus } from '@element-plus/icons-vue'
-import { messageApi, type MessageVO, type MessageDTO } from '@/api/enterprise/message'
-import type { PageResult, TableColumn } from '@/types'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {Delete, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {messageApi, type MessageDTO, type MessageReceiverVO, type MessageVO} from '@/api/enterprise/message'
+import type {PageResult, TableColumn} from '@/types'
 
 // 表格列配置
 const columns = ref<TableColumn[]>([
   { key: 'id', label: 'ID', visible: true, fixed: 'left' },
   { key: 'title', label: '标题', visible: true },
   { key: 'senderName', label: '发送人', visible: true },
+  { key: 'receiverName', label: '接收人', visible: true },
   { key: 'readTime', label: '阅读时间', visible: true },
   { key: 'createTime', label: '发送时间', visible: true },
 ])
-
-const visibleColumns = computed(() => columns.value.filter(c => c.visible))
 
 // 表格引用
 const tableRef = ref()
@@ -37,8 +36,26 @@ const pagination = reactive({
 
 // 查询表单
 const queryForm = reactive({
+  boxType: 1 as number, // 1-收件箱 2-发件箱
   isRead: undefined as number | undefined,
 })
+
+const boxTypeOptions = [
+  { label: '收件箱', value: 1 },
+  { label: '发件箱', value: 2 },
+]
+
+const isOutbox = computed(() => queryForm.boxType === 2)
+
+const visibleColumns = computed(() =>
+  columns.value
+    .filter(c => c.visible)
+    .filter((c) => {
+      if (c.key === 'senderName') return !isOutbox.value
+      if (c.key === 'receiverName') return isOutbox.value
+      return true
+    }),
+)
 
 // 已读状态选项
 const readStatusOptions = [
@@ -86,6 +103,9 @@ async function handleBatchDelete() {
 
 // 批量标记为已读
 async function handleBatchRead() {
+  if (isOutbox.value) {
+    return
+  }
   if (selectedRows.value.length === 0) {
     ElMessage.warning('请选择要标记的消息')
     return
@@ -107,6 +127,9 @@ async function handleBatchRead() {
 
 // 全部标记为已读
 async function handleReadAll() {
+  if (isOutbox.value) {
+    return
+  }
   try {
     await ElMessageBox.confirm('确定要将所有未读消息标记为已读吗？', '提示', {
       type: 'warning',
@@ -128,8 +151,10 @@ async function handleReadAll() {
 // 发送消息对话框
 const sendDialogVisible = ref(false)
 const sendFormLoading = ref(false)
+const receiverLoading = ref(false)
+const receiverOptions = ref<MessageReceiverVO[]>([])
 const sendFormData = reactive<MessageDTO>({
-  receiverId: 0,
+  receiverId: undefined,
   title: '',
   content: '',
 })
@@ -155,6 +180,7 @@ async function fetchMessageList() {
     const params: MessageDTO = {
       page: pagination.page,
       pageSize: pagination.pageSize,
+      boxType: queryForm.boxType,
       isRead: queryForm.isRead,
     }
     const result = await messageApi.list(params) as PageResult<MessageVO>
@@ -170,6 +196,20 @@ async function fetchMessageList() {
   }
 }
 
+async function fetchReceiverOptions() {
+  receiverLoading.value = true
+  try {
+    receiverOptions.value = await messageApi.receivers()
+  }
+  catch (error) {
+    console.error('获取接收人列表失败:', error)
+    ElMessage.error('获取接收人列表失败')
+  }
+  finally {
+    receiverLoading.value = false
+  }
+}
+
 // 搜索
 function handleSearch() {
   pagination.page = 1
@@ -178,8 +218,16 @@ function handleSearch() {
 
 // 重置
 function handleReset() {
+  queryForm.boxType = 1
   queryForm.isRead = undefined
   pagination.page = 1
+  fetchMessageList()
+}
+
+function handleBoxTypeChange() {
+  queryForm.isRead = undefined
+  pagination.page = 1
+  tableRef.value?.clearSelection()
   fetchMessageList()
 }
 
@@ -189,7 +237,7 @@ async function handleView(row: MessageVO) {
     detailData.value = await messageApi.getById(row.id!)
     detailVisible.value = true
     // 如果是未读消息，标记为已读
-    if (row.isRead === 0) {
+    if (!isOutbox.value && row.isRead === 0) {
       await messageApi.markAsRead(row.id!)
       fetchUnreadCount()
       fetchMessageList()
@@ -223,7 +271,7 @@ async function handleDelete(row: MessageVO) {
     })
     await messageApi.delete(row.id!)
     ElMessage.success('删除成功')
-    if (row.isRead === 0) {
+    if (!isOutbox.value && row.isRead === 0) {
       fetchUnreadCount()
     }
     fetchMessageList()
@@ -237,19 +285,20 @@ async function handleDelete(row: MessageVO) {
 }
 
 // 打开发送对话框
-function handleOpenSend() {
+async function handleOpenSend() {
   Object.assign(sendFormData, {
-    receiverId: 0,
+    receiverId: undefined,
     title: '',
     content: '',
   })
+  await fetchReceiverOptions()
   sendDialogVisible.value = true
 }
 
 // 发送消息
 async function handleSend() {
   if (!sendFormData.receiverId) {
-    ElMessage.warning('请输入接收人ID')
+    ElMessage.warning('请选择接收人')
     return
   }
   if (!sendFormData.title) {
@@ -297,6 +346,13 @@ function formatTime(time?: string) {
   return time.replace('T', ' ').substring(0, 19)
 }
 
+function formatReceiverLabel(receiver: MessageReceiverVO) {
+  if (receiver.displayName && receiver.displayName !== receiver.username) {
+    return `${receiver.displayName} (${receiver.username})`
+  }
+  return receiver.displayName || receiver.username
+}
+
 // 页面加载
 onMounted(() => {
   fetchMessageList()
@@ -320,7 +376,29 @@ onMounted(() => {
             :md="8"
             :lg="6"
           >
-            <el-form-item label="阅读状态">
+            <el-form-item label="消息箱体">
+              <el-select
+                v-model="queryForm.boxType"
+                placeholder="请选择箱体"
+                class="filter-control"
+                @change="handleBoxTypeChange"
+              >
+                <el-option
+                  v-for="item in boxTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
+            <el-form-item :label="isOutbox ? '对方阅读' : '阅读状态'">
               <el-select
                 v-model="queryForm.isRead"
                 placeholder="请选择状态"
@@ -368,6 +446,7 @@ onMounted(() => {
       <TableToolbar>
         <template #actions>
           <el-button
+            v-if="!isOutbox"
             type="success"
             :disabled="selectedRows.length === 0"
             @click="handleBatchRead"
@@ -375,6 +454,7 @@ onMounted(() => {
             批量已读
           </el-button>
           <el-button
+            v-if="!isOutbox"
             type="warning"
             :disabled="unreadCount === 0"
             @click="handleReadAll"
@@ -451,6 +531,16 @@ onMounted(() => {
             width="120"
           />
           <el-table-column
+            v-else-if="col.key === 'receiverName'"
+            prop="receiverName"
+            :label="col.label"
+            width="120"
+          >
+            <template #default="{ row }">
+              {{ row.receiverName || row.receiverId }}
+            </template>
+          </el-table-column>
+          <el-table-column
             v-else-if="col.key === 'readTime'"
             prop="readTime"
             :label="col.label"
@@ -501,7 +591,7 @@ onMounted(() => {
               查看
             </el-button>
             <el-button
-              v-if="row.isRead === 0"
+              v-if="!isOutbox && row.isRead === 0"
               type="success"
               link
               @click="handleMarkRead(row)"
@@ -509,6 +599,7 @@ onMounted(() => {
               标记已读
             </el-button>
             <el-button
+              v-if="!isOutbox"
               type="danger"
               link
               :icon="Delete"
@@ -540,6 +631,7 @@ onMounted(() => {
       @clear="tableRef?.clearSelection()"
     >
       <el-button
+        v-if="!isOutbox"
         type="success"
         size="small"
         @click="handleBatchRead"
@@ -547,6 +639,7 @@ onMounted(() => {
         批量已读
       </el-button>
       <el-button
+        v-if="!isOutbox"
         type="danger"
         size="small"
         :icon="Delete"
@@ -567,15 +660,25 @@ onMounted(() => {
         label-width="80px"
       >
         <el-form-item
-          label="接收人ID"
+          label="接收人"
           required
         >
-          <el-input-number
+          <el-select
             v-model="sendFormData.receiverId"
-            :min="1"
-            placeholder="请输入接收人ID"
+            filterable
+            clearable
+            :loading="receiverLoading"
+            no-data-text="暂无可选员工"
+            placeholder="请选择接收人"
             style="width: 100%"
-          />
+          >
+            <el-option
+              v-for="receiver in receiverOptions"
+              :key="receiver.id"
+              :label="formatReceiverLabel(receiver)"
+              :value="receiver.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item
           label="标题"
@@ -627,6 +730,9 @@ onMounted(() => {
         </el-descriptions-item>
         <el-descriptions-item label="发送人">
           {{ detailData.senderName }}
+        </el-descriptions-item>
+        <el-descriptions-item label="接收人">
+          {{ detailData.receiverName || detailData.receiverId }}
         </el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="detailData.isRead === 1 ? 'success' : 'danger'">

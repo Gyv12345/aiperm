@@ -7,34 +7,44 @@ import com.devlovecode.aiperm.common.repository.SpecificationUtils;
 import com.devlovecode.aiperm.modules.enterprise.dto.MessageDTO;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysMessage;
 import com.devlovecode.aiperm.modules.enterprise.repository.MessageRepository;
+import com.devlovecode.aiperm.modules.enterprise.vo.MessageReceiverVO;
 import com.devlovecode.aiperm.modules.enterprise.vo.MessageVO;
+import com.devlovecode.aiperm.modules.system.entity.SysUser;
+import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MessageService {
 
     private final MessageRepository messageRepo;
+    private final UserRepository userRepo;
 
     /**
      * 分页查询当前用户消息
      */
     public PageResult<MessageVO> queryPage(MessageDTO dto) {
-        Long receiverId = getCurrentUserId();
+        Long currentUserId = getCurrentUserId();
+        boolean outbox = Integer.valueOf(2).equals(dto.getBoxType());
         Specification<SysMessage> spec = SpecificationUtils.and(
-                SpecificationUtils.eq("receiverId", receiverId),
+                SpecificationUtils.eq(outbox ? "senderId" : "receiverId", currentUserId),
                 SpecificationUtils.eq("isRead", dto.getIsRead())
         );
-        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+        PageRequest pageRequest = PageRequest.of(
+                dto.getPage() - 1,
+                dto.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createTime")
+        );
         Page<SysMessage> page = messageRepo.findAll(spec, pageRequest);
         PageResult<SysMessage> result = PageResult.fromJpaPage(page);
         return result.map(this::toVO);
@@ -44,9 +54,16 @@ public class MessageService {
      * 查询详情
      */
     public MessageVO findById(Long id) {
-        return messageRepo.findById(id)
-                .map(this::toVO)
+        SysMessage message = messageRepo.findById(id)
                 .orElseThrow(() -> new BusinessException("消息不存在"));
+
+        Long currentUserId = getCurrentUserId();
+        boolean canAccess = currentUserId.equals(message.getReceiverId()) || currentUserId.equals(message.getSenderId());
+        if (!canAccess) {
+            throw new BusinessException("无权查看此消息");
+        }
+
+        return toVO(message);
     }
 
     /**
@@ -58,12 +75,40 @@ public class MessageService {
     }
 
     /**
+     * 查询可选接收人列表
+     */
+    public List<MessageReceiverVO> listReceivers() {
+        Long currentUserId = getCurrentUserId();
+        return userRepo.findAll()
+                .stream()
+                .filter(user -> Integer.valueOf(1).equals(user.getStatus()))
+                .filter(user -> !user.getId().equals(currentUserId))
+                .sorted(Comparator
+                        .comparing((SysUser user) -> safeSortName(user.getRealName()))
+                        .thenComparing(user -> safeSortName(user.getNickname()))
+                        .thenComparing(user -> safeSortName(user.getUsername())))
+                .map(this::toReceiverVO)
+                .toList();
+    }
+
+    /**
      * 发送消息
      */
     @Transactional
     public Long send(MessageDTO dto) {
+        Long senderId = getCurrentUserId();
+        if (senderId.equals(dto.getReceiverId())) {
+            throw new BusinessException("不能给自己发送消息");
+        }
+
+        SysUser receiver = userRepo.findById(dto.getReceiverId())
+                .orElseThrow(() -> new BusinessException("接收人不存在"));
+        if (!Integer.valueOf(1).equals(receiver.getStatus())) {
+            throw new BusinessException("接收人状态异常，无法发送消息");
+        }
+
         SysMessage entity = new SysMessage();
-        entity.setSenderId(getCurrentUserId());
+        entity.setSenderId(senderId);
         entity.setReceiverId(dto.getReceiverId());
         entity.setTitle(dto.getTitle());
         entity.setContent(dto.getContent());
@@ -145,9 +190,45 @@ public class MessageService {
         vo.setIsRead(entity.getIsRead());
         vo.setReadTime(entity.getReadTime());
         vo.setCreateTime(entity.getCreateTime());
-        // senderName 可以通过关联查询用户表获取，这里简化处理
-        vo.setSenderName(entity.getCreateBy());
+        vo.setSenderName(resolveUserDisplayName(entity.getSenderId(), entity.getCreateBy()));
+        vo.setReceiverName(resolveUserDisplayName(entity.getReceiverId(), null));
         return vo;
+    }
+
+    private MessageReceiverVO toReceiverVO(SysUser user) {
+        MessageReceiverVO vo = new MessageReceiverVO();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setNickname(user.getNickname());
+        vo.setRealName(user.getRealName());
+        vo.setDisplayName(pickDisplayName(user));
+        return vo;
+    }
+
+    private String pickDisplayName(SysUser user) {
+        if (user.getRealName() != null && !user.getRealName().isBlank()) {
+            return user.getRealName();
+        }
+        if (user.getNickname() != null && !user.getNickname().isBlank()) {
+            return user.getNickname();
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return String.valueOf(user.getId());
+    }
+
+    private String resolveUserDisplayName(Long userId, String fallback) {
+        if (userId == null) {
+            return fallback != null ? fallback : "-";
+        }
+        return userRepo.findById(userId)
+                .map(this::pickDisplayName)
+                .orElseGet(() -> fallback != null ? fallback : String.valueOf(userId));
+    }
+
+    private String safeSortName(String value) {
+        return value == null ? "" : value;
     }
 
     private Long getCurrentUserId() {

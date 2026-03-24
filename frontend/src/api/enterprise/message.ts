@@ -3,7 +3,7 @@
  * 对应后端 SysMessageController (/enterprise/message)
  */
 import request from '@/utils/request'
-import type { PageResult, PageParams } from '@/types'
+import type {PageParams, PageResult} from '@/types'
 
 // ==================== 类型定义 ====================
 
@@ -16,9 +16,19 @@ export interface MessageVO {
   senderId: number
   senderName: string
   receiverId: number
+  receiverName?: string
   isRead: number
   readTime: string
   createTime: string
+}
+
+/** 消息接收人选项 */
+export interface MessageReceiverVO {
+  id: number
+  username: string
+  nickname?: string
+  realName?: string
+  displayName: string
 }
 
 /** 消息查询/创建/更新 DTO */
@@ -27,6 +37,7 @@ export interface MessageDTO extends PageParams {
   title?: string
   content?: string
   messageType?: number
+  boxType?: number
   receiverId?: number
   receiverIds?: number[]
   ids?: number[]
@@ -47,6 +58,10 @@ export const messageApi = {
   /** 获取未读消息数量 */
   unreadCount: () =>
     request.get<number>('/enterprise/message/unread-count'),
+
+  /** 获取可选接收人 */
+  receivers: () =>
+    request.get<MessageReceiverVO[]>('/enterprise/message/receivers'),
 
   /** 发送消息 */
   send: (data: MessageDTO) =>
