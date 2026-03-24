@@ -1,6 +1,8 @@
 package com.devlovecode.aiperm.modules.enterprise.dto;
 
 import com.devlovecode.aiperm.common.domain.Views;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +46,7 @@ public class JobDTO {
     @Schema(description = "执行类")
     @NotBlank(message = "执行类不能为空", groups = {Views.Create.class, Views.Update.class})
     @Size(max = 200, message = "执行类不能超过200个字符")
+    @JsonAlias("invokeTarget")
     private String beanClass;
 
     @JsonView({Views.Create.class, Views.Update.class, Views.Query.class})
@@ -51,7 +54,26 @@ public class JobDTO {
     private Integer status;
 
     @JsonView({Views.Create.class, Views.Update.class})
+    @Schema(description = "错过策略（兼容字段）")
+    private Integer misfirePolicy;
+
+    @JsonView({Views.Create.class, Views.Update.class})
+    @Schema(description = "并发策略（兼容字段）")
+    private Integer concurrent;
+
+    @JsonView({Views.Create.class, Views.Update.class})
     @Schema(description = "备注")
     @Size(max = 500, message = "备注不能超过500个字符")
     private String remark;
+
+    @JsonProperty("invokeTarget")
+    @Schema(description = "执行目标（前端兼容字段）")
+    public String getInvokeTarget() {
+        return beanClass;
+    }
+
+    @JsonProperty("invokeTarget")
+    public void setInvokeTarget(String invokeTarget) {
+        this.beanClass = invokeTarget;
+    }
 }

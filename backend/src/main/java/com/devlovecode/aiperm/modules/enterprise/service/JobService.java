@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class JobService {
 
     private final JobRepository jobRepo;
+    private final JobSchedulerService jobSchedulerService;
 
     /**
      * 分页查询
@@ -42,7 +44,7 @@ public class JobService {
      * 查询详情
      */
     public JobVO findById(Long id) {
-        return jobRepo.findById(id)
+        return jobRepo.findByIdAndDeleted(id, 0)
                 .map(this::toVO)
                 .orElseThrow(() -> new BusinessException("定时任务不存在"));
     }
@@ -52,6 +54,8 @@ public class JobService {
      */
     @Transactional
     public Long create(JobDTO dto) {
+        validateCronExpression(dto.getCronExpression());
+
         SysJob entity = new SysJob();
         entity.setJobName(dto.getJobName());
         entity.setJobGroup(dto.getJobGroup());
@@ -63,6 +67,7 @@ public class JobService {
         entity.setCreateTime(LocalDateTime.now());
 
         jobRepo.save(entity);
+        jobSchedulerService.refreshJobAfterCommit(entity);
 
         return entity.getId();
     }
@@ -72,7 +77,9 @@ public class JobService {
      */
     @Transactional
     public void update(Long id, JobDTO dto) {
-        SysJob entity = jobRepo.findById(id)
+        validateCronExpression(dto.getCronExpression());
+
+        SysJob entity = jobRepo.findByIdAndDeleted(id, 0)
                 .orElseThrow(() -> new BusinessException("定时任务不存在"));
 
         entity.setJobName(dto.getJobName());
@@ -85,6 +92,7 @@ public class JobService {
         entity.setUpdateTime(LocalDateTime.now());
 
         jobRepo.save(entity);
+        jobSchedulerService.refreshJobAfterCommit(entity);
     }
 
     /**
@@ -92,10 +100,9 @@ public class JobService {
      */
     @Transactional
     public void delete(Long id) {
-        if (!jobRepo.existsById(id)) {
-            throw new BusinessException("定时任务不存在");
-        }
+        jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
         jobRepo.softDelete(id, LocalDateTime.now());
+        jobSchedulerService.removeJobAfterCommit(id);
     }
 
     /**
@@ -103,10 +110,9 @@ public class JobService {
      */
     @Transactional
     public void pause(Long id) {
-        if (!jobRepo.existsById(id)) {
-            throw new BusinessException("定时任务不存在");
-        }
+        jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
         jobRepo.updateStatus(id, 0, getCurrentUsername(), LocalDateTime.now());
+        jobSchedulerService.removeJobAfterCommit(id);
     }
 
     /**
@@ -114,10 +120,10 @@ public class JobService {
      */
     @Transactional
     public void resume(Long id) {
-        if (!jobRepo.existsById(id)) {
-            throw new BusinessException("定时任务不存在");
-        }
+        SysJob entity = jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
         jobRepo.updateStatus(id, 1, getCurrentUsername(), LocalDateTime.now());
+        entity.setStatus(1);
+        jobSchedulerService.refreshJobAfterCommit(entity);
     }
 
     // ========== 私有方法 ==========
@@ -140,6 +146,14 @@ public class JobService {
             return StpUtil.getLoginIdAsString();
         } catch (Exception e) {
             return "system";
+        }
+    }
+
+    private void validateCronExpression(String cronExpression) {
+        try {
+            CronExpression.parse(cronExpression);
+        } catch (Exception e) {
+            throw new BusinessException("Cron表达式不合法");
         }
     }
 }

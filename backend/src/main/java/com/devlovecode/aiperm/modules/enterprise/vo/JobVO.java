@@ -1,5 +1,6 @@
 package com.devlovecode.aiperm.modules.enterprise.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -27,9 +28,21 @@ public class JobVO {
     @Schema(description = "状态：0-暂停 1-运行")
     private Integer status;
 
+    @Schema(description = "错过策略（兼容字段）")
+    private Integer misfirePolicy = 1;
+
+    @Schema(description = "并发策略（兼容字段）")
+    private Integer concurrent = 1;
+
     @Schema(description = "备注")
     private String remark;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @JsonProperty("invokeTarget")
+    @Schema(description = "执行目标（前端兼容字段）")
+    public String getInvokeTarget() {
+        return beanClass;
+    }
 }

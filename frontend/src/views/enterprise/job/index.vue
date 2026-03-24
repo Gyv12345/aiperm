@@ -562,7 +562,7 @@ onMounted(() => {
         >
           <el-input
             v-model="formData.invokeTarget"
-            placeholder="请输入执行目标的完整类名"
+            placeholder="请输入Spring Bean名称或完整类名"
           />
         </el-form-item>
         <el-form-item label="状态">
