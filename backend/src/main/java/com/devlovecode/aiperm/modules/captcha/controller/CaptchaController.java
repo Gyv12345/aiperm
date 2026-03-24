@@ -1,6 +1,8 @@
 package com.devlovecode.aiperm.modules.captcha.controller;
 
+import com.devlovecode.aiperm.common.annotation.RateLimit;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.common.enums.AccessLimitScope;
 import com.devlovecode.aiperm.modules.captcha.dto.SendCaptchaDTO;
 import com.devlovecode.aiperm.modules.captcha.enums.CaptchaScene;
 import com.devlovecode.aiperm.modules.captcha.service.CaptchaService;
@@ -29,6 +31,7 @@ public class CaptchaController {
 
     @Operation(summary = "发送验证码（短信或邮件）")
     @PostMapping("/send")
+    @RateLimit(count = 10, windowSeconds = 60, scope = AccessLimitScope.IP, key = "captcha:send", message = "验证码发送请求过于频繁，请稍后重试")
     public R<Void> send(@RequestBody @Valid SendCaptchaDTO dto, HttpServletRequest request) {
         String ip = getClientIp(request);
         CaptchaScene scene = CaptchaScene.valueOf(dto.getScene().toUpperCase());

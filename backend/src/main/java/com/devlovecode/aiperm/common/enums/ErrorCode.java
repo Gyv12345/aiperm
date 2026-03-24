@@ -56,6 +56,8 @@ public enum ErrorCode {
     TOKEN_EXPIRED(50003, "Token已过期"),
     UNAUTHORIZED(50004, "未登录或登录已过期"),
     FORBIDDEN(50005, "禁止访问"),
+    RATE_LIMITED(50006, "请求过于频繁，请稍后重试"),
+    IDEMPOTENT_CONFLICT(50007, "请勿重复提交"),
 
     // 系统错误码 9xxx
     SYSTEM_ERROR(90001, "系统错误"),

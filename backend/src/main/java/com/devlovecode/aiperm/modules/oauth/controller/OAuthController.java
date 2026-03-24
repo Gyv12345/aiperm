@@ -1,8 +1,10 @@
 package com.devlovecode.aiperm.modules.oauth.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.devlovecode.aiperm.common.annotation.Idempotent;
 import com.devlovecode.aiperm.common.annotation.Log;
 import com.devlovecode.aiperm.common.domain.R;
+import com.devlovecode.aiperm.common.enums.AccessLimitScope;
 import com.devlovecode.aiperm.common.enums.OperType;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.oauth.service.OAuthService;
@@ -66,6 +68,7 @@ public class OAuthController {
     @SaCheckLogin
     @Log(title = "OAuth绑定", operType = OperType.CREATE)
     @GetMapping("/bind/callback/{platform}")
+    @Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:bind", message = "请勿重复提交绑定请求")
     public R<Void> bindCallback(@PathVariable String platform, @RequestParam String code) {
         oAuthService.bind(platform, code);
         return R.ok();
@@ -75,6 +78,7 @@ public class OAuthController {
     @SaCheckLogin
     @Log(title = "OAuth解绑", operType = OperType.DELETE)
     @DeleteMapping("/unbind/{platform}")
+    @Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:unbind", message = "请勿重复提交解绑请求")
     public R<Void> unbind(@PathVariable String platform) {
         oAuthService.unbind(platform);
         return R.ok();
