@@ -38,4 +38,11 @@ public class BaseEntity implements Serializable {
 
     @Version
     private Integer version;
+
+    @PrePersist
+    public void prePersist() {
+        if (deleted == null) {
+            deleted = 0;
+        }
+    }
 }

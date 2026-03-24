@@ -17,8 +17,6 @@ public class StpInterfaceImpl implements StpInterface {
 
     private final AuthService authService;
 
-    private static final Long SUPER_ADMIN_ID = 1L;
-
     /**
      * 返回一个账号所拥有的权限码集合
      */
@@ -26,7 +24,7 @@ public class StpInterfaceImpl implements StpInterface {
     public List<String> getPermissionList(Object loginId, String loginType) {
         Long userId = Long.parseLong(loginId.toString());
 
-        if (SUPER_ADMIN_ID.equals(userId)) {
+        if (authService.isSuperAdmin(userId)) {
             // 超级管理员返回所有权限
             return authService.getAllPermissions();
         }
@@ -40,6 +38,9 @@ public class StpInterfaceImpl implements StpInterface {
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
         Long userId = Long.parseLong(loginId.toString());
+        if (authService.isSuperAdmin(userId)) {
+            return List.of("super_admin");
+        }
         // 统一从数据库获取角色
         return authService.getUserRoles(userId);
     }

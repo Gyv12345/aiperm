@@ -118,7 +118,7 @@ public class RoleService {
             throw new BusinessException("角色已分配给用户，不能删除");
         }
         // 删除角色菜单关联
-        roleRepo.deleteRoleMenus(id, LocalDateTime.now());
+        roleRepo.deleteRoleMenus(id);
         // 删除角色
         roleRepo.softDelete(id, LocalDateTime.now());
     }
@@ -135,7 +135,7 @@ public class RoleService {
         LocalDateTime now = LocalDateTime.now();
 
         // 先删除旧的关联
-        roleRepo.deleteRoleMenus(roleId, now);
+        roleRepo.deleteRoleMenus(roleId);
 
         // 添加新的关联
         if (menuIds != null && !menuIds.isEmpty()) {

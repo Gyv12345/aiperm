@@ -86,12 +86,17 @@ public interface MenuRepository extends BaseJpaRepository<SysMenu> {
      * 获取用户权限标识
      */
     @Query(value = """
-        SELECT DISTINCT m.perms
+        SELECT DISTINCT TRIM(m.perms)
         FROM sys_menu m
         INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
         INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
-        WHERE ur.user_id = :userId AND m.perms IS NOT NULL AND m.perms != ''
-          AND m.status = 1 AND m.deleted = 0
+        WHERE ur.user_id = :userId
+          AND ur.deleted = 0
+          AND rm.deleted = 0
+          AND m.perms IS NOT NULL
+          AND TRIM(m.perms) != ''
+          AND m.status = 1
+          AND m.deleted = 0
         """, nativeQuery = true)
     List<String> findPermissionsByUserId(@Param("userId") Long userId);
 
@@ -99,9 +104,12 @@ public interface MenuRepository extends BaseJpaRepository<SysMenu> {
      * 获取所有启用的权限标识（超级管理员使用）
      */
     @Query(value = """
-        SELECT DISTINCT perms
+        SELECT DISTINCT TRIM(perms)
         FROM sys_menu
-        WHERE perms IS NOT NULL AND perms != '' AND status = 1 AND deleted = 0
+        WHERE perms IS NOT NULL
+          AND TRIM(perms) != ''
+          AND status = 1
+          AND deleted = 0
         """, nativeQuery = true)
     List<String> findAllEnabledPermissions();
 }

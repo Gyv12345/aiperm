@@ -4,6 +4,7 @@ import com.devlovecode.aiperm.common.domain.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -37,6 +38,7 @@ public class SysDept extends BaseEntity {
 
     private String remark;
 
+    @Transient
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<SysDept> children = new ArrayList<>();
 }

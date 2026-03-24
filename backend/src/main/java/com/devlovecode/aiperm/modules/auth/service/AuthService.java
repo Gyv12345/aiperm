@@ -54,7 +54,6 @@ public class AuthService {
 
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final long CAPTCHA_EXPIRE = 5; // 验证码过期时间（分钟）
-    private static final Long SUPER_ADMIN_ID = 1L;
 
     /**
      * 生成验证码
@@ -222,7 +221,7 @@ public class AuthService {
         List<String> roles;
         List<String> permissions;
 
-        if (SUPER_ADMIN_ID.equals(userId)) {
+        if (isSuperAdmin(userId)) {
             // 超级管理员：返回所有启用的权限
             roles = List.of("super_admin");
             permissions = getAllPermissions();
@@ -249,7 +248,7 @@ public class AuthService {
         Long userId = StpUtil.getLoginIdAsLong();
 
         List<SysMenu> menus;
-        if (SUPER_ADMIN_ID.equals(userId)) {
+        if (isSuperAdmin(userId)) {
             // 超级管理员：返回所有启用的菜单
             menus = menuRepo.findAllEnabled();
         } else {
@@ -328,6 +327,13 @@ public class AuthService {
      */
     public List<String> getAllPermissions() {
         return menuRepo.findAllEnabledPermissions();
+    }
+
+    /**
+     * 判定用户是否超级管理员
+     */
+    public boolean isSuperAdmin(Long userId) {
+        return userRepo.isAdmin(userId);
     }
 
     /**

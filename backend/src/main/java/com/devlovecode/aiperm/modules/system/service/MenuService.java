@@ -68,13 +68,12 @@ public class MenuService {
         entity.setSort(dto.getSort() != null ? dto.getSort() : 0);
         entity.setPath(dto.getPath());
         entity.setComponent(dto.getComponent());
-        entity.setPerms(dto.getPerms());
+        entity.setPerms(resolvePerms(dto));
         entity.setIcon(dto.getIcon());
         entity.setIsExternal(dto.getIsExternal() != null ? dto.getIsExternal() : 0);
         entity.setIsCache(dto.getIsCache() != null ? dto.getIsCache() : 0);
         entity.setVisible(dto.getVisible() != null ? dto.getVisible() : 1);
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
-        entity.setPermission(dto.getPermission());
         entity.setRemark(dto.getRemark());
         entity.setCreateBy(getCurrentUsername());
         entity.setCreateTime(LocalDateTime.now());
@@ -106,13 +105,12 @@ public class MenuService {
         entity.setSort(dto.getSort());
         entity.setPath(dto.getPath());
         entity.setComponent(dto.getComponent());
-        entity.setPerms(dto.getPerms());
+        entity.setPerms(resolvePerms(dto));
         entity.setIcon(dto.getIcon());
         entity.setIsExternal(dto.getIsExternal());
         entity.setIsCache(dto.getIsCache());
         entity.setVisible(dto.getVisible());
         entity.setStatus(dto.getStatus());
-        entity.setPermission(dto.getPermission());
         entity.setRemark(dto.getRemark());
         entity.setUpdateBy(getCurrentUsername());
         entity.setUpdateTime(LocalDateTime.now());
@@ -189,5 +187,12 @@ public class MenuService {
         } catch (Exception e) {
             return "system";
         }
+    }
+
+    private String resolvePerms(MenuDTO dto) {
+        if (dto.getPerms() != null && !dto.getPerms().isBlank()) {
+            return dto.getPerms();
+        }
+        return dto.getPermission();
     }
 }

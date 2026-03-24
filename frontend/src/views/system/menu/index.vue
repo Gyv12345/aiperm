@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
-import { menuApi, type MenuVO, type MenuDTO } from '@/api/system/menu'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Refresh} from '@element-plus/icons-vue'
+import {menuApi, type MenuDTO, type MenuVO} from '@/api/system/menu'
 
 // 菜单树数据
 const menuTree = ref<MenuVO[]>([])
@@ -53,8 +53,8 @@ function isMenuType(type: number | string | undefined) {
 
 // 状态选项
 const statusOptions = [
-  { value: 0, label: '正常' },
-  { value: 1, label: '停用' },
+  { value: 1, label: '启用' },
+  { value: 0, label: '禁用' },
 ]
 
 // 是否选项
@@ -79,7 +79,7 @@ const form = reactive<MenuDTO & { id?: number }>({
   isExternal: 0,
   isCache: 0,
   visible: 1,
-  status: 0,
+  status: 1,
   remark: '',
 })
 
@@ -222,7 +222,7 @@ function resetForm() {
     isExternal: 0,
     isCache: 0,
     visible: 1,
-    status: 0,
+    status: 1,
     remark: '',
   })
   selectedIcon.value = ''
@@ -481,7 +481,7 @@ onMounted(() => {
         >
           <template #default="{ row }">
             <el-tag
-              :type="row.status === 0 ? 'success' : 'danger'"
+              :type="row.status === 1 ? 'success' : 'danger'"
               size="small"
             >
               {{ statusOptions.find(o => o.value === row.status)?.label || '未知' }}
