@@ -3,7 +3,7 @@
  * 对应后端 SysPostController (/system/post)
  */
 import request from '@/utils/request'
-import type { PageResult, PageParams } from '@/types'
+import type {PageParams, PageResult} from '@/types'
 
 // ==================== 类型定义 ====================
 

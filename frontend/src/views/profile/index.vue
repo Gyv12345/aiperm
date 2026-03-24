@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { profileApi, type ProfileVO, type ProfileDTO } from '@/api/profile'
-import { mfaApi, type MfaStatusVO } from '@/api/mfa'
-import { useUserStore } from '@/stores/user'
-import { useDict } from '@/composables/useDict'
+import {onMounted, ref} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {profileApi, type ProfileDTO, type ProfileVO} from '@/api/profile'
+import {mfaApi, type MfaStatusVO} from '@/api/mfa'
+import {useUserStore} from '@/stores/user'
+import {useDict} from '@/composables/useDict'
 import DictTag from '@/components/dict/DictTag.vue'
 import MfaBindDialog from '@/components/mfa/MfaBindDialog.vue'
 

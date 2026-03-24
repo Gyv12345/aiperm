@@ -1,4 +1,4 @@
-import { useUserStore } from '@/stores/user'
+import {useUserStore} from '@/stores/user'
 
 /**
  * 检查是否有指定权限

@@ -1,6 +1,7 @@
 package com.devlovecode.aiperm.modules.mfa.vo;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 /**

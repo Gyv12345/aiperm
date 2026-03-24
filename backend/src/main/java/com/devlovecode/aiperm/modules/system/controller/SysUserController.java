@@ -8,7 +8,6 @@ import com.devlovecode.aiperm.common.domain.R;
 import com.devlovecode.aiperm.common.domain.Views;
 import com.devlovecode.aiperm.common.enums.OperType;
 import com.devlovecode.aiperm.modules.system.dto.UserDTO;
-import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.service.UserService;
 import com.devlovecode.aiperm.modules.system.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +16,7 @@ import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @Tag(name = "用户管理")

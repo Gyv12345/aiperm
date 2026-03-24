@@ -1,7 +1,8 @@
 package com.devlovecode.aiperm.modules.mfa.entity;
 
 import com.devlovecode.aiperm.common.domain.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

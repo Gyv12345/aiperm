@@ -2,8 +2,8 @@
  * 请求工具
  * 基于现有的 axiosInstance 封装
  */
-import { axiosInstance } from './api-mutator'
-import type { R } from '@/types'
+import {axiosInstance} from './api-mutator'
+import type {R} from '@/types'
 
 // 请求封装
 const request = {

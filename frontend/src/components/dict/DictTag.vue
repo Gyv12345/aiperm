@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { DictDataVO } from '@/api/system/dict'
+import {computed} from 'vue'
+import type {DictDataVO} from '@/api/system/dict'
 
 /**
  * 字典标签展示组件（模仿若依）

@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { PageResult } from '@/types'
+import type {PageResult} from '@/types'
 
 export interface ProfileVO {
   id: number

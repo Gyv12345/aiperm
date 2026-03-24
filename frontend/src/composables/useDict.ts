@@ -1,5 +1,5 @@
-import { ref, toRefs, reactive } from 'vue'
-import { dictApi, type DictDataVO } from '@/api/system/dict'
+import {reactive, ref, toRefs} from 'vue'
+import {dictApi, type DictDataVO} from '@/api/system/dict'
 
 /**
  * 字典数据组合式函数（模仿若依）

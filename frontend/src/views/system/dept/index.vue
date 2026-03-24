@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { deptApi, type DeptVO, type DeptDTO } from '@/api/system/dept'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {deptApi, type DeptDTO, type DeptVO} from '@/api/system/dept'
 
 // 表单引用
 const formRef = ref<FormInstance>()

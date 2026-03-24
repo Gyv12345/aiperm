@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { RouterView } from 'vue-router'
-import { useAppStore } from '@/stores/app'
+import {onMounted, onUnmounted, ref} from 'vue'
+import {RouterView} from 'vue-router'
+import {useAppStore} from '@/stores/app'
 import MfaVerifyDialog from '@/components/mfa/MfaVerifyDialog.vue'
 
 const appStore = useAppStore()

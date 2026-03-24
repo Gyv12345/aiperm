@@ -3,7 +3,7 @@
  * 对应后端 SysMenuController (/system/menu)
  */
 import request from '@/utils/request'
-import type { PageParams } from '@/types'
+import type {PageParams} from '@/types'
 
 // ==================== 类型定义 ====================
 

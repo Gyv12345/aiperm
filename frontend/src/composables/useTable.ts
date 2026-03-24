@@ -1,5 +1,5 @@
-import { ref, reactive } from 'vue'
-import type { PageResult } from '@/types'
+import {reactive, ref} from 'vue'
+import type {PageResult} from '@/types'
 
 export interface TableOptions<T> {
   fetchData: (params: { page: number; pageSize: number }) => Promise<PageResult<T>>

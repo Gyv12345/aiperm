@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Close } from '@element-plus/icons-vue'
+import {Close} from '@element-plus/icons-vue'
 
 /**
  * 浮动多选操作条

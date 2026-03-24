@@ -1,5 +1,5 @@
-import { ref, reactive } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import {reactive, ref} from 'vue'
+import type {FormInstance, FormRules} from 'element-plus'
 
 export interface FormOptions<T> {
   defaultValues?: Partial<T>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { dictApi, type DictDataVO } from '@/api/system/dict'
+import {onMounted, ref} from 'vue'
+import {dictApi, type DictDataVO} from '@/api/system/dict'
 
 /**
  * 字典单选组件（用于表单，选项 ≤ 4 项时使用）

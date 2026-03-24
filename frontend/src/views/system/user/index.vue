@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh, Key, User, MoreFilled, Female, Male, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
-import { userApi, type UserVO, type UserDTO } from '@/api/system/user'
-import { roleApi, type RoleVO } from '@/api/system/role'
-import { deptApi, type DeptVO } from '@/api/system/dept'
-import { postApi, type PostVO } from '@/api/system/post'
-import type { PageResult, TableColumn } from '@/types'
-import { useDict } from '@/composables/useDict'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {
+  ArrowUp,
+  Delete,
+  Edit,
+  Female,
+  Key,
+  Male,
+  MoreFilled,
+  Plus,
+  Refresh,
+  Search,
+  User
+} from '@element-plus/icons-vue'
+import {userApi, type UserDTO, type UserVO} from '@/api/system/user'
+import {roleApi, type RoleVO} from '@/api/system/role'
+import {deptApi, type DeptVO} from '@/api/system/dept'
+import {postApi, type PostVO} from '@/api/system/post'
+import type {PageResult, TableColumn} from '@/types'
+import {useDict} from '@/composables/useDict'
 
 // 字典
 const dictData = useDict('sys_status')

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { profileApi, type PasswordDTO } from '@/api/profile'
+import {ref} from 'vue'
+import {ElMessage} from 'element-plus'
+import {type PasswordDTO, profileApi} from '@/api/profile'
 
 const saving = ref(false)
 const formRef = ref()

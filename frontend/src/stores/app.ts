@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import {defineStore} from 'pinia'
+import {computed, ref, watch} from 'vue'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'

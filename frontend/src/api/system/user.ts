@@ -3,7 +3,7 @@
  * 对应后端 SysUserController (/system/user)
  */
 import request from '@/utils/request'
-import type { PageResult, PageParams } from '@/types'
+import type {PageParams, PageResult} from '@/types'
 
 // ==================== 类型定义 ====================
 

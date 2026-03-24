@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { mfaPolicyApi, type MfaPolicyVO, type MfaPolicyDTO } from '@/api/system/mfaPolicy'
+import {onMounted, ref} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {mfaPolicyApi, type MfaPolicyDTO, type MfaPolicyVO} from '@/api/system/mfaPolicy'
 
 const tableData = ref<MfaPolicyVO[]>([])
 const loading = ref(false)

@@ -1,7 +1,7 @@
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
+import {computed} from 'vue'
+import {useRouter} from 'vue-router'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {useUserStore} from '@/stores/user'
 
 /**
  * 认证相关的组合式函数

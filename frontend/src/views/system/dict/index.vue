@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
-import { dictApi, type DictTypeVO, type DictDataVO, type DictTypeDTO, type DictDataDTO } from '@/api/system/dict'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue'
+import {dictApi, type DictDataDTO, type DictDataVO, type DictTypeDTO, type DictTypeVO} from '@/api/system/dict'
 
 // 字典类型相关
 const dictTypeList = ref<DictTypeVO[]>([])

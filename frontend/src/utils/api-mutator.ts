@@ -1,5 +1,5 @@
-import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
-import { ElMessage } from 'element-plus'
+import axios, {type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig} from 'axios'
+import {ElMessage} from 'element-plus'
 
 // 错误码映射
 const ERROR_MESSAGES: Record<number, string> = {

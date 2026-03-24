@@ -4,7 +4,6 @@ import com.devlovecode.aiperm.common.repository.BaseJpaRepository;
 import com.devlovecode.aiperm.modules.enterprise.entity.SysConfig;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 

@@ -3,7 +3,6 @@
  * 对应后端 OAuthController (/oauth)
  */
 import request from '@/utils/request'
-import type { LoginVO } from './auth'
 
 // ==================== 类型定义 ====================
 

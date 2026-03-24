@@ -1,6 +1,6 @@
-import { defineStore } from 'pinia'
-import { ref, shallowRef, computed } from 'vue'
-import { authApi } from '@/api/auth'
+import {defineStore} from 'pinia'
+import {computed, ref, shallowRef} from 'vue'
+import {authApi} from '@/api/auth'
 
 export interface UserInfo {
   id: number

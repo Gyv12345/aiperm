@@ -1,12 +1,7 @@
-import {
-  createRouter,
-  createWebHistory,
-  type RouteRecordRaw,
-  type Router,
-} from 'vue-router'
-import type { App } from 'vue'
-import { useUserStore } from '@/stores/user'
-import { usePermissionStore } from '@/stores/permission'
+import {createRouter, createWebHistory, type Router, type RouteRecordRaw,} from 'vue-router'
+import type {App} from 'vue'
+import {useUserStore} from '@/stores/user'
+import {usePermissionStore} from '@/stores/permission'
 
 // 静态路由（不需要权限）
 export const constantRoutes: RouteRecordRaw[] = [

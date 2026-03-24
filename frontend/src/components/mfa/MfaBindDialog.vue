@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { mfaApi, type MfaQrcodeVO } from '@/api/mfa'
+import {ref, watch} from 'vue'
+import {ElMessage} from 'element-plus'
+import {mfaApi, type MfaQrcodeVO} from '@/api/mfa'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{

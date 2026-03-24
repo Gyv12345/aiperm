@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { User, Lock, Picture, Iphone, Message } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
-import { authApi, type LoginRequest, type CaptchaVO, type UnifiedLoginDTO, type LoginConfigVO } from '@/api/auth'
-import { captchaApi } from '@/api/captcha'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {ElMessage, type FormInstance, type FormRules} from 'element-plus'
+import {Iphone, Lock, Message, Picture, User} from '@element-plus/icons-vue'
+import {useUserStore} from '@/stores/user'
+import {authApi, type CaptchaVO, type LoginConfigVO, type UnifiedLoginDTO} from '@/api/auth'
+import {captchaApi} from '@/api/captcha'
 
 const router = useRouter()
 const userStore = useUserStore()

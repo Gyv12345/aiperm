@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh, VideoPause, VideoPlay } from '@element-plus/icons-vue'
-import { jobApi, type JobVO, type JobDTO } from '@/api/enterprise/job'
-import type { PageResult, TableColumn } from '@/types'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Refresh, Search, VideoPause, VideoPlay} from '@element-plus/icons-vue'
+import {jobApi, type JobDTO, type JobVO} from '@/api/enterprise/job'
+import type {PageResult, TableColumn} from '@/types'
 
 // 表格列配置
 const columns = ref<TableColumn[]>([

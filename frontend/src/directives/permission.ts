@@ -1,6 +1,6 @@
-import type { Directive, DirectiveBinding } from 'vue'
-import { hasPermission } from '@/utils/permission'
-import { useUserStore } from '@/stores/user'
+import type {Directive, DirectiveBinding} from 'vue'
+import {hasPermission} from '@/utils/permission'
+import {useUserStore} from '@/stores/user'
 
 /**
  * v-permission 指令

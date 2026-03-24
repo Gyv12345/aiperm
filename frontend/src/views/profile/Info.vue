@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { profileApi, type ProfileVO, type ProfileDTO } from '@/api/profile'
-import { useDict } from '@/composables/useDict'
+import {onMounted, ref} from 'vue'
+import {ElMessage} from 'element-plus'
+import {profileApi, type ProfileDTO, type ProfileVO} from '@/api/profile'
+import {useDict} from '@/composables/useDict'
 import DictTag from '@/components/dict/DictTag.vue'
 
 // 字典

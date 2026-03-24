@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAppStore } from '@/stores/app'
-import { usePermissionStore } from '@/stores/permission'
-import type { MenuVO } from '@/api/system/menu'
+import {computed, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {useAppStore} from '@/stores/app'
+import {usePermissionStore} from '@/stores/permission'
+import type {MenuVO} from '@/api/system/menu'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 interface MenuItem extends MenuVO {

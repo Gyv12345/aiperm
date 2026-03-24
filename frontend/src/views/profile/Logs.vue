@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { profileApi, type LoginLogVO } from '@/api/profile'
-import type { PageResult } from '@/types'
+import {onMounted, ref} from 'vue'
+import {type LoginLogVO, profileApi} from '@/api/profile'
+import type {PageResult} from '@/types'
 
 const loading = ref(false)
 const tableData = ref<LoginLogVO[]>([])

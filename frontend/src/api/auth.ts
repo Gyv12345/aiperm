@@ -3,7 +3,7 @@
  * 对应后端 AuthController (/auth)
  */
 import request from '@/utils/request'
-import type { MenuVO } from './system/menu'
+import type {MenuVO} from './system/menu'
 
 export type { MenuVO }
 

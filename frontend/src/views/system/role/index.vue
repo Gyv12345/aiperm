@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { roleApi, type RoleVO, type RoleDTO } from '@/api/system/role'
-import { menuApi, type MenuVO } from '@/api/system/menu'
-import type { PageResult, TableColumn } from '@/types'
-import { useDict } from '@/composables/useDict'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
+import {Delete, Edit, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {roleApi, type RoleDTO, type RoleVO} from '@/api/system/role'
+import {menuApi, type MenuVO} from '@/api/system/menu'
+import type {PageResult, TableColumn} from '@/types'
+import {useDict} from '@/composables/useDict'
 
 // 字典
 const dictData = useDict('sys_status')
