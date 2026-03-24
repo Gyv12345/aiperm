@@ -22,11 +22,13 @@
     "axios": "^1.13.5",
     "element-plus": "^2.13.2",
     "orval": "^7.13.2",
+    "page-agent": "^1.6.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "unocss": "^66.6.0",
     "vue": "^3.5.25",
-    "vue-router": "^5.0.3"
+    "vue-router": "^5.0.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

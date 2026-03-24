@@ -31,9 +31,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/oauth/login/**",
                         // 审批回调接口（来自企业IM服务端）
                         "/approval/callback/**",
-                        // 排除 Agent SSE 端点（异步分发阶段无 Sa-Token ThreadLocal 上下文）
-                        "/agent/chat/stream",
-                        "/agent/confirm",
                         // 排除Swagger相关
                         "/swagger-ui/**",
                         "/swagger-resources/**",

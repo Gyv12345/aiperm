@@ -54,12 +54,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 数据权限拦截器（排除 SSE 流式接口，避免异步分发时 Sa-Token 上下文不存在）
+        // 数据权限拦截器
         registry.addInterceptor(dataScopeInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/auth/**",
-                        "/agent/**",  // SSE 流式接口，异步场景
                         "/error",
                         "/v3/api-docs/**",
                         "/swagger-ui/**"

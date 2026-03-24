@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import {computed} from 'vue'
+import {useRoute} from 'vue-router'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
-import AgentFloat from '@/components/agent/AgentFloat.vue'
+import FormPageAgent from '@/components/agent/FormPageAgent.vue'
 
 const route = useRoute()
 
@@ -33,8 +33,7 @@ const pageTitle = computed(() => {
       </main>
     </div>
 
-    <!-- Agent 悬浮球 -->
-    <AgentFloat />
+    <FormPageAgent />
   </div>
 </template>
 
