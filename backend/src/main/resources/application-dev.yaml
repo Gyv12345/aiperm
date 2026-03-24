@@ -12,7 +12,6 @@ spring:
 
   # 数据源配置 - 开发环境
   # 可通过环境变量覆盖，便于本地和测试机复用
-  # 数据源配置 - 开发环境使用阿里云 RDS
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${DB_URL:jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}

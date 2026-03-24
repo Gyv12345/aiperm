@@ -120,8 +120,9 @@ tasks.named('test') {
 }
 
 flyway {
-    url = 'jdbc:mysql://localhost:3306/aiperm?useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true'
-    user = 'root'
-    password = ''
+    url = System.getenv('FLYWAY_URL') ?: System.getenv('DB_URL') ?:
+            'jdbc:mysql://localhost:3306/aiperm?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true'
+    user = System.getenv('FLYWAY_USER') ?: System.getenv('DB_USERNAME') ?: 'root'
+    password = System.getenv('FLYWAY_PASSWORD') ?: System.getenv('DB_PASSWORD') ?: ''
     locations = ['classpath:db/migration']
 }
