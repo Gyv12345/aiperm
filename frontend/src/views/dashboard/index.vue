@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { shallowRef, onMounted, ref } from 'vue'
-import { dashboardApi } from '@/api/dashboard'
+import {computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch} from 'vue'
+import {dashboardApi} from '@/api/dashboard'
+import {noticeApi, type NoticeVO} from '@/api/enterprise/notice'
 
 // 统计数据（从后端获取）
 const stats = shallowRef([
@@ -36,6 +37,56 @@ const stats = shallowRef([
 
 // 加载状态
 const loading = ref(false)
+const announcements = ref<NoticeVO[]>([])
+const announcementIndex = ref(0)
+const noticeViewportRef = ref<HTMLElement>()
+const noticeMeasureRef = ref<HTMLElement>()
+const shouldMarqueeCurrentLine = ref(false)
+
+const announcementLines = computed(() =>
+  announcements.value
+    .map((item) => {
+      const title = item.title?.trim() || ''
+      const content = item.content || ''
+      if (!title) return content
+      if (!content || content === title) return title
+      return `${title}：${content}`
+    })
+    .filter(Boolean)
+)
+const currentAnnouncementLine = computed(() => {
+  if (announcementLines.value.length === 0) return ''
+  return announcementLines.value[announcementIndex.value] || announcementLines.value[0]
+})
+let announcementTimer: number | undefined
+let announcementRotateTimer: number | undefined
+
+const detectAnnouncementOverflow = () => {
+  const viewport = noticeViewportRef.value
+  const measure = noticeMeasureRef.value
+  if (!viewport || !measure || !currentAnnouncementLine.value) {
+    shouldMarqueeCurrentLine.value = false
+    return
+  }
+
+  shouldMarqueeCurrentLine.value = measure.scrollWidth > viewport.clientWidth + 8
+}
+
+const startAnnouncementRotate = () => {
+  if (announcementRotateTimer) {
+    window.clearInterval(announcementRotateTimer)
+    announcementRotateTimer = undefined
+  }
+
+  if (announcementLines.value.length <= 1) {
+    announcementIndex.value = 0
+    return
+  }
+
+  announcementRotateTimer = window.setInterval(() => {
+    announcementIndex.value = (announcementIndex.value + 1) % announcementLines.value.length
+  }, 5000)
+}
 
 // 系统信息
 const systemInfo = shallowRef([
@@ -89,12 +140,6 @@ const backendSecurity = shallowRef([
     icon: 'Document',
     color: 'sky'
   },
-  {
-    name: 'OAuth 第三方登录',
-    desc: '企业微信、钉钉、飞书一键登录',
-    icon: 'Connection',
-    color: 'teal'
-  },
 ])
 
 // 前端安全特性
@@ -140,7 +185,7 @@ const backendStack = shallowRef([
   { name: 'Spring Boot 4.0', desc: 'Java 微服务框架', color: 'green' },
   { name: 'Java 25', desc: '最新平台版本', color: 'orange' },
   { name: 'Sa-Token', desc: '轻量级权限认证框架', color: 'red' },
-  { name: 'Spring JdbcClient', desc: '现代化数据库操作', color: 'teal' },
+  { name: 'Spring Data JPA', desc: 'ORM 数据库操作', color: 'teal' },
   { name: 'MySQL 8.0', desc: '关系型数据库', color: 'blue' },
   { name: 'Redis 7.x', desc: '高性能缓存服务', color: 'red' },
 ])
@@ -165,13 +210,46 @@ const fetchStats = async () => {
   }
 }
 
+// 获取首页公告（type=2）
+const fetchAnnouncements = async () => {
+  try {
+    announcements.value = await noticeApi.feed(2, 10)
+    if (announcementIndex.value >= announcementLines.value.length) {
+      announcementIndex.value = 0
+    }
+    startAnnouncementRotate()
+    await nextTick()
+    detectAnnouncementOverflow()
+  } catch (error) {
+    console.error('获取公告失败:', error)
+  }
+}
+
+watch(currentAnnouncementLine, async () => {
+  await nextTick()
+  detectAnnouncementOverflow()
+})
+
 onMounted(() => {
   // 获取统计数据
   fetchStats()
+  fetchAnnouncements()
+  announcementTimer = window.setInterval(fetchAnnouncements, 60_000)
+  window.addEventListener('resize', detectAnnouncementOverflow)
   // 延迟触发动画
   setTimeout(() => {
     isLoaded.value = true
   }, 100)
+})
+
+onUnmounted(() => {
+  if (announcementTimer) {
+    window.clearInterval(announcementTimer)
+  }
+  if (announcementRotateTimer) {
+    window.clearInterval(announcementRotateTimer)
+  }
+  window.removeEventListener('resize', detectAnnouncementOverflow)
 })
 </script>
 
@@ -205,6 +283,52 @@ onMounted(() => {
             </el-icon>
             <span>{{ new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</span>
           </div>
+        </div>
+      </div>
+
+      <div
+        v-if="currentAnnouncementLine"
+        class="notice-panel rounded-2xl bg-white/95 dark:bg-slate-800/95 border border-slate-100 dark:border-slate-700 px-4 py-3 flex items-start gap-3 transition-all duration-700"
+        :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'"
+        :style="{ transitionDelay: '140ms' }"
+      >
+        <div class="notice-badge-inline flex items-center gap-1.5 text-sm font-medium">
+          <el-icon><Bell /></el-icon>
+          <span>公告</span>
+        </div>
+        <div
+          ref="noticeViewportRef"
+          class="notice-content flex-1"
+        >
+          <transition
+            name="notice-slide-up"
+            mode="out-in"
+          >
+            <div
+              :key="`${announcementIndex}-${currentAnnouncementLine}`"
+              class="notice-line-wrapper"
+            >
+              <template v-if="shouldMarqueeCurrentLine">
+                <div class="notice-marquee-track">
+                  <span class="notice-line notice-line--nowrap">{{ currentAnnouncementLine }}</span>
+                  <span class="notice-marquee-gap" />
+                  <span class="notice-line notice-line--nowrap">{{ currentAnnouncementLine }}</span>
+                  <span class="notice-marquee-gap" />
+                </div>
+              </template>
+              <template v-else>
+                <div class="notice-line">
+                  {{ currentAnnouncementLine }}
+                </div>
+              </template>
+            </div>
+          </transition>
+          <span
+            ref="noticeMeasureRef"
+            class="notice-line notice-line--measure"
+          >
+            {{ currentAnnouncementLine }}
+          </span>
         </div>
       </div>
 
@@ -522,6 +646,88 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
+.notice-badge-inline {
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+}
+
+.notice-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.notice-line-wrapper {
+  overflow: hidden;
+}
+
+.notice-line {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notice-line--nowrap {
+  white-space: nowrap;
+}
+
+.notice-line--measure {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.notice-marquee-track {
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  white-space: nowrap;
+  animation: notice-marquee 16s linear infinite;
+}
+
+.notice-marquee-gap {
+  width: 3rem;
+  flex-shrink: 0;
+}
+
+@keyframes notice-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.notice-slide-up-enter-active,
+.notice-slide-up-leave-active {
+  transition: all 0.35s ease;
+}
+
+.notice-slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.notice-slide-up-enter-to {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notice-slide-up-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notice-slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-18px);
+}
+
 /* 减少动画偏好 */
 @media (prefers-reduced-motion: reduce) {
   .stat-card,
@@ -536,5 +742,10 @@ onMounted(() => {
   .security-item:hover {
     transform: none;
   }
+
+  .notice-marquee-track {
+    animation: none;
+  }
+
 }
 </style>

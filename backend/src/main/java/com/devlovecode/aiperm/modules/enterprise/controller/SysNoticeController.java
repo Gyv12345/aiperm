@@ -45,6 +45,14 @@ public class SysNoticeController {
         return R.ok(noticeService.findPublished(type, limit));
     }
 
+    @Operation(summary = "首页公告通知流")
+    @GetMapping("/feed")
+    public R<List<NoticeVO>> feed(
+            @RequestParam(required = false) Integer type,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        return R.ok(noticeService.findPublished(type, limit));
+    }
+
     @Operation(summary = "查询公告详情")
     @SaCheckPermission("enterprise:notice:list")
     @GetMapping("/{id}")

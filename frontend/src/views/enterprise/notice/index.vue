@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Search, Refresh } from '@element-plus/icons-vue'
-import { noticeApi, type NoticeVO, type NoticeDTO } from '@/api/enterprise/notice'
-import type { PageResult, TableColumn } from '@/types'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {Delete, Edit, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {noticeApi, type NoticeDTO, type NoticeVO} from '@/api/enterprise/notice'
+import type {PageResult, TableColumn} from '@/types'
 
 // 表格列配置
 const columns = ref<TableColumn[]>([
@@ -50,7 +50,7 @@ const currentId = ref<number>(0)
 const formData = reactive<NoticeDTO>({
   title: '',
   content: '',
-  type: 1,
+  type: 2,
   status: 0,
   page: 1,
   pageSize: 10,
@@ -151,7 +151,7 @@ function handleAdd() {
   Object.assign(formData, {
     title: '',
     content: '',
-    type: 1,
+    type: 2,
     status: 0,
   })
   dialogVisible.value = true
@@ -625,6 +625,9 @@ onMounted(() => {
               :value="item.value"
             />
           </el-select>
+          <div class="text-xs text-slate-500 mt-1">
+            首页跑马灯仅展示“公告”类型
+          </div>
         </el-form-item>
         <el-form-item label="内容">
           <el-input

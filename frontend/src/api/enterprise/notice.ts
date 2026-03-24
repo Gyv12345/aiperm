@@ -3,7 +3,7 @@
  * 对应后端 SysNoticeController (/enterprise/notice)
  */
 import request from '@/utils/request'
-import type { PageResult, PageParams } from '@/types'
+import type {PageParams, PageResult} from '@/types'
 
 // ==================== 类型定义 ====================
 
@@ -42,6 +42,10 @@ export const noticeApi = {
   /** 查询已发布公告 */
   published: (type?: number, limit?: number) =>
     request.get<NoticeVO[]>('/enterprise/notice/published', { params: { type, limit } }),
+
+  /** 首页公告/通知流（登录即可访问） */
+  feed: (type?: number, limit?: number) =>
+    request.get<NoticeVO[]>('/enterprise/notice/feed', { params: { type, limit } }),
 
   /** 查询公告详情 */
   getById: (id: number) =>
