@@ -1,8 +1,8 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import type { RouteRecordRaw } from 'vue-router'
-import { authApi } from '@/api/auth'
-import type { MenuVO } from '@/api/system/menu'
+import {defineStore} from 'pinia'
+import {ref} from 'vue'
+import type {RouteRecordRaw} from 'vue-router'
+import {authApi} from '@/api/auth'
+import type {MenuVO} from '@/api/system/menu'
 
 // 组件映射表
 const componentModules = import.meta.glob('@/views/**/*.vue')
@@ -19,6 +19,65 @@ interface MenuItem extends MenuVO {
   children?: MenuItem[]
 }
 
+const DISABLED_ROUTE_PATHS = new Set([
+  '/system/im-config',
+  '/system/approval-scene',
+  '/approval/my',
+  '/approval/todo',
+  '/enterprise/message-template',
+  '/enterprise/message-log',
+])
+
+function normalizePath(path?: string | null): string {
+  if (!path) {
+    return '/'
+  }
+  const withLeadingSlash = path.startsWith('/') ? path : `/${path}`
+  return withLeadingSlash.replace(/\/{2,}/g, '/')
+}
+
+function buildMenuFullPath(parentPath: string, menuPath?: string | null): string {
+  const normalizedMenuPath = normalizePath(menuPath)
+  if (!parentPath || parentPath === '/') {
+    return normalizedMenuPath
+  }
+  return normalizePath(`${parentPath}/${normalizedMenuPath}`)
+}
+
+function filterDisabledMenus(menuList: MenuItem[], parentPath = ''): MenuItem[] {
+  const result: MenuItem[] = []
+
+  for (const menu of menuList) {
+    const fullPath = buildMenuFullPath(parentPath, menu.path)
+    const nextChildren = menu.children?.length
+      ? filterDisabledMenus(menu.children as MenuItem[], fullPath)
+      : undefined
+
+    // 目录菜单：仅在有可见子菜单时保留
+    if (menu.menuType === '1') {
+      if (nextChildren && nextChildren.length > 0) {
+        result.push({
+          ...menu,
+          children: nextChildren,
+        })
+      }
+      continue
+    }
+
+    // 菜单项：命中禁用路径则删除
+    if (DISABLED_ROUTE_PATHS.has(fullPath)) {
+      continue
+    }
+
+    result.push({
+      ...menu,
+      children: nextChildren,
+    })
+  }
+
+  return result
+}
+
 export const usePermissionStore = defineStore('permission', () => {
   const menus = ref<MenuItem[]>([])
   const routes = ref<RouteRecordRaw[]>([])
@@ -27,7 +86,7 @@ export const usePermissionStore = defineStore('permission', () => {
   // 获取用户菜单
   async function fetchMenus() {
     const data = await authApi.menus()
-    menus.value = data as MenuItem[]
+    menus.value = filterDisabledMenus(data as MenuItem[])
     return menus.value
   }
 
