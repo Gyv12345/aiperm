@@ -12,10 +12,22 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface LoginLogRepository extends JpaRepository<SysLoginLog, Long> {
 
-    @Query("SELECT l FROM SysLoginLog l WHERE l.userId = :userId ORDER BY l.loginTime DESC")
-    Page<SysLoginLog> queryPageByUserId(@Param("userId") Long userId, org.springframework.data.domain.Pageable pageable);
+    @Query("""
+        SELECT l
+        FROM SysLoginLog l
+        WHERE COALESCE(l.deleted, 0) = 0
+          AND (l.userId = :userId OR (l.userId IS NULL AND l.username = :username))
+        ORDER BY l.loginTime DESC
+        """)
+    Page<SysLoginLog> queryPageByUser(@Param("userId") Long userId,
+                                      @Param("username") String username,
+                                      org.springframework.data.domain.Pageable pageable);
 
-    default Page<SysLoginLog> queryPageByUserId(Long userId, int pageNum, int pageSize) {
-        return queryPageByUserId(userId, PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "loginTime")));
+    default Page<SysLoginLog> queryPageByUser(Long userId, String username, int pageNum, int pageSize) {
+        return queryPageByUser(
+                userId,
+                username,
+                PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "loginTime"))
+        );
     }
 }

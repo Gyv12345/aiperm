@@ -95,7 +95,14 @@ public class ProfileService {
      */
     public PageResult<LoginLogVO> getLoginLogs(int pageNum, int pageSize) {
         Long userId = StpUtil.getLoginIdAsLong();
-        org.springframework.data.domain.Page<SysLoginLog> jpaPage = loginLogRepo.queryPageByUserId(userId, pageNum, pageSize);
+        SysUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+        org.springframework.data.domain.Page<SysLoginLog> jpaPage = loginLogRepo.queryPageByUser(
+                userId,
+                user.getUsername(),
+                pageNum,
+                pageSize
+        );
         return PageResult.fromJpaPage(jpaPage).map(this::toLogVO);
     }
 

@@ -3,6 +3,7 @@ package com.devlovecode.aiperm.modules.oauth.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.exception.BusinessException;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
+import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.oauth.entity.SysUserOauth;
 import com.devlovecode.aiperm.modules.oauth.provider.OAuthProvider;
 import com.devlovecode.aiperm.modules.oauth.provider.OAuthUserInfo;
@@ -31,6 +32,7 @@ public class OAuthService {
     private final UserOauthRepository userOauthRepo;
     private final UserRepository userRepo;
     private final List<OAuthProvider> providers;
+    private final LoginLogService loginLogService;
 
     private Map<String, OAuthProvider> providerMap;
 
@@ -63,7 +65,9 @@ public class OAuthService {
         }
 
         StpUtil.login(user.getId());
-        userRepo.updateLoginInfo(user.getId(), "127.0.0.1", LocalDateTime.now());
+        String ip = "127.0.0.1";
+        userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
         userOauthRepo.updateLastLoginTime(binding.getId(), LocalDateTime.now());
 
         LoginVO.UserInfo loginUserInfo = LoginVO.UserInfo.builder()

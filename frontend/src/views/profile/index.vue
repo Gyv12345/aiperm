@@ -147,7 +147,7 @@ async function handleChangePassword() {
 async function fetchLogs() {
   logsLoading.value = true
   try {
-    const data = await profileApi.getLoginLogs({ page: 1, pageSize: 20 })
+    const data = await profileApi.getLogs(1, 20)
     logs.value = data?.list || []
   } catch (error) {
     console.error('获取登录日志失败:', error)
@@ -212,6 +212,7 @@ function handleTabChange(tab: string) {
 onMounted(() => {
   fetchProfile()
   fetchMfaStatus()
+  fetchLogs()
 })
 </script>
 
@@ -454,8 +455,8 @@ onMounted(() => {
               width="80"
             >
               <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-                  {{ row.status === 1 ? '成功' : '失败' }}
+                <el-tag :type="row.status === 0 ? 'success' : 'danger'">
+                  {{ row.status === 0 ? '成功' : '失败' }}
                 </el-tag>
               </template>
             </el-table-column>

@@ -6,6 +6,7 @@ import com.devlovecode.aiperm.modules.auth.enums.LoginType;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.captcha.enums.CaptchaScene;
 import com.devlovecode.aiperm.modules.captcha.service.CaptchaService;
+import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 public class EmailLoginStrategy implements LoginStrategy {
 
     private final UserRepository userRepo;
+    private final LoginLogService loginLogService;
 
     @Qualifier("emailCaptchaService")
     private final CaptchaService emailCaptchaService;
@@ -45,6 +47,7 @@ public class EmailLoginStrategy implements LoginStrategy {
 
         StpUtil.login(user.getId());
         userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
 
         return LoginVO.builder()
                 .token(StpUtil.getTokenValue())

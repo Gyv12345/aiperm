@@ -17,6 +17,7 @@ import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.auth.vo.MenuVO;
 import com.devlovecode.aiperm.modules.auth.vo.UserInfoVO;
 import com.devlovecode.aiperm.modules.enterprise.repository.ConfigRepository;
+import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysMenu;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.MenuRepository;
@@ -48,6 +49,7 @@ public class AuthService {
     private final ConfigRepository configRepo;
     private final StringRedisTemplate redisTemplate;
     private final LoginStrategyFactory loginStrategyFactory;
+    private final LoginLogService loginLogService;
 
     @Value("${auth.captcha.enabled:true}")
     private boolean captchaEnabled;
@@ -85,34 +87,41 @@ public class AuthService {
      * 登录
      */
     public LoginVO login(LoginRequest request) {
-        // 验证码校验
-        validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
+        String ip = "127.0.0.1";
+        try {
+            // 验证码校验
+            validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
 
-        // 查询用户
-        SysUser user = userRepo.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BusinessException("用户名或密码错误"));
+            // 查询用户
+            SysUser user = userRepo.findByUsername(request.getUsername())
+                    .orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
-        // 检查用户状态
-        if (user.getStatus() != null && user.getStatus() == 0) {
-            throw new BusinessException("账号已被禁用");
+            // 检查用户状态
+            if (user.getStatus() != null && user.getStatus() == 0) {
+                throw new BusinessException("账号已被禁用");
+            }
+
+            // 密码校验
+            if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
+                throw new BusinessException("用户名或密码错误");
+            }
+
+            // 执行登录
+            StpUtil.login(user.getId());
+
+            // 更新登录信息
+            userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+            loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
+
+            // 返回登录信息
+            return LoginVO.builder()
+                    .token(StpUtil.getTokenValue())
+                    .userInfo(buildUserInfo(user))
+                    .build();
+        } catch (BusinessException e) {
+            loginLogService.recordFailed(request.getUsername(), ip, e.getMessage());
+            throw e;
         }
-
-        // 密码校验
-        if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
-            throw new BusinessException("用户名或密码错误");
-        }
-
-        // 执行登录
-        StpUtil.login(user.getId());
-
-        // 更新登录信息
-        userRepo.updateLoginInfo(user.getId(), "127.0.0.1", LocalDateTime.now());
-
-        // 返回登录信息
-        return LoginVO.builder()
-                .token(StpUtil.getTokenValue())
-                .userInfo(buildUserInfo(user))
-                .build();
     }
 
     /**
@@ -126,9 +135,14 @@ public class AuthService {
             validateCaptcha(dto.getImageCaptchaKey(), dto.getImageCaptcha());
         }
 
-        // 获取对应的登录策略
-        LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
-        return strategy.login(dto.getIdentifier(), dto.getCredential(), ip);
+        try {
+            // 获取对应的登录策略
+            LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
+            return strategy.login(dto.getIdentifier(), dto.getCredential(), ip);
+        } catch (BusinessException e) {
+            loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage());
+            throw e;
+        }
     }
 
     /**
