@@ -3,6 +3,7 @@ package com.devlovecode.aiperm.modules.captcha.controller;
 import com.devlovecode.aiperm.common.annotation.RateLimit;
 import com.devlovecode.aiperm.common.domain.R;
 import com.devlovecode.aiperm.common.enums.AccessLimitScope;
+import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import com.devlovecode.aiperm.modules.captcha.dto.SendCaptchaDTO;
 import com.devlovecode.aiperm.modules.captcha.enums.CaptchaScene;
 import com.devlovecode.aiperm.modules.captcha.service.CaptchaService;
@@ -33,7 +34,7 @@ public class CaptchaController {
     @PostMapping("/send")
     @RateLimit(count = 10, windowSeconds = 60, scope = AccessLimitScope.IP, key = "captcha:send", message = "验证码发送请求过于频繁，请稍后重试")
     public R<Void> send(@RequestBody @Valid SendCaptchaDTO dto, HttpServletRequest request) {
-        String ip = getClientIp(request);
+        String ip = ClientIpUtils.getClientIp(request);
         CaptchaScene scene = CaptchaScene.valueOf(dto.getScene().toUpperCase());
 
         CaptchaService service = "SMS".equalsIgnoreCase(dto.getType())
@@ -42,20 +43,5 @@ public class CaptchaController {
 
         service.send(dto.getTarget(), scene, ip);
         return R.ok();
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        // 多级代理时取第一个 IP
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

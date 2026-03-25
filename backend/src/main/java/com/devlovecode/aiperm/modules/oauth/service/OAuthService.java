@@ -2,6 +2,7 @@ package com.devlovecode.aiperm.modules.oauth.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.oauth.entity.SysUserOauth;
@@ -65,7 +66,7 @@ public class OAuthService {
         }
 
         StpUtil.login(user.getId());
-        String ip = "127.0.0.1";
+        String ip = ClientIpUtils.getCurrentRequestIp();
         userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
         loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
         userOauthRepo.updateLastLoginTime(binding.getId(), LocalDateTime.now());

@@ -2,6 +2,7 @@ package com.devlovecode.aiperm.common.aspect;
 
 import cn.hutool.json.JSONUtil;
 import com.devlovecode.aiperm.common.annotation.Log;
+import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -58,7 +59,7 @@ public class LogAspect {
                 joinPoint.getTarget().getClass().getName() + "." + method.getName(),
                 request != null ? request.getMethod() : "",
                 request != null ? request.getRequestURI() : "",
-                request != null ? getIp(request) : "",
+                request != null ? ClientIpUtils.getClientIp(request) : "",
                 logAnnotation.saveRequestParam() ? buildParams(joinPoint.getArgs()) : "",
                 logAnnotation.saveResponseResult() && result != null ? JSONUtil.toJsonStr(result) : "",
                 status,
@@ -77,11 +78,4 @@ public class LogAspect {
         }
     }
 
-    private String getIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
-    }
 }

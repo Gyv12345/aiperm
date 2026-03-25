@@ -8,12 +8,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Component
 @RequiredArgsConstructor
 public class JobInvokeExecutor {
 
     private final ApplicationContext applicationContext;
+    private final ConcurrentMap<Class<?>, Optional<Method>> executableMethodCache = new ConcurrentHashMap<>();
 
     public void execute(SysJob job) {
         Object target = resolveTarget(job.getBeanClass());
@@ -22,14 +26,8 @@ public class JobInvokeExecutor {
             return;
         }
 
-        Method method = ReflectionUtils.findMethod(target.getClass(), "execute");
-        if (method == null) {
-            method = ReflectionUtils.findMethod(target.getClass(), "run");
-        }
-        if (method == null) {
-            throw new BusinessException("任务执行目标缺少无参 execute()/run() 方法: " + job.getBeanClass());
-        }
-        ReflectionUtils.makeAccessible(method);
+        Method method = resolveExecutableMethod(target.getClass())
+                .orElseThrow(() -> new BusinessException("任务执行目标缺少无参 execute()/run() 方法: " + job.getBeanClass()));
         ReflectionUtils.invokeMethod(method, target);
     }
 
@@ -50,5 +48,20 @@ public class JobInvokeExecutor {
             // 兼容按 beanName 传参但名字里带点号的场景
             return applicationContext.getBean(target);
         }
+    }
+
+    private Optional<Method> resolveExecutableMethod(Class<?> targetClass) {
+        return executableMethodCache.computeIfAbsent(targetClass, this::findExecutableMethod);
+    }
+
+    private Optional<Method> findExecutableMethod(Class<?> targetClass) {
+        Method method = ReflectionUtils.findMethod(targetClass, "execute");
+        if (method == null) {
+            method = ReflectionUtils.findMethod(targetClass, "run");
+        }
+        if (method != null) {
+            ReflectionUtils.makeAccessible(method);
+        }
+        return Optional.ofNullable(method);
     }
 }

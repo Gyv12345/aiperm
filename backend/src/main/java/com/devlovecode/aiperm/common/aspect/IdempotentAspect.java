@@ -6,6 +6,7 @@ import com.devlovecode.aiperm.common.annotation.Idempotent;
 import com.devlovecode.aiperm.common.enums.AccessLimitScope;
 import com.devlovecode.aiperm.common.enums.ErrorCode;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -162,30 +163,12 @@ public class IdempotentAspect {
             return "user:" + StpUtil.getLoginIdAsString();
         }
 
-        return "ip:" + getClientIp(request);
+        return "ip:" + ClientIpUtils.getClientIp(request);
     }
 
     private HttpServletRequest currentRequest() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         return attributes == null ? null : attributes.getRequest();
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        if (request == null) {
-            return "unknown";
-        }
-
-        String ip = request.getHeader("X-Forwarded-For");
-        if (!hasText(ip) || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (!hasText(ip) || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return hasText(ip) ? ip : "unknown";
     }
 
     private String normalize(String value) {

@@ -16,6 +16,7 @@ import com.devlovecode.aiperm.modules.auth.vo.LoginConfigVO;
 import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.auth.vo.MenuVO;
 import com.devlovecode.aiperm.modules.auth.vo.UserInfoVO;
+import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import com.devlovecode.aiperm.modules.enterprise.repository.ConfigRepository;
 import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysMenu;
@@ -24,6 +25,7 @@ import com.devlovecode.aiperm.modules.system.repository.MenuRepository;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
  * @author DevLoveCode
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -87,7 +90,7 @@ public class AuthService {
      * 登录
      */
     public LoginVO login(LoginRequest request) {
-        String ip = "127.0.0.1";
+        String ip = ClientIpUtils.getCurrentRequestIp();
         try {
             // 验证码校验
             validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
@@ -121,6 +124,10 @@ public class AuthService {
         } catch (BusinessException e) {
             loginLogService.recordFailed(request.getUsername(), ip, e.getMessage());
             throw e;
+        } catch (Exception e) {
+            log.error("传统登录异常: username={}, ip={}", request.getUsername(), ip, e);
+            loginLogService.recordFailed(request.getUsername(), ip, "系统异常");
+            throw e;
         }
     }
 
@@ -128,7 +135,7 @@ public class AuthService {
      * 统一登录（支持多种登录方式）
      */
     public LoginVO unifiedLogin(UnifiedLoginDTO dto, HttpServletRequest request) {
-        String ip = getClientIp(request);
+        String ip = ClientIpUtils.getClientIp(request);
 
         // 密码登录需要验证图形验证码
         if (LoginType.PASSWORD.getCode().equalsIgnoreCase(dto.getLoginType())) {
@@ -141,6 +148,10 @@ public class AuthService {
             return strategy.login(dto.getIdentifier(), dto.getCredential(), ip);
         } catch (BusinessException e) {
             loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("统一登录异常: loginType={}, identifier={}, ip={}", dto.getLoginType(), dto.getIdentifier(), ip, e);
+            loginLogService.recordFailed(dto.getIdentifier(), ip, "系统异常");
             throw e;
         }
     }
@@ -191,20 +202,6 @@ public class AuthService {
         return configRepo.findByConfigKey(key)
                 .map(c -> "1".equals(c.getConfigValue()))
                 .orElse(defaultValue);
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 
     /**
