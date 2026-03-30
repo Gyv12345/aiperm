@@ -5,6 +5,7 @@ import {useAppStore} from '@/stores/app'
 import {usePermissionStore} from '@/stores/permission'
 import type {MenuVO} from '@/api/system/menu'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import {Document} from '@element-plus/icons-vue'
 
 interface MenuItem extends MenuVO {
   children?: MenuItem[]
@@ -25,9 +26,6 @@ const menuItems = computed(() => {
 
 // 侧边栏折叠状态
 const collapsed = computed(() => appStore.sidebarCollapsed)
-
-// 当前激活的菜单
-const activeMenu = computed(() => route.path)
 
 // 当前打开的子菜单（只保持一个打开）
 const openedMenu = ref<string>('')
@@ -195,7 +193,7 @@ function getIconComponent(iconName: string | null | undefined) {
       :unique-opened="true"
       background-color="transparent"
       text-color="rgba(255, 255, 255, 0.85)"
-      active-text-color="#409eff"
+      active-text-color="var(--color-primary)"
       class="sidebar-menu border-none flex-1"
       @select="handleSelect"
       @open="handleMenuOpen"

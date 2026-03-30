@@ -2,6 +2,9 @@
 import {computed} from 'vue'
 import {useRoute} from 'vue-router'
 import AppHeader from './AppHeader.vue'
+import AppTabs from './AppTabs.vue'
+import AppWatermark from './AppWatermark.vue'
+import SettingsPanel from './SettingsPanel.vue'
 import AppSidebar from './AppSidebar.vue'
 import FormPageAgent from '@/components/agent/FormPageAgent.vue'
 
@@ -27,10 +30,17 @@ const pageTitle = computed(() => {
         </template>
       </AppHeader>
 
-      <!-- 内容区域 -->
-      <main class="main-content flex-1 overflow-auto p-4">
-        <router-view />
-      </main>
+      <div class="content-shell relative flex flex-1 flex-col overflow-hidden">
+        <AppWatermark />
+        <AppTabs />
+
+        <!-- 内容区域 -->
+        <main class="main-content flex-1 overflow-auto p-4">
+          <router-view />
+        </main>
+      </div>
+
+      <SettingsPanel />
     </div>
 
     <FormPageAgent />
@@ -44,6 +54,8 @@ const pageTitle = computed(() => {
 }
 
 .main-content {
+  position: relative;
+  z-index: 10;
   background-color: var(--color-bg-page);
   transition: background-color 0.3s ease;
 }

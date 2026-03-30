@@ -3,37 +3,20 @@ import {computed, onMounted, onUnmounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessageBox} from 'element-plus'
 import {useUserStore} from '@/stores/user'
-import {type ThemeMode, useAppStore} from '@/stores/app'
+import {useAppStore} from '@/stores/app'
 import {noticeApi, type NoticeVO} from '@/api/enterprise/notice'
 
 const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
 let noticeTimer: number | undefined
+let stopSystemThemeWatch: (() => void) | undefined
 
 // 用户信息
 const username = computed(() => userStore.username || '未登录')
 const notifications = ref<NoticeVO[]>([])
 const noticeLoading = ref(false)
 const noticeCount = computed(() => notifications.value.length)
-
-// 主题选项
-const themeOptions: { value: ThemeMode, label: string, icon: string }[] = [
-  { value: 'system', label: '跟随系统', icon: 'Monitor' },
-  { value: 'light', label: '浅色', icon: 'Sunny' },
-  { value: 'dark', label: '深色', icon: 'Moon' },
-]
-
-// 当前主题标签
-const currentThemeLabel = computed(() => {
-  const option = themeOptions.find(opt => opt.value === appStore.theme)
-  return option?.label || '跟随系统'
-})
-
-// 设置主题
-function handleThemeChange(mode: ThemeMode) {
-  appStore.setTheme(mode)
-}
 
 // 处理登出
 async function handleLogout() {
@@ -89,15 +72,20 @@ function formatNoticeTime(time?: string) {
   return time.replace('T', ' ').substring(0, 16)
 }
 
+function handleNoticeOpen() {
+  notifications.value = []
+}
+
 // 初始化主题
 onMounted(() => {
-  appStore.watchSystemTheme()
+  stopSystemThemeWatch = appStore.watchSystemTheme()
   appStore.updateThemeClass()
   fetchNotifications()
   noticeTimer = window.setInterval(fetchNotifications, 60_000)
 })
 
 onUnmounted(() => {
+  stopSystemThemeWatch?.()
   if (noticeTimer) {
     window.clearInterval(noticeTimer)
   }
@@ -123,7 +111,10 @@ onUnmounted(() => {
         placement="bottom-end"
         @command="handleNoticeCommand"
       >
-        <div class="notice-trigger flex items-center justify-center cursor-pointer">
+        <div
+          class="notice-trigger flex items-center justify-center cursor-pointer"
+          @click="handleNoticeOpen"
+        >
           <el-badge
             :value="noticeCount"
             :max="99"
@@ -175,43 +166,15 @@ onUnmounted(() => {
         </template>
       </el-dropdown>
 
-      <!-- 主题切换 -->
-      <el-dropdown
-        trigger="click"
-        @command="handleThemeChange"
+      <!-- 系统设置 -->
+      <div
+        class="settings-trigger flex items-center justify-center cursor-pointer"
+        @click="appStore.toggleSettingsPanel"
       >
-        <div class="theme-dropdown flex items-center cursor-pointer">
-          <el-icon :size="18">
-            <Sunny v-if="appStore.resolvedTheme === 'light'" />
-            <Moon v-else />
-          </el-icon>
-          <span class="ml-1 text-sm">{{ currentThemeLabel }}</span>
-          <el-icon class="ml-1">
-            <ArrowDown />
-          </el-icon>
-        </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item
-              v-for="option in themeOptions"
-              :key="option.value"
-              :command="option.value"
-              :class="{ 'is-active': appStore.theme === option.value }"
-            >
-              <el-icon>
-                <component :is="option.icon" />
-              </el-icon>
-              <span class="ml-2">{{ option.label }}</span>
-              <el-icon
-                v-if="appStore.theme === option.value"
-                class="ml-auto"
-              >
-                <Check />
-              </el-icon>
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+        <el-icon :size="18">
+          <Setting />
+        </el-icon>
+      </div>
 
       <!-- 用户下拉菜单 -->
       <el-dropdown trigger="click">
@@ -259,14 +222,16 @@ onUnmounted(() => {
   color: var(--color-text-primary);
 }
 
-.notice-trigger {
+.notice-trigger,
+.settings-trigger {
   color: var(--color-text-primary);
   padding: 6px 8px;
   border-radius: 6px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.notice-trigger:hover {
+.notice-trigger:hover,
+.settings-trigger:hover {
   background-color: var(--color-bg-hover);
   color: var(--color-primary);
 }
@@ -289,18 +254,6 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-.theme-dropdown {
-  color: var(--color-text-primary);
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.theme-dropdown:hover {
-  background-color: var(--color-bg-hover);
-  color: var(--color-primary);
-}
-
 .user-dropdown {
   color: var(--color-text-primary);
 }
@@ -311,12 +264,6 @@ onUnmounted(() => {
 
 .username {
   color: var(--color-text-primary);
-}
-
-/* 主题选项激活状态 */
-:deep(.el-dropdown-menu__item.is-active) {
-  color: var(--el-color-primary);
-  background-color: var(--el-fill-color-light);
 }
 
 :deep(.notice-menu .el-dropdown-menu__item) {
