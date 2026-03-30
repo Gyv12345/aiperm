@@ -27,7 +27,7 @@ public class DictDataService {
 	/**
 	 * 根据字典类型查询
 	 */
-	@Cacheable(key = "#dictType")
+	@Cacheable(key = "#p0")
 	public List<DictDataVO> listByDictType(String dictType) {
 		return dictDataRepo.findByDictTypeAndStatusAndDeletedOrderBySortAsc(dictType, 1, 0)
 			.stream()

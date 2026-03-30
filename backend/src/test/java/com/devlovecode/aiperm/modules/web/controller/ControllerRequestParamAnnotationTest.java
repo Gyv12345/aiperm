@@ -35,8 +35,9 @@ class ControllerRequestParamAnnotationTest {
 					}
 
 					boolean hasExplicitName = !requestParam.name().isBlank() || !requestParam.value().isBlank();
+					int finalI = i;
 					assertFalse(!hasExplicitName, () -> controllerClass.getSimpleName() + "#" + method.getName() + " 第 "
-							+ (i + 1) + " 个参数缺少显式 RequestParam 名称");
+							+ (finalI + 1) + " 个参数缺少显式 RequestParam 名称");
 				}
 			}
 		}
