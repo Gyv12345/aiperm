@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 
 /**
  * 接口限流注解
+ * @author shichenyang
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
