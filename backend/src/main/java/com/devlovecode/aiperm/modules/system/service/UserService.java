@@ -26,220 +26,216 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepo;
-    private final DeptRepository deptRepo;
-    private final PostRepository postRepo;
-    private final RoleRepository roleRepo;
+	private final UserRepository userRepo;
 
-    /**
-     * 分页查询
-     */
-    public PageResult<UserVO> queryPage(UserDTO dto) {
-        Page<SysUser> jpaPage = userRepo.queryPage(
-                dto.getUsername(), dto.getPhone(), dto.getDeptId(), dto.getStatus(),
-                dto.getPage(), dto.getPageSize()
-        );
-        return PageResult.fromJpaPage(jpaPage).map(this::toVO);
-    }
+	private final DeptRepository deptRepo;
 
-    /**
-     * 查询详情
-     */
-    public UserVO findById(Long id) {
-        SysUser user = userRepo.findById(id)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
-        return toVO(user);
-    }
+	private final PostRepository postRepo;
 
-    /**
-     * 转换为VO，填充关联数据
-     */
-    private UserVO toVO(SysUser entity) {
-        UserVO vo = new UserVO();
-        vo.setId(entity.getId());
-        vo.setUsername(entity.getUsername());
-        vo.setNickname(entity.getNickname());
-        vo.setEmail(entity.getEmail());
-        vo.setPhone(entity.getPhone());
-        vo.setGender(entity.getGender());
-        vo.setAvatar(entity.getAvatar());
-        vo.setDeptId(entity.getDeptId());
-        vo.setStatus(entity.getStatus());
-        vo.setRemark(entity.getRemark());
-        vo.setCreateTime(entity.getCreateTime());
-        vo.setUpdateTime(entity.getUpdateTime());
+	private final RoleRepository roleRepo;
 
-        // 填充部门名称
-        if (entity.getDeptId() != null) {
-            deptRepo.findById(entity.getDeptId())
-                    .ifPresent(dept -> vo.setDeptName(dept.getDeptName()));
-        }
+	/**
+	 * 分页查询
+	 */
+	public PageResult<UserVO> queryPage(UserDTO dto) {
+		Page<SysUser> jpaPage = userRepo.queryPage(dto.getUsername(), dto.getPhone(), dto.getDeptId(), dto.getStatus(),
+				dto.getPage(), dto.getPageSize());
+		return PageResult.fromJpaPage(jpaPage).map(this::toVO);
+	}
 
-        // 填充岗位信息（单岗位）
-        if (entity.getPostId() != null) {
-            postRepo.findById(entity.getPostId())
-                    .ifPresent(post -> {
-                        vo.setPostIds(List.of(post.getId()));
-                        vo.setPostNames(post.getPostName());
-                    });
-        }
+	/**
+	 * 查询详情
+	 */
+	public UserVO findById(Long id) {
+		SysUser user = userRepo.findById(id).orElseThrow(() -> new BusinessException("用户不存在"));
+		return toVO(user);
+	}
 
-        // 填充角色信息（需要从用户角色关联表查询）
-        List<Long> roleIds = userRepo.findRoleIdsByUserId(entity.getId());
-        if (roleIds != null && !roleIds.isEmpty()) {
-            vo.setRoleIds(roleIds);
-            List<String> roleNames = new ArrayList<>();
-            for (Long roleId : roleIds) {
-                roleRepo.findById(roleId)
-                        .ifPresent(role -> roleNames.add(role.getRoleName()));
-            }
-            vo.setRoleNames(String.join(", ", roleNames));
-        }
+	/**
+	 * 转换为VO，填充关联数据
+	 */
+	private UserVO toVO(SysUser entity) {
+		UserVO vo = new UserVO();
+		vo.setId(entity.getId());
+		vo.setUsername(entity.getUsername());
+		vo.setNickname(entity.getNickname());
+		vo.setEmail(entity.getEmail());
+		vo.setPhone(entity.getPhone());
+		vo.setGender(entity.getGender());
+		vo.setAvatar(entity.getAvatar());
+		vo.setDeptId(entity.getDeptId());
+		vo.setStatus(entity.getStatus());
+		vo.setRemark(entity.getRemark());
+		vo.setCreateTime(entity.getCreateTime());
+		vo.setUpdateTime(entity.getUpdateTime());
 
-        return vo;
-    }
+		// 填充部门名称
+		if (entity.getDeptId() != null) {
+			deptRepo.findById(entity.getDeptId()).ifPresent(dept -> vo.setDeptName(dept.getDeptName()));
+		}
 
-    /**
-     * 创建
-     */
-    @Transactional
-    public void create(UserDTO dto) {
-        if (userRepo.existsByUsername(dto.getUsername())) {
-            throw new BusinessException("用户名已存在");
-        }
+		// 填充岗位信息（单岗位）
+		if (entity.getPostId() != null) {
+			postRepo.findById(entity.getPostId()).ifPresent(post -> {
+				vo.setPostIds(List.of(post.getId()));
+				vo.setPostNames(post.getPostName());
+			});
+		}
 
-        SysUser entity = new SysUser();
-        entity.setUsername(dto.getUsername());
-        entity.setPassword(BCrypt.hashpw(dto.getPassword()));
-        entity.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getUsername());
-        entity.setRealName(dto.getRealName());
-        entity.setEmail(dto.getEmail());
-        entity.setPhone(dto.getPhone());
-        entity.setGender(dto.getGender() != null ? dto.getGender() : 0);
-        entity.setAvatar(dto.getAvatar());
-        entity.setDeptId(dto.getDeptId());
-        entity.setPostId(dto.getPostId());
-        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
-        entity.setRemark(dto.getRemark());
-        entity.setCreateBy(getCurrentUsername());
-        entity.setCreateTime(LocalDateTime.now());
+		// 填充角色信息（需要从用户角色关联表查询）
+		List<Long> roleIds = userRepo.findRoleIdsByUserId(entity.getId());
+		if (roleIds != null && !roleIds.isEmpty()) {
+			vo.setRoleIds(roleIds);
+			List<String> roleNames = new ArrayList<>();
+			for (Long roleId : roleIds) {
+				roleRepo.findById(roleId).ifPresent(role -> roleNames.add(role.getRoleName()));
+			}
+			vo.setRoleNames(String.join(", ", roleNames));
+		}
 
-        userRepo.save(entity);
+		return vo;
+	}
 
-        // 创建角色关联
-        if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
-            userRepo.updateUserRoles(entity.getId(), dto.getRoleIds(), getCurrentUsername());
-        }
-    }
+	/**
+	 * 创建
+	 */
+	@Transactional
+	public void create(UserDTO dto) {
+		if (userRepo.existsByUsername(dto.getUsername())) {
+			throw new BusinessException("用户名已存在");
+		}
 
-    /**
-     * 更新
-     */
-    @Transactional
-    public void update(Long id, UserDTO dto) {
-        SysUser entity = userRepo.findById(id)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+		SysUser entity = new SysUser();
+		entity.setUsername(dto.getUsername());
+		entity.setPassword(BCrypt.hashpw(dto.getPassword()));
+		entity.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getUsername());
+		entity.setRealName(dto.getRealName());
+		entity.setEmail(dto.getEmail());
+		entity.setPhone(dto.getPhone());
+		entity.setGender(dto.getGender() != null ? dto.getGender() : 0);
+		entity.setAvatar(dto.getAvatar());
+		entity.setDeptId(dto.getDeptId());
+		entity.setPostId(dto.getPostId());
+		entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
+		entity.setRemark(dto.getRemark());
+		entity.setCreateBy(getCurrentUsername());
+		entity.setCreateTime(LocalDateTime.now());
 
-        if (userRepo.existsByUsernameExcludeId(dto.getUsername(), id)) {
-            throw new BusinessException("用户名已存在");
-        }
+		userRepo.save(entity);
 
-        if (userRepo.isAdmin(id)) {
-            if (!Objects.equals(entity.getDeptId(), dto.getDeptId())) {
-                throw new BusinessException("超级管理员的部门不能修改");
-            }
+		// 创建角色关联
+		if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
+			userRepo.updateUserRoles(entity.getId(), dto.getRoleIds(), getCurrentUsername());
+		}
+	}
 
-            if (dto.getRoleIds() != null) {
-                List<Long> currentRoleIds = userRepo.findRoleIdsByUserId(id);
-                if (!new HashSet<>(currentRoleIds).equals(new HashSet<>(dto.getRoleIds()))) {
-                    throw new BusinessException("超级管理员的角色不能修改");
-                }
-            }
-        }
+	/**
+	 * 更新
+	 */
+	@Transactional
+	public void update(Long id, UserDTO dto) {
+		SysUser entity = userRepo.findById(id).orElseThrow(() -> new BusinessException("用户不存在"));
 
-        entity.setUsername(dto.getUsername());
-        entity.setNickname(dto.getNickname());
-        entity.setRealName(dto.getRealName());
-        entity.setEmail(dto.getEmail());
-        entity.setPhone(dto.getPhone());
-        entity.setGender(dto.getGender());
-        entity.setAvatar(dto.getAvatar());
-        entity.setDeptId(dto.getDeptId());
-        entity.setPostId(dto.getPostId());
-        entity.setStatus(dto.getStatus());
-        entity.setRemark(dto.getRemark());
-        entity.setUpdateBy(getCurrentUsername());
-        entity.setUpdateTime(LocalDateTime.now());
+		if (userRepo.existsByUsernameExcludeId(dto.getUsername(), id)) {
+			throw new BusinessException("用户名已存在");
+		}
 
-        userRepo.save(entity);
+		if (userRepo.isAdmin(id)) {
+			if (!Objects.equals(entity.getDeptId(), dto.getDeptId())) {
+				throw new BusinessException("超级管理员的部门不能修改");
+			}
 
-        // 更新角色关联
-        if (dto.getRoleIds() != null) {
-            userRepo.updateUserRoles(id, dto.getRoleIds(), getCurrentUsername());
-        }
-    }
+			if (dto.getRoleIds() != null) {
+				List<Long> currentRoleIds = userRepo.findRoleIdsByUserId(id);
+				if (!new HashSet<>(currentRoleIds).equals(new HashSet<>(dto.getRoleIds()))) {
+					throw new BusinessException("超级管理员的角色不能修改");
+				}
+			}
+		}
 
-    /**
-     * 删除
-     */
-    @Transactional
-    public void delete(Long id) {
-        if (!userRepo.existsById(id)) {
-            throw new BusinessException("用户不存在");
-        }
-        if (userRepo.isAdmin(id)) {
-            throw new BusinessException("不能删除管理员用户");
-        }
-        userRepo.softDelete(id, LocalDateTime.now());
-    }
+		entity.setUsername(dto.getUsername());
+		entity.setNickname(dto.getNickname());
+		entity.setRealName(dto.getRealName());
+		entity.setEmail(dto.getEmail());
+		entity.setPhone(dto.getPhone());
+		entity.setGender(dto.getGender());
+		entity.setAvatar(dto.getAvatar());
+		entity.setDeptId(dto.getDeptId());
+		entity.setPostId(dto.getPostId());
+		entity.setStatus(dto.getStatus());
+		entity.setRemark(dto.getRemark());
+		entity.setUpdateBy(getCurrentUsername());
+		entity.setUpdateTime(LocalDateTime.now());
 
-    /**
-     * 批量删除
-     */
-    @Transactional
-    public void deleteBatch(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return;
-        }
-        // 过滤掉管理员用户
-        List<Long> toDelete = ids.stream()
-                .filter(id -> !userRepo.isAdmin(id))
-                .toList();
-        if (!toDelete.isEmpty()) {
-            userRepo.softDeleteByIds(toDelete, LocalDateTime.now());
-        }
-    }
+		userRepo.save(entity);
 
-    /**
-     * 重置密码
-     */
-    @Transactional
-    public void resetPassword(Long id, String newPassword) {
-        if (!userRepo.existsById(id)) {
-            throw new BusinessException("用户不存在");
-        }
-        userRepo.updatePassword(id, BCrypt.hashpw(newPassword), LocalDateTime.now());
-    }
+		// 更新角色关联
+		if (dto.getRoleIds() != null) {
+			userRepo.updateUserRoles(id, dto.getRoleIds(), getCurrentUsername());
+		}
+	}
 
-    /**
-     * 修改状态
-     */
-    @Transactional
-    public void changeStatus(Long id, Integer status) {
-        if (!userRepo.existsById(id)) {
-            throw new BusinessException("用户不存在");
-        }
-        if (userRepo.isAdmin(id)) {
-            throw new BusinessException("不能修改管理员用户状态");
-        }
-        userRepo.updateStatus(id, status, LocalDateTime.now());
-    }
+	/**
+	 * 删除
+	 */
+	@Transactional
+	public void delete(Long id) {
+		if (!userRepo.existsById(id)) {
+			throw new BusinessException("用户不存在");
+		}
+		if (userRepo.isAdmin(id)) {
+			throw new BusinessException("不能删除管理员用户");
+		}
+		userRepo.softDelete(id, LocalDateTime.now());
+	}
 
-    private String getCurrentUsername() {
-        try {
-            return StpUtil.getLoginIdAsString();
-        } catch (Exception e) {
-            return "system";
-        }
-    }
+	/**
+	 * 批量删除
+	 */
+	@Transactional
+	public void deleteBatch(List<Long> ids) {
+		if (ids == null || ids.isEmpty()) {
+			return;
+		}
+		// 过滤掉管理员用户
+		List<Long> toDelete = ids.stream().filter(id -> !userRepo.isAdmin(id)).toList();
+		if (!toDelete.isEmpty()) {
+			userRepo.softDeleteByIds(toDelete, LocalDateTime.now());
+		}
+	}
+
+	/**
+	 * 重置密码
+	 */
+	@Transactional
+	public void resetPassword(Long id, String newPassword) {
+		if (!userRepo.existsById(id)) {
+			throw new BusinessException("用户不存在");
+		}
+		userRepo.updatePassword(id, BCrypt.hashpw(newPassword), LocalDateTime.now());
+	}
+
+	/**
+	 * 修改状态
+	 */
+	@Transactional
+	public void changeStatus(Long id, Integer status) {
+		if (!userRepo.existsById(id)) {
+			throw new BusinessException("用户不存在");
+		}
+		if (userRepo.isAdmin(id)) {
+			throw new BusinessException("不能修改管理员用户状态");
+		}
+		userRepo.updateStatus(id, status, LocalDateTime.now());
+	}
+
+	private String getCurrentUsername() {
+		try {
+			return StpUtil.getLoginIdAsString();
+		}
+		catch (Exception e) {
+			return "system";
+		}
+	}
+
 }

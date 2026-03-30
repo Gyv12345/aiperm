@@ -28,59 +28,60 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuthController {
 
-    private final OAuthService oAuthService;
+	private final OAuthService oAuthService;
 
-    // ===== 登录相关（无需登录） =====
+	// ===== 登录相关（无需登录） =====
 
-    @Operation(summary = "跳转第三方登录授权页")
-    @GetMapping("/login/{platform}")
-    public void login(@PathVariable String platform, HttpServletResponse response) throws IOException {
-        String state = UUID.randomUUID().toString().replace("-", "");
-        String authUrl = oAuthService.getAuthorizationUrl(platform, state);
-        response.sendRedirect(authUrl);
-    }
+	@Operation(summary = "跳转第三方登录授权页")
+	@GetMapping("/login/{platform}")
+	public void login(@PathVariable String platform, HttpServletResponse response) throws IOException {
+		String state = UUID.randomUUID().toString().replace("-", "");
+		String authUrl = oAuthService.getAuthorizationUrl(platform, state);
+		response.sendRedirect(authUrl);
+	}
 
-    @Operation(summary = "第三方登录回调")
-    @GetMapping("/login/callback/{platform}")
-    public R<LoginVO> loginCallback(@PathVariable String platform, @RequestParam String code) {
-        return R.ok(oAuthService.oauthLogin(platform, code));
-    }
+	@Operation(summary = "第三方登录回调")
+	@GetMapping("/login/callback/{platform}")
+	public R<LoginVO> loginCallback(@PathVariable String platform, @RequestParam(name = "code") String code) {
+		return R.ok(oAuthService.oauthLogin(platform, code));
+	}
 
-    // ===== 绑定相关（需要登录） =====
+	// ===== 绑定相关（需要登录） =====
 
-    @Operation(summary = "获取已绑定的第三方账号列表")
-    @SaCheckLogin
-    @GetMapping("/bindings")
-    public R<List<OauthBindingVO>> bindings() {
-        return R.ok(oAuthService.getBindings());
-    }
+	@Operation(summary = "获取已绑定的第三方账号列表")
+	@SaCheckLogin
+	@GetMapping("/bindings")
+	public R<List<OauthBindingVO>> bindings() {
+		return R.ok(oAuthService.getBindings());
+	}
 
-    @Operation(summary = "跳转绑定第三方账号授权页")
-    @SaCheckLogin
-    @GetMapping("/bind/{platform}")
-    public void bindRedirect(@PathVariable String platform, HttpServletResponse response) throws IOException {
-        String state = UUID.randomUUID().toString().replace("-", "");
-        String authUrl = oAuthService.getAuthorizationUrl(platform, state);
-        response.sendRedirect(authUrl);
-    }
+	@Operation(summary = "跳转绑定第三方账号授权页")
+	@SaCheckLogin
+	@GetMapping("/bind/{platform}")
+	public void bindRedirect(@PathVariable String platform, HttpServletResponse response) throws IOException {
+		String state = UUID.randomUUID().toString().replace("-", "");
+		String authUrl = oAuthService.getAuthorizationUrl(platform, state);
+		response.sendRedirect(authUrl);
+	}
 
-    @Operation(summary = "绑定回调")
-    @SaCheckLogin
-    @Log(title = "OAuth绑定", operType = OperType.CREATE)
-    @GetMapping("/bind/callback/{platform}")
-    @Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:bind", message = "请勿重复提交绑定请求")
-    public R<Void> bindCallback(@PathVariable String platform, @RequestParam String code) {
-        oAuthService.bind(platform, code);
-        return R.ok();
-    }
+	@Operation(summary = "绑定回调")
+	@SaCheckLogin
+	@Log(title = "OAuth绑定", operType = OperType.CREATE)
+	@GetMapping("/bind/callback/{platform}")
+	@Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:bind", message = "请勿重复提交绑定请求")
+	public R<Void> bindCallback(@PathVariable String platform, @RequestParam(name = "code") String code) {
+		oAuthService.bind(platform, code);
+		return R.ok();
+	}
 
-    @Operation(summary = "解绑第三方账号")
-    @SaCheckLogin
-    @Log(title = "OAuth解绑", operType = OperType.DELETE)
-    @DeleteMapping("/unbind/{platform}")
-    @Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:unbind", message = "请勿重复提交解绑请求")
-    public R<Void> unbind(@PathVariable String platform) {
-        oAuthService.unbind(platform);
-        return R.ok();
-    }
+	@Operation(summary = "解绑第三方账号")
+	@SaCheckLogin
+	@Log(title = "OAuth解绑", operType = OperType.DELETE)
+	@DeleteMapping("/unbind/{platform}")
+	@Idempotent(expireSeconds = 10, scope = AccessLimitScope.USER, key = "oauth:unbind", message = "请勿重复提交解绑请求")
+	public R<Void> unbind(@PathVariable String platform) {
+		oAuthService.unbind(platform);
+		return R.ok();
+	}
+
 }

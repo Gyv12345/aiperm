@@ -25,41 +25,42 @@ import java.time.format.DateTimeFormatter;
 @ConditionalOnProperty(name = "oss.storage-type", havingValue = "local", matchIfMissing = true)
 public class LocalOssServiceImpl implements OssService {
 
-    private final OssProperties ossProperties;
+	private final OssProperties ossProperties;
 
-    @Override
-    public OssResult upload(MultipartFile file) {
-        String originalName = file.getOriginalFilename();
-        String ext = StrUtil.isNotBlank(originalName) && originalName.contains(".")
-                ? originalName.substring(originalName.lastIndexOf("."))
-                : "";
-        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String fileName = UUID.randomUUID().toString(true) + ext;
-        String relativePath = datePath + "/" + fileName;
-        String fullPath = ossProperties.getLocal().getPath() + "/" + relativePath;
+	@Override
+	public OssResult upload(MultipartFile file) {
+		String originalName = file.getOriginalFilename();
+		String ext = StrUtil.isNotBlank(originalName) && originalName.contains(".")
+				? originalName.substring(originalName.lastIndexOf(".")) : "";
+		String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+		String fileName = UUID.randomUUID().toString(true) + ext;
+		String relativePath = datePath + "/" + fileName;
+		String fullPath = ossProperties.getLocal().getPath() + "/" + relativePath;
 
-        try {
-            File dest = new File(fullPath);
-            FileUtil.mkParentDirs(dest);
-            file.transferTo(dest);
-        } catch (IOException e) {
-            log.error("本地文件上传失败", e);
-            throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
-        }
+		try {
+			File dest = new File(fullPath);
+			FileUtil.mkParentDirs(dest);
+			file.transferTo(dest);
+		}
+		catch (IOException e) {
+			log.error("本地文件上传失败", e);
+			throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
+		}
 
-        String url = ossProperties.getLocal().getAccessUrl() + "/" + relativePath;
-        return OssResult.builder()
-                .fileName(relativePath)
-                .originalName(originalName)
-                .url(url)
-                .size(file.getSize())
-                .contentType(file.getContentType())
-                .build();
-    }
+		String url = ossProperties.getLocal().getAccessUrl() + "/" + relativePath;
+		return OssResult.builder()
+			.fileName(relativePath)
+			.originalName(originalName)
+			.url(url)
+			.size(file.getSize())
+			.contentType(file.getContentType())
+			.build();
+	}
 
-    @Override
-    public void delete(String fileName) {
-        String fullPath = ossProperties.getLocal().getPath() + "/" + fileName;
-        FileUtil.del(fullPath);
-    }
+	@Override
+	public void delete(String fileName) {
+		String fullPath = ossProperties.getLocal().getPath() + "/" + fileName;
+		FileUtil.del(fullPath);
+	}
+
 }

@@ -16,9 +16,15 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysUserMfa extends BaseEntity {
-    private Long userId;
-    private String mfaType;       // TOTP
-    private String secretKey;     // Base32 编码的密钥
-    private LocalDateTime bindTime;
-    private Integer status;       // 1启用，0禁用
+
+	private Long userId;
+
+	private String mfaType; // TOTP
+
+	private String secretKey; // Base32 编码的密钥
+
+	private LocalDateTime bindTime;
+
+	private Integer status; // 1启用，0禁用
+
 }

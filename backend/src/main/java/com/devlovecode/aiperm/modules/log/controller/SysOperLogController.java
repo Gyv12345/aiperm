@@ -20,34 +20,34 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SysOperLogController {
 
-    private final OperLogService operLogService;
+	private final OperLogService operLogService;
 
-    @Operation(summary = "分页查询操作日志")
-    @SaCheckPermission("log:oper:list")
-    @GetMapping
-    public R<PageResult<SysOperLog>> page(
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) Integer status) {
-        return R.ok(operLogService.queryPage(title, status, page, pageSize));
-    }
+	@Operation(summary = "分页查询操作日志")
+	@SaCheckPermission("log:oper:list")
+	@GetMapping
+	public R<PageResult<SysOperLog>> page(@RequestParam(name = "page", defaultValue = "1") Integer page,
+			@RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+			@RequestParam(name = "title", required = false) String title,
+			@RequestParam(name = "status", required = false) Integer status) {
+		return R.ok(operLogService.queryPage(title, status, page, pageSize));
+	}
 
-    @Operation(summary = "删除操作日志")
-    @SaCheckPermission("log:oper:delete")
-    @Log(title = "操作日志管理", operType = OperType.DELETE)
-    @DeleteMapping("/{id}")
-    public R<Void> delete(@PathVariable Long id) {
-        operLogService.delete(id);
-        return R.ok();
-    }
+	@Operation(summary = "删除操作日志")
+	@SaCheckPermission("log:oper:delete")
+	@Log(title = "操作日志管理", operType = OperType.DELETE)
+	@DeleteMapping("/{id}")
+	public R<Void> delete(@PathVariable Long id) {
+		operLogService.delete(id);
+		return R.ok();
+	}
 
-    @Operation(summary = "清空操作日志")
-    @SaCheckPermission("log:oper:delete")
-    @Log(title = "操作日志管理", operType = OperType.DELETE)
-    @DeleteMapping("/clean")
-    public R<Void> clean() {
-        operLogService.clean();
-        return R.ok();
-    }
+	@Operation(summary = "清空操作日志")
+	@SaCheckPermission("log:oper:delete")
+	@Log(title = "操作日志管理", operType = OperType.DELETE)
+	@DeleteMapping("/clean")
+	public R<Void> clean() {
+		operLogService.clean();
+		return R.ok();
+	}
+
 }

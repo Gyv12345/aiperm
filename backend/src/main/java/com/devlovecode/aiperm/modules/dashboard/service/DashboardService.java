@@ -16,42 +16,45 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final UserRepository userRepo;
-    private final RoleRepository roleRepo;
-    private final MenuRepository menuRepo;
+	private final UserRepository userRepo;
 
-    /**
-     * 获取首页统计数据
-     */
-    public DashboardStatsVO getStats() {
-        DashboardStatsVO vo = new DashboardStatsVO();
+	private final RoleRepository roleRepo;
 
-        // 用户总数
-        vo.setUserCount(userRepo.count());
+	private final MenuRepository menuRepo;
 
-        // 角色数量
-        vo.setRoleCount(roleRepo.count());
+	/**
+	 * 获取首页统计数据
+	 */
+	public DashboardStatsVO getStats() {
+		DashboardStatsVO vo = new DashboardStatsVO();
 
-        // 菜单/权限数量
-        vo.setMenuCount(menuRepo.count());
+		// 用户总数
+		vo.setUserCount(userRepo.count());
 
-        // 在线用户数（从 Sa-Token 获取）
-        vo.setOnlineCount(getOnlineCount());
+		// 角色数量
+		vo.setRoleCount(roleRepo.count());
 
-        return vo;
-    }
+		// 菜单/权限数量
+		vo.setMenuCount(menuRepo.count());
 
-    /**
-     * 获取在线用户数
-     * 当前 Sa-Token 版本不支持按 loginId 直接检索，这里按 token 数量统计在线会话数
-     */
-    private Long getOnlineCount() {
-        try {
-            List<String> tokenList = StpUtil.searchTokenValue("", 0, -1, false);
-            return tokenList == null ? 0L : (long) tokenList.size();
-        } catch (Exception e) {
-            log.warn("获取在线用户数失败: {}", e.getMessage());
-            return 0L;
-        }
-    }
+		// 在线用户数（从 Sa-Token 获取）
+		vo.setOnlineCount(getOnlineCount());
+
+		return vo;
+	}
+
+	/**
+	 * 获取在线用户数 当前 Sa-Token 版本不支持按 loginId 直接检索，这里按 token 数量统计在线会话数
+	 */
+	private Long getOnlineCount() {
+		try {
+			List<String> tokenList = StpUtil.searchTokenValue("", 0, -1, false);
+			return tokenList == null ? 0L : (long) tokenList.size();
+		}
+		catch (Exception e) {
+			log.warn("获取在线用户数失败: {}", e.getMessage());
+			return 0L;
+		}
+	}
+
 }

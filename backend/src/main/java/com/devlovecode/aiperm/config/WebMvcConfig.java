@@ -24,84 +24,66 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private final DataScopeInterceptor dataScopeInterceptor;
-    private final MfaInterceptor mfaInterceptor;
+	private final DataScopeInterceptor dataScopeInterceptor;
 
-    /**
-     * 本地 OSS 文件访问映射
-     */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/files/**")
-                .addResourceLocations("file:./uploads/");
-    }
+	private final MfaInterceptor mfaInterceptor;
 
-    /**
-     * 跨域配置
-     */
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
+	/**
+	 * 本地 OSS 文件访问映射
+	 */
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		registry.addResourceHandler("/files/**").addResourceLocations("file:./uploads/");
+	}
 
-    /**
-     * 拦截器配置
-     */
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        // 数据权限拦截器
-        registry.addInterceptor(dataScopeInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns(
-                        "/auth/**",
-                        "/error",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**"
-                );
+	/**
+	 * 跨域配置
+	 */
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		registry.addMapping("/**")
+			.allowedOriginPatterns("*")
+			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+			.allowedHeaders("*")
+			.allowCredentials(true)
+			.maxAge(3600);
+	}
 
-        // 2FA 拦截器（检查敏感操作是否需要二次验证）
-        registry.addInterceptor(mfaInterceptor)
-                .addPathPatterns("/system/**", "/enterprise/**", "/mfa/unbind")
-                .excludePathPatterns(
-                        "/auth/**",
-                        "/captcha/**",
-                        "/error",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/mfa/status",
-                        "/mfa/bind/**",
-                        "/mfa/verify"
-                );
-    }
+	/**
+	 * 拦截器配置
+	 */
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		// 数据权限拦截器
+		registry.addInterceptor(dataScopeInterceptor)
+			.addPathPatterns("/**")
+			.excludePathPatterns("/auth/**", "/error", "/v3/api-docs/**", "/swagger-ui/**");
 
-    /**
-     * OpenAPI配置
-     */
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("AiPerm RBAC权限系统API")
-                        .version("1.0.0")
-                        .description("基于Spring Boot 4 + Sa-Token的RBAC权限管理系统")
-                        .contact(new Contact()
-                                .name("DevLoveCode")
-                                .email("dev@lovecode.com"))
-                        .license(new License()
-                                .name("Apache 2.0")
-                                .url("https://www.apache.org/licenses/LICENSE-2.0.html")));
-    }
+		// 2FA 拦截器（检查敏感操作是否需要二次验证）
+		registry.addInterceptor(mfaInterceptor)
+			.addPathPatterns("/system/**", "/enterprise/**", "/mfa/unbind")
+			.excludePathPatterns("/auth/**", "/captcha/**", "/error", "/v3/api-docs/**", "/swagger-ui/**",
+					"/mfa/status", "/mfa/bind/**", "/mfa/verify");
+	}
 
-    /**
-     * RestTemplate Bean（用于 OAuth HTTP 调用）
-     */
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+	/**
+	 * OpenAPI配置
+	 */
+	@Bean
+	public OpenAPI customOpenAPI() {
+		return new OpenAPI().info(new Info().title("AiPerm RBAC权限系统API")
+			.version("1.0.0")
+			.description("基于Spring Boot 4 + Sa-Token的RBAC权限管理系统")
+			.contact(new Contact().name("DevLoveCode").email("dev@lovecode.com"))
+			.license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")));
+	}
+
+	/**
+	 * RestTemplate Bean（用于 OAuth HTTP 调用）
+	 */
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
+
 }

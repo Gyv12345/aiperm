@@ -18,11 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardService dashboardService;
+	private final DashboardService dashboardService;
 
-    @Operation(summary = "获取统计数据")
-    @GetMapping("/stats")
-    public R<DashboardStatsVO> getStats() {
-        return R.ok(dashboardService.getStats());
-    }
+	@Operation(summary = "获取统计数据")
+	@GetMapping("/stats")
+	public R<DashboardStatsVO> getStats() {
+		return R.ok(dashboardService.getStats());
+	}
+
 }

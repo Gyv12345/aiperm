@@ -15,15 +15,16 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class SysJob extends BaseEntity {
 
-    private String jobName;
+	private String jobName;
 
-    private String jobGroup;
+	private String jobGroup;
 
-    private String cronExpression;
+	private String cronExpression;
 
-    private String beanClass;
+	private String beanClass;
 
-    private Integer status;
+	private Integer status;
 
-    private String remark;
+	private String remark;
+
 }

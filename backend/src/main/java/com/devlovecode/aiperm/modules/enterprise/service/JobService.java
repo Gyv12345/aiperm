@@ -22,138 +22,137 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class JobService {
 
-    private final JobRepository jobRepo;
-    private final JobSchedulerService jobSchedulerService;
+	private final JobRepository jobRepo;
 
-    /**
-     * 分页查询
-     */
-    public PageResult<JobVO> queryPage(JobDTO dto) {
-        Specification<SysJob> spec = SpecificationUtils.and(
-                SpecificationUtils.like("jobName", dto.getJobName()),
-                SpecificationUtils.like("jobGroup", dto.getJobGroup()),
-                SpecificationUtils.eq("status", dto.getStatus())
-        );
-        PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
-        Page<SysJob> page = jobRepo.findAll(spec, pageRequest);
-        PageResult<SysJob> result = PageResult.fromJpaPage(page);
-        return result.map(this::toVO);
-    }
+	private final JobSchedulerService jobSchedulerService;
 
-    /**
-     * 查询详情
-     */
-    public JobVO findById(Long id) {
-        return jobRepo.findByIdAndDeleted(id, 0)
-                .map(this::toVO)
-                .orElseThrow(() -> new BusinessException("定时任务不存在"));
-    }
+	/**
+	 * 分页查询
+	 */
+	public PageResult<JobVO> queryPage(JobDTO dto) {
+		Specification<SysJob> spec = SpecificationUtils.and(SpecificationUtils.like("jobName", dto.getJobName()),
+				SpecificationUtils.like("jobGroup", dto.getJobGroup()),
+				SpecificationUtils.eq("status", dto.getStatus()));
+		PageRequest pageRequest = PageRequest.of(dto.getPage() - 1, dto.getPageSize());
+		Page<SysJob> page = jobRepo.findAll(spec, pageRequest);
+		PageResult<SysJob> result = PageResult.fromJpaPage(page);
+		return result.map(this::toVO);
+	}
 
-    /**
-     * 创建
-     */
-    @Transactional
-    public Long create(JobDTO dto) {
-        validateCronExpression(dto.getCronExpression());
+	/**
+	 * 查询详情
+	 */
+	public JobVO findById(Long id) {
+		return jobRepo.findByIdAndDeleted(id, 0).map(this::toVO).orElseThrow(() -> new BusinessException("定时任务不存在"));
+	}
 
-        SysJob entity = new SysJob();
-        entity.setJobName(dto.getJobName());
-        entity.setJobGroup(dto.getJobGroup());
-        entity.setCronExpression(dto.getCronExpression());
-        entity.setBeanClass(dto.getBeanClass());
-        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
-        entity.setRemark(dto.getRemark());
-        entity.setCreateBy(getCurrentUsername());
-        entity.setCreateTime(LocalDateTime.now());
+	/**
+	 * 创建
+	 */
+	@Transactional
+	public Long create(JobDTO dto) {
+		validateCronExpression(dto.getCronExpression());
 
-        jobRepo.save(entity);
-        jobSchedulerService.refreshJobAfterCommit(entity);
+		SysJob entity = new SysJob();
+		entity.setJobName(dto.getJobName());
+		entity.setJobGroup(dto.getJobGroup());
+		entity.setCronExpression(dto.getCronExpression());
+		entity.setBeanClass(dto.getBeanClass());
+		entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+		entity.setRemark(dto.getRemark());
+		entity.setCreateBy(getCurrentUsername());
+		entity.setCreateTime(LocalDateTime.now());
 
-        return entity.getId();
-    }
+		jobRepo.save(entity);
+		jobSchedulerService.refreshJobAfterCommit(entity);
 
-    /**
-     * 更新
-     */
-    @Transactional
-    public void update(Long id, JobDTO dto) {
-        validateCronExpression(dto.getCronExpression());
+		return entity.getId();
+	}
 
-        SysJob entity = jobRepo.findByIdAndDeleted(id, 0)
-                .orElseThrow(() -> new BusinessException("定时任务不存在"));
+	/**
+	 * 更新
+	 */
+	@Transactional
+	public void update(Long id, JobDTO dto) {
+		validateCronExpression(dto.getCronExpression());
 
-        entity.setJobName(dto.getJobName());
-        entity.setJobGroup(dto.getJobGroup());
-        entity.setCronExpression(dto.getCronExpression());
-        entity.setBeanClass(dto.getBeanClass());
-        entity.setStatus(dto.getStatus());
-        entity.setRemark(dto.getRemark());
-        entity.setUpdateBy(getCurrentUsername());
-        entity.setUpdateTime(LocalDateTime.now());
+		SysJob entity = jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
 
-        jobRepo.save(entity);
-        jobSchedulerService.refreshJobAfterCommit(entity);
-    }
+		entity.setJobName(dto.getJobName());
+		entity.setJobGroup(dto.getJobGroup());
+		entity.setCronExpression(dto.getCronExpression());
+		entity.setBeanClass(dto.getBeanClass());
+		entity.setStatus(dto.getStatus());
+		entity.setRemark(dto.getRemark());
+		entity.setUpdateBy(getCurrentUsername());
+		entity.setUpdateTime(LocalDateTime.now());
 
-    /**
-     * 删除
-     */
-    @Transactional
-    public void delete(Long id) {
-        jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
-        jobRepo.softDelete(id, LocalDateTime.now());
-        jobSchedulerService.removeJobAfterCommit(id);
-    }
+		jobRepo.save(entity);
+		jobSchedulerService.refreshJobAfterCommit(entity);
+	}
 
-    /**
-     * 暂停任务
-     */
-    @Transactional
-    public void pause(Long id) {
-        jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
-        jobRepo.updateStatus(id, 0, getCurrentUsername(), LocalDateTime.now());
-        jobSchedulerService.removeJobAfterCommit(id);
-    }
+	/**
+	 * 删除
+	 */
+	@Transactional
+	public void delete(Long id) {
+		jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
+		jobRepo.softDelete(id, LocalDateTime.now());
+		jobSchedulerService.removeJobAfterCommit(id);
+	}
 
-    /**
-     * 恢复任务
-     */
-    @Transactional
-    public void resume(Long id) {
-        SysJob entity = jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
-        jobRepo.updateStatus(id, 1, getCurrentUsername(), LocalDateTime.now());
-        entity.setStatus(1);
-        jobSchedulerService.refreshJobAfterCommit(entity);
-    }
+	/**
+	 * 暂停任务
+	 */
+	@Transactional
+	public void pause(Long id) {
+		jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
+		jobRepo.updateStatus(id, 0, getCurrentUsername(), LocalDateTime.now());
+		jobSchedulerService.removeJobAfterCommit(id);
+	}
 
-    // ========== 私有方法 ==========
+	/**
+	 * 恢复任务
+	 */
+	@Transactional
+	public void resume(Long id) {
+		SysJob entity = jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
+		jobRepo.updateStatus(id, 1, getCurrentUsername(), LocalDateTime.now());
+		entity.setStatus(1);
+		jobSchedulerService.refreshJobAfterCommit(entity);
+	}
 
-    private JobVO toVO(SysJob entity) {
-        JobVO vo = new JobVO();
-        vo.setId(entity.getId());
-        vo.setJobName(entity.getJobName());
-        vo.setJobGroup(entity.getJobGroup());
-        vo.setCronExpression(entity.getCronExpression());
-        vo.setBeanClass(entity.getBeanClass());
-        vo.setStatus(entity.getStatus());
-        vo.setRemark(entity.getRemark());
-        vo.setCreateTime(entity.getCreateTime());
-        return vo;
-    }
+	// ========== 私有方法 ==========
 
-    private String getCurrentUsername() {
-        try {
-            return StpUtil.getLoginIdAsString();
-        } catch (Exception e) {
-            return "system";
-        }
-    }
+	private JobVO toVO(SysJob entity) {
+		JobVO vo = new JobVO();
+		vo.setId(entity.getId());
+		vo.setJobName(entity.getJobName());
+		vo.setJobGroup(entity.getJobGroup());
+		vo.setCronExpression(entity.getCronExpression());
+		vo.setBeanClass(entity.getBeanClass());
+		vo.setStatus(entity.getStatus());
+		vo.setRemark(entity.getRemark());
+		vo.setCreateTime(entity.getCreateTime());
+		return vo;
+	}
 
-    private void validateCronExpression(String cronExpression) {
-        try {
-            CronExpression.parse(cronExpression);
-        } catch (Exception e) {
-            throw new BusinessException("Cron表达式不合法");
-        }
-    }
+	private String getCurrentUsername() {
+		try {
+			return StpUtil.getLoginIdAsString();
+		}
+		catch (Exception e) {
+			return "system";
+		}
+	}
+
+	private void validateCronExpression(String cronExpression) {
+		try {
+			CronExpression.parse(cronExpression);
+		}
+		catch (Exception e) {
+			throw new BusinessException("Cron表达式不合法");
+		}
+	}
+
 }

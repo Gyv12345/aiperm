@@ -19,42 +19,43 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("认证服务测试")
 class AuthServiceTest {
 
-    @Autowired
-    private AuthService authService;
+	@Autowired
+	private AuthService authService;
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+	@Autowired
+	private StringRedisTemplate redisTemplate;
 
-    @Test
-    @DisplayName("生成验证码")
-    void testGenerateCaptcha() {
-        CaptchaVO captcha = authService.generateCaptcha();
-        assertNotNull(captcha.getCaptchaKey(), "验证码 Key 不应为空");
-        assertNotNull(captcha.getCaptchaImage(), "验证码图片不应为空");
-        assertTrue(captcha.getCaptchaImage().startsWith("data:image"), "应该是 Base64 图片");
-    }
+	@Test
+	@DisplayName("生成验证码")
+	void testGenerateCaptcha() {
+		CaptchaVO captcha = authService.generateCaptcha();
+		assertNotNull(captcha.getCaptchaKey(), "验证码 Key 不应为空");
+		assertNotNull(captcha.getCaptchaImage(), "验证码图片不应为空");
+		assertTrue(captcha.getCaptchaImage().startsWith("data:image"), "应该是 Base64 图片");
+	}
 
-    @Test
-    @DisplayName("登录失败 - 用户不存在")
-    void testLoginUserNotFound() {
-        LoginRequest request = new LoginRequest();
-        request.setUsername("nonexistent_user");
-        request.setPassword("any_password");
-        request.setCaptchaKey("test_key");
-        request.setCaptcha("test");
+	@Test
+	@DisplayName("登录失败 - 用户不存在")
+	void testLoginUserNotFound() {
+		LoginRequest request = new LoginRequest();
+		request.setUsername("nonexistent_user");
+		request.setPassword("any_password");
+		request.setCaptchaKey("test_key");
+		request.setCaptcha("test");
 
-        assertThrows(BusinessException.class, () -> authService.login(request));
-    }
+		assertThrows(BusinessException.class, () -> authService.login(request));
+	}
 
-    @Test
-    @DisplayName("登录失败 - 密码错误")
-    void testLoginWrongPassword() {
-        LoginRequest request = new LoginRequest();
-        request.setUsername("admin");
-        request.setPassword("wrong_password");
-        request.setCaptchaKey("test_key");
-        request.setCaptcha("test");
+	@Test
+	@DisplayName("登录失败 - 密码错误")
+	void testLoginWrongPassword() {
+		LoginRequest request = new LoginRequest();
+		request.setUsername("admin");
+		request.setPassword("wrong_password");
+		request.setCaptchaKey("test_key");
+		request.setCaptcha("test");
 
-        assertThrows(BusinessException.class, () -> authService.login(request));
-    }
+		assertThrows(BusinessException.class, () -> authService.login(request));
+	}
+
 }

@@ -31,79 +31,79 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class RateLimitAspect {
 
-    private static final String KEY_PREFIX = "aiperm:rate-limit:";
+	private static final String KEY_PREFIX = "aiperm:rate-limit:";
 
-    private final StringRedisTemplate redisTemplate;
+	private final StringRedisTemplate redisTemplate;
 
-    @Around("@annotation(rateLimit)")
-    public Object around(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
-        String key = buildRateLimitKey(joinPoint, rateLimit);
+	@Around("@annotation(rateLimit)")
+	public Object around(ProceedingJoinPoint joinPoint, RateLimit rateLimit) throws Throwable {
+		String key = buildRateLimitKey(joinPoint, rateLimit);
 
-        Long current = incrementCounter(key, rateLimit.windowSeconds());
-        if (current != null && current > rateLimit.count()) {
-            throw new BusinessException(ErrorCode.RATE_LIMITED, rateLimit.message());
-        }
+		Long current = incrementCounter(key, rateLimit.windowSeconds());
+		if (current != null && current > rateLimit.count()) {
+			throw new BusinessException(ErrorCode.RATE_LIMITED, rateLimit.message());
+		}
 
-        return joinPoint.proceed();
-    }
+		return joinPoint.proceed();
+	}
 
-    private Long incrementCounter(String key, int windowSeconds) {
-        try {
-            Long current = redisTemplate.opsForValue().increment(key);
-            if (current != null && current == 1L) {
-                redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
-            }
-            return current;
-        } catch (Exception e) {
-            // Redis 出现短暂异常时降级为放行，避免影响主链路可用性
-            log.warn("限流降级放行，key={}", key, e);
-            return null;
-        }
-    }
+	private Long incrementCounter(String key, int windowSeconds) {
+		try {
+			Long current = redisTemplate.opsForValue().increment(key);
+			if (current != null && current == 1L) {
+				redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
+			}
+			return current;
+		}
+		catch (Exception e) {
+			// Redis 出现短暂异常时降级为放行，避免影响主链路可用性
+			log.warn("限流降级放行，key={}", key, e);
+			return null;
+		}
+	}
 
-    private String buildRateLimitKey(ProceedingJoinPoint joinPoint, RateLimit rateLimit) {
-        HttpServletRequest request = currentRequest();
-        String resource = hasText(rateLimit.key())
-                ? rateLimit.key()
-                : resolveResource(joinPoint, request);
-        String subject = resolveSubject(rateLimit.scope(), request);
-        return KEY_PREFIX + normalize(resource) + ":" + normalize(subject);
-    }
+	private String buildRateLimitKey(ProceedingJoinPoint joinPoint, RateLimit rateLimit) {
+		HttpServletRequest request = currentRequest();
+		String resource = hasText(rateLimit.key()) ? rateLimit.key() : resolveResource(joinPoint, request);
+		String subject = resolveSubject(rateLimit.scope(), request);
+		return KEY_PREFIX + normalize(resource) + ":" + normalize(subject);
+	}
 
-    private String resolveResource(ProceedingJoinPoint joinPoint, HttpServletRequest request) {
-        if (request != null) {
-            return request.getMethod() + ":" + request.getRequestURI();
-        }
+	private String resolveResource(ProceedingJoinPoint joinPoint, HttpServletRequest request) {
+		if (request != null) {
+			return request.getMethod() + ":" + request.getRequestURI();
+		}
 
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        return signature.getDeclaringTypeName() + "#" + signature.getName();
-    }
+		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+		return signature.getDeclaringTypeName() + "#" + signature.getName();
+	}
 
-    private String resolveSubject(AccessLimitScope scope, HttpServletRequest request) {
-        if (scope == AccessLimitScope.GLOBAL) {
-            return "global";
-        }
+	private String resolveSubject(AccessLimitScope scope, HttpServletRequest request) {
+		if (scope == AccessLimitScope.GLOBAL) {
+			return "global";
+		}
 
-        if (scope == AccessLimitScope.USER && StpUtil.isLogin()) {
-            return "user:" + StpUtil.getLoginIdAsString();
-        }
+		if (scope == AccessLimitScope.USER && StpUtil.isLogin()) {
+			return "user:" + StpUtil.getLoginIdAsString();
+		}
 
-        return "ip:" + ClientIpUtils.getClientIp(request);
-    }
+		return "ip:" + ClientIpUtils.getClientIp(request);
+	}
 
-    private HttpServletRequest currentRequest() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        return attributes == null ? null : attributes.getRequest();
-    }
+	private HttpServletRequest currentRequest() {
+		ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		return attributes == null ? null : attributes.getRequest();
+	}
 
-    private String normalize(String value) {
-        if (!hasText(value)) {
-            return "unknown";
-        }
-        return value.replaceAll("\\s+", "_").replace(":", "_");
-    }
+	private String normalize(String value) {
+		if (!hasText(value)) {
+			return "unknown";
+		}
+		return value.replaceAll("\\s+", "_").replace(":", "_");
+	}
 
-    private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
-    }
+	private boolean hasText(String value) {
+		return value != null && !value.trim().isEmpty();
+	}
+
 }

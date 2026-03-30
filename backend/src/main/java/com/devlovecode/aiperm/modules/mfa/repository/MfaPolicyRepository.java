@@ -12,5 +12,6 @@ import java.util.List;
 @Repository
 public interface MfaPolicyRepository extends BaseJpaRepository<SysMfaPolicy> {
 
-    List<SysMfaPolicy> findByEnabled(Integer enabled);
+	List<SysMfaPolicy> findByEnabled(Integer enabled);
+
 }

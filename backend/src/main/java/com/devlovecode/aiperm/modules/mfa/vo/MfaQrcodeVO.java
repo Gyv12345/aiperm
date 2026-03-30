@@ -12,9 +12,10 @@ import lombok.Data;
 @Schema(description = "2FA绑定二维码")
 public class MfaQrcodeVO {
 
-    @Schema(description = "TOTP URI（用于生成二维码）")
-    private String totpUri;
+	@Schema(description = "TOTP URI（用于生成二维码）")
+	private String totpUri;
 
-    @Schema(description = "密钥（用于手动输入）")
-    private String secretKey;
+	@Schema(description = "密钥（用于手动输入）")
+	private String secretKey;
+
 }

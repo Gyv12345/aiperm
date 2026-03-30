@@ -12,23 +12,24 @@ import java.util.Optional;
  */
 public interface ConfigRepository extends BaseJpaRepository<SysConfig> {
 
-    /**
-     * 根据配置键查询
-     */
-    @Query("SELECT c FROM SysConfig c WHERE c.configKey = :configKey AND c.deleted = 0")
-    Optional<SysConfig> findByConfigKey(@Param("configKey") String configKey);
+	/**
+	 * 根据配置键查询
+	 */
+	@Query("SELECT c FROM SysConfig c WHERE c.configKey = :configKey AND c.deleted = 0")
+	Optional<SysConfig> findByConfigKey(@Param("configKey") String configKey);
 
-    /**
-     * 检查配置键是否存在
-     */
-    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM SysConfig c " +
-           "WHERE c.configKey = :configKey AND c.deleted = 0")
-    boolean existsByConfigKey(@Param("configKey") String configKey);
+	/**
+	 * 检查配置键是否存在
+	 */
+	@Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM SysConfig c "
+			+ "WHERE c.configKey = :configKey AND c.deleted = 0")
+	boolean existsByConfigKey(@Param("configKey") String configKey);
 
-    /**
-     * 检查配置键是否存在（排除指定ID）
-     */
-    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM SysConfig c " +
-           "WHERE c.configKey = :configKey AND c.id != :excludeId AND c.deleted = 0")
-    boolean existsByConfigKeyExcludeId(@Param("configKey") String configKey, @Param("excludeId") Long excludeId);
+	/**
+	 * 检查配置键是否存在（排除指定ID）
+	 */
+	@Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM SysConfig c "
+			+ "WHERE c.configKey = :configKey AND c.id != :excludeId AND c.deleted = 0")
+	boolean existsByConfigKeyExcludeId(@Param("configKey") String configKey, @Param("excludeId") Long excludeId);
+
 }

@@ -25,57 +25,54 @@ import java.lang.reflect.Method;
 @Component
 public class LogAspect {
 
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+	@Autowired
+	private ApplicationEventPublisher eventPublisher;
 
-    @Around("@annotation(com.devlovecode.aiperm.common.annotation.Log)")
-    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
-        long startTime = System.currentTimeMillis();
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
-        Log logAnnotation = method.getAnnotation(Log.class);
+	@Around("@annotation(com.devlovecode.aiperm.common.annotation.Log)")
+	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
+		long startTime = System.currentTimeMillis();
+		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+		Method method = signature.getMethod();
+		Log logAnnotation = method.getAnnotation(Log.class);
 
-        HttpServletRequest request = null;
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
-            request = attributes.getRequest();
-        }
+		HttpServletRequest request = null;
+		ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		if (attributes != null) {
+			request = attributes.getRequest();
+		}
 
-        Object result = null;
-        String errorMsg = null;
-        int status = 0;
-        try {
-            result = joinPoint.proceed();
-            return result;
-        } catch (Exception e) {
-            status = 1;
-            errorMsg = e.getMessage();
-            throw e;
-        } finally {
-            long costTime = System.currentTimeMillis() - startTime;
-            LogEvent event = new LogEvent(
-                logAnnotation.title(),
-                logAnnotation.operType().getCode(),
-                joinPoint.getTarget().getClass().getName() + "." + method.getName(),
-                request != null ? request.getMethod() : "",
-                request != null ? request.getRequestURI() : "",
-                request != null ? ClientIpUtils.getClientIp(request) : "",
-                logAnnotation.saveRequestParam() ? buildParams(joinPoint.getArgs()) : "",
-                logAnnotation.saveResponseResult() && result != null ? JSONUtil.toJsonStr(result) : "",
-                status,
-                errorMsg,
-                costTime
-            );
-            eventPublisher.publishEvent(event);
-        }
-    }
+		Object result = null;
+		String errorMsg = null;
+		int status = 0;
+		try {
+			result = joinPoint.proceed();
+			return result;
+		}
+		catch (Exception e) {
+			status = 1;
+			errorMsg = e.getMessage();
+			throw e;
+		}
+		finally {
+			long costTime = System.currentTimeMillis() - startTime;
+			LogEvent event = new LogEvent(logAnnotation.title(), logAnnotation.operType().getCode(),
+					joinPoint.getTarget().getClass().getName() + "." + method.getName(),
+					request != null ? request.getMethod() : "", request != null ? request.getRequestURI() : "",
+					request != null ? ClientIpUtils.getClientIp(request) : "",
+					logAnnotation.saveRequestParam() ? buildParams(joinPoint.getArgs()) : "",
+					logAnnotation.saveResponseResult() && result != null ? JSONUtil.toJsonStr(result) : "", status,
+					errorMsg, costTime);
+			eventPublisher.publishEvent(event);
+		}
+	}
 
-    private String buildParams(Object[] args) {
-        try {
-            return JSONUtil.toJsonStr(args);
-        } catch (Exception e) {
-            return "";
-        }
-    }
+	private String buildParams(Object[] args) {
+		try {
+			return JSONUtil.toJsonStr(args);
+		}
+		catch (Exception e) {
+			return "";
+		}
+	}
 
 }

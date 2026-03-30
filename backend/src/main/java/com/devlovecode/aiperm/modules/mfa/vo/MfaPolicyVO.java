@@ -9,10 +9,17 @@ import java.time.LocalDateTime;
  */
 @Data
 public class MfaPolicyVO {
-    private Long id;
-    private String name;
-    private String permPattern;
-    private String apiPattern;
-    private Integer enabled;
-    private LocalDateTime createTime;
+
+	private Long id;
+
+	private String name;
+
+	private String permPattern;
+
+	private String apiPattern;
+
+	private Integer enabled;
+
+	private LocalDateTime createTime;
+
 }

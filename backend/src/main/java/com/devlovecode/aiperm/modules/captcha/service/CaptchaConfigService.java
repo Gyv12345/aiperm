@@ -17,72 +17,74 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CaptchaConfigService {
 
-    private final CaptchaConfigRepository captchaConfigRepo;
+	private final CaptchaConfigRepository captchaConfigRepo;
 
-    /** 获取配置（密钥脱敏） */
-    public CaptchaConfigVO getConfig(String type) {
-        SysCaptchaConfig config = captchaConfigRepo.findByType(type.toUpperCase())
-                .orElseThrow(() -> new BusinessException("配置不存在：" + type));
-        return toVO(config);
-    }
+	/** 获取配置（密钥脱敏） */
+	public CaptchaConfigVO getConfig(String type) {
+		SysCaptchaConfig config = captchaConfigRepo.findByType(type.toUpperCase())
+			.orElseThrow(() -> new BusinessException("配置不存在：" + type));
+		return toVO(config);
+	}
 
-    /** 更新配置 */
-    @Transactional
-    public void updateConfig(String type, CaptchaConfigDTO dto) {
-        SysCaptchaConfig config = captchaConfigRepo.findByType(type.toUpperCase())
-                .orElseThrow(() -> new BusinessException("配置不存在：" + type));
+	/** 更新配置 */
+	@Transactional
+	public void updateConfig(String type, CaptchaConfigDTO dto) {
+		SysCaptchaConfig config = captchaConfigRepo.findByType(type.toUpperCase())
+			.orElseThrow(() -> new BusinessException("配置不存在：" + type));
 
-        config.setEnabled(dto.getEnabled());
-        config.setSmsProvider(dto.getSmsProvider());
+		config.setEnabled(dto.getEnabled());
+		config.setSmsProvider(dto.getSmsProvider());
 
-        // 密钥：空值代表不更新（前端脱敏显示，不传空值）
-        if (dto.getSmsAccessKey() != null && !dto.getSmsAccessKey().contains("****")) {
-            config.setSmsAccessKey(dto.getSmsAccessKey());
-        }
-        if (dto.getSmsSecretKey() != null && !dto.getSmsSecretKey().isBlank()) {
-            config.setSmsSecretKey(dto.getSmsSecretKey());
-        }
-        config.setSmsSignName(dto.getSmsSignName());
-        config.setSmsTemplateCode(dto.getSmsTemplateCode());
-        config.setEmailHost(dto.getEmailHost());
-        config.setEmailPort(dto.getEmailPort());
-        config.setEmailUsername(dto.getEmailUsername());
-        if (dto.getEmailPassword() != null && !dto.getEmailPassword().isBlank()) {
-            config.setEmailPassword(dto.getEmailPassword());
-        }
-        config.setEmailFrom(dto.getEmailFrom());
-        config.setEmailFromName(dto.getEmailFromName());
-        config.setCodeLength(dto.getCodeLength());
-        config.setExpireMinutes(dto.getExpireMinutes());
-        config.setDailyLimit(dto.getDailyLimit());
-        config.setUpdateBy(StpUtil.getLoginIdAsString());
+		// 密钥：空值代表不更新（前端脱敏显示，不传空值）
+		if (dto.getSmsAccessKey() != null && !dto.getSmsAccessKey().contains("****")) {
+			config.setSmsAccessKey(dto.getSmsAccessKey());
+		}
+		if (dto.getSmsSecretKey() != null && !dto.getSmsSecretKey().isBlank()) {
+			config.setSmsSecretKey(dto.getSmsSecretKey());
+		}
+		config.setSmsSignName(dto.getSmsSignName());
+		config.setSmsTemplateCode(dto.getSmsTemplateCode());
+		config.setEmailHost(dto.getEmailHost());
+		config.setEmailPort(dto.getEmailPort());
+		config.setEmailUsername(dto.getEmailUsername());
+		if (dto.getEmailPassword() != null && !dto.getEmailPassword().isBlank()) {
+			config.setEmailPassword(dto.getEmailPassword());
+		}
+		config.setEmailFrom(dto.getEmailFrom());
+		config.setEmailFromName(dto.getEmailFromName());
+		config.setCodeLength(dto.getCodeLength());
+		config.setExpireMinutes(dto.getExpireMinutes());
+		config.setDailyLimit(dto.getDailyLimit());
+		config.setUpdateBy(StpUtil.getLoginIdAsString());
 
-        captchaConfigRepo.save(config);
-    }
+		captchaConfigRepo.save(config);
+	}
 
-    private CaptchaConfigVO toVO(SysCaptchaConfig entity) {
-        CaptchaConfigVO vo = new CaptchaConfigVO();
-        vo.setId(entity.getId());
-        vo.setType(entity.getType());
-        vo.setEnabled(entity.getEnabled());
-        vo.setSmsProvider(entity.getSmsProvider());
-        // 密钥脱敏
-        vo.setSmsAccessKey(desensitize(entity.getSmsAccessKey()));
-        vo.setSmsSignName(entity.getSmsSignName());
-        vo.setSmsTemplateCode(entity.getSmsTemplateCode());
-        vo.setEmailHost(entity.getEmailHost());
-        vo.setEmailPort(entity.getEmailPort());
-        vo.setEmailUsername(entity.getEmailUsername());
-        vo.setEmailFrom(entity.getEmailFrom());
-        vo.setEmailFromName(entity.getEmailFromName());
-        vo.setCodeLength(entity.getCodeLength());
-        vo.setExpireMinutes(entity.getExpireMinutes());
-        vo.setDailyLimit(entity.getDailyLimit());
-        return vo;
-    }
+	private CaptchaConfigVO toVO(SysCaptchaConfig entity) {
+		CaptchaConfigVO vo = new CaptchaConfigVO();
+		vo.setId(entity.getId());
+		vo.setType(entity.getType());
+		vo.setEnabled(entity.getEnabled());
+		vo.setSmsProvider(entity.getSmsProvider());
+		// 密钥脱敏
+		vo.setSmsAccessKey(desensitize(entity.getSmsAccessKey()));
+		vo.setSmsSignName(entity.getSmsSignName());
+		vo.setSmsTemplateCode(entity.getSmsTemplateCode());
+		vo.setEmailHost(entity.getEmailHost());
+		vo.setEmailPort(entity.getEmailPort());
+		vo.setEmailUsername(entity.getEmailUsername());
+		vo.setEmailFrom(entity.getEmailFrom());
+		vo.setEmailFromName(entity.getEmailFromName());
+		vo.setCodeLength(entity.getCodeLength());
+		vo.setExpireMinutes(entity.getExpireMinutes());
+		vo.setDailyLimit(entity.getDailyLimit());
+		return vo;
+	}
 
-    private String desensitize(String value) {
-        if (value == null || value.length() <= 4) return value;
-        return value.substring(0, 4) + "****";
-    }
+	private String desensitize(String value) {
+		if (value == null || value.length() <= 4)
+			return value;
+		return value.substring(0, 4) + "****";
+	}
+
 }

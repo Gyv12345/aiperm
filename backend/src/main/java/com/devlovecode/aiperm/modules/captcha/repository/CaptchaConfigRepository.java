@@ -9,5 +9,6 @@ import java.util.Optional;
 @Repository
 public interface CaptchaConfigRepository extends BaseJpaRepository<SysCaptchaConfig> {
 
-    Optional<SysCaptchaConfig> findByType(String type);
+	Optional<SysCaptchaConfig> findByType(String type);
+
 }

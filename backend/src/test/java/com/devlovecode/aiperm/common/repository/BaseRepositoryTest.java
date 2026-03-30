@@ -10,5 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @DisplayName("Repository 测试基类")
 public abstract class BaseRepositoryTest {
-    // 测试基类，提供通用测试配置
+
+	// 测试基类，提供通用测试配置
+
 }

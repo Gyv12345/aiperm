@@ -21,50 +21,50 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MfaPolicyService {
 
-    private final MfaPolicyRepository mfaPolicyRepo;
+	private final MfaPolicyRepository mfaPolicyRepo;
 
-    public List<MfaPolicyVO> listAll() {
-        return mfaPolicyRepo.findByEnabled(1).stream().map(this::toVO).collect(Collectors.toList());
-    }
+	public List<MfaPolicyVO> listAll() {
+		return mfaPolicyRepo.findByEnabled(1).stream().map(this::toVO).collect(Collectors.toList());
+	}
 
-    @Transactional
-    public void create(MfaPolicyDTO dto) {
-        SysMfaPolicy policy = new SysMfaPolicy();
-        policy.setName(dto.getName());
-        policy.setPermPattern(dto.getPermPattern());
-        policy.setApiPattern(dto.getApiPattern());
-        policy.setEnabled(dto.getEnabled() != null ? dto.getEnabled() : 1);
-        policy.setCreateTime(LocalDateTime.now());
-        policy.setCreateBy(StpUtil.getLoginIdAsString());
-        mfaPolicyRepo.save(policy);
-    }
+	@Transactional
+	public void create(MfaPolicyDTO dto) {
+		SysMfaPolicy policy = new SysMfaPolicy();
+		policy.setName(dto.getName());
+		policy.setPermPattern(dto.getPermPattern());
+		policy.setApiPattern(dto.getApiPattern());
+		policy.setEnabled(dto.getEnabled() != null ? dto.getEnabled() : 1);
+		policy.setCreateTime(LocalDateTime.now());
+		policy.setCreateBy(StpUtil.getLoginIdAsString());
+		mfaPolicyRepo.save(policy);
+	}
 
-    @Transactional
-    public void update(Long id, MfaPolicyDTO dto) {
-        SysMfaPolicy policy = mfaPolicyRepo.findById(id)
-                .orElseThrow(() -> new BusinessException("策略不存在"));
-        policy.setName(dto.getName());
-        policy.setPermPattern(dto.getPermPattern());
-        policy.setApiPattern(dto.getApiPattern());
-        policy.setEnabled(dto.getEnabled());
-        policy.setUpdateTime(LocalDateTime.now());
-        policy.setUpdateBy(StpUtil.getLoginIdAsString());
-        mfaPolicyRepo.save(policy);
-    }
+	@Transactional
+	public void update(Long id, MfaPolicyDTO dto) {
+		SysMfaPolicy policy = mfaPolicyRepo.findById(id).orElseThrow(() -> new BusinessException("策略不存在"));
+		policy.setName(dto.getName());
+		policy.setPermPattern(dto.getPermPattern());
+		policy.setApiPattern(dto.getApiPattern());
+		policy.setEnabled(dto.getEnabled());
+		policy.setUpdateTime(LocalDateTime.now());
+		policy.setUpdateBy(StpUtil.getLoginIdAsString());
+		mfaPolicyRepo.save(policy);
+	}
 
-    @Transactional
-    public void delete(Long id) {
-        mfaPolicyRepo.softDelete(id, LocalDateTime.now());
-    }
+	@Transactional
+	public void delete(Long id) {
+		mfaPolicyRepo.softDelete(id, LocalDateTime.now());
+	}
 
-    private MfaPolicyVO toVO(SysMfaPolicy entity) {
-        MfaPolicyVO vo = new MfaPolicyVO();
-        vo.setId(entity.getId());
-        vo.setName(entity.getName());
-        vo.setPermPattern(entity.getPermPattern());
-        vo.setApiPattern(entity.getApiPattern());
-        vo.setEnabled(entity.getEnabled());
-        vo.setCreateTime(entity.getCreateTime());
-        return vo;
-    }
+	private MfaPolicyVO toVO(SysMfaPolicy entity) {
+		MfaPolicyVO vo = new MfaPolicyVO();
+		vo.setId(entity.getId());
+		vo.setName(entity.getName());
+		vo.setPermPattern(entity.getPermPattern());
+		vo.setApiPattern(entity.getApiPattern());
+		vo.setEnabled(entity.getEnabled());
+		vo.setCreateTime(entity.getCreateTime());
+		return vo;
+	}
+
 }

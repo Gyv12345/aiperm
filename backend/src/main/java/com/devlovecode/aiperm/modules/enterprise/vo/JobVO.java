@@ -10,39 +10,40 @@ import java.time.LocalDateTime;
 @Schema(description = "定时任务响应VO")
 public class JobVO {
 
-    @Schema(description = "任务ID")
-    private Long id;
+	@Schema(description = "任务ID")
+	private Long id;
 
-    @Schema(description = "任务名称")
-    private String jobName;
+	@Schema(description = "任务名称")
+	private String jobName;
 
-    @Schema(description = "任务分组")
-    private String jobGroup;
+	@Schema(description = "任务分组")
+	private String jobGroup;
 
-    @Schema(description = "Cron表达式")
-    private String cronExpression;
+	@Schema(description = "Cron表达式")
+	private String cronExpression;
 
-    @Schema(description = "执行类")
-    private String beanClass;
+	@Schema(description = "执行类")
+	private String beanClass;
 
-    @Schema(description = "状态：0-暂停 1-运行")
-    private Integer status;
+	@Schema(description = "状态：0-暂停 1-运行")
+	private Integer status;
 
-    @Schema(description = "错过策略（兼容字段）")
-    private Integer misfirePolicy = 1;
+	@Schema(description = "错过策略（兼容字段）")
+	private Integer misfirePolicy = 1;
 
-    @Schema(description = "并发策略（兼容字段）")
-    private Integer concurrent = 1;
+	@Schema(description = "并发策略（兼容字段）")
+	private Integer concurrent = 1;
 
-    @Schema(description = "备注")
-    private String remark;
+	@Schema(description = "备注")
+	private String remark;
 
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
+	@Schema(description = "创建时间")
+	private LocalDateTime createTime;
 
-    @JsonProperty("invokeTarget")
-    @Schema(description = "执行目标（前端兼容字段）")
-    public String getInvokeTarget() {
-        return beanClass;
-    }
+	@JsonProperty("invokeTarget")
+	@Schema(description = "执行目标（前端兼容字段）")
+	public String getInvokeTarget() {
+		return beanClass;
+	}
+
 }

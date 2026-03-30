@@ -17,13 +17,14 @@ import lombok.EqualsAndHashCode;
 @Table(name = "sys_post")
 public class SysPost extends BaseEntity {
 
-    private String postName;
+	private String postName;
 
-    private String postCode;
+	private String postCode;
 
-    private Integer sort;
+	private Integer sort;
 
-    private Integer status;
+	private Integer status;
 
-    private String remark;
+	private String remark;
+
 }

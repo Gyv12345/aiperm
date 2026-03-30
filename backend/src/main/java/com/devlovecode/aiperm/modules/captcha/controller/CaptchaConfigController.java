@@ -25,23 +25,23 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CaptchaConfigController {
 
-    private final CaptchaConfigService captchaConfigService;
+	private final CaptchaConfigService captchaConfigService;
 
-    @Operation(summary = "获取验证码配置（SMS或EMAIL）")
-    @SaCheckPermission("system:captcha:config")
-    @GetMapping("/{type}")
-    public R<CaptchaConfigVO> getConfig(@PathVariable String type) {
-        return R.ok(captchaConfigService.getConfig(type));
-    }
+	@Operation(summary = "获取验证码配置（SMS或EMAIL）")
+	@SaCheckPermission("system:captcha:config")
+	@GetMapping("/{type}")
+	public R<CaptchaConfigVO> getConfig(@PathVariable String type) {
+		return R.ok(captchaConfigService.getConfig(type));
+	}
 
-    @Operation(summary = "更新验证码配置")
-    @SaCheckPermission("system:captcha:config")
-    @Log(title = "验证码配置", operType = OperType.UPDATE)
-    @PutMapping("/{type}")
-    public R<Void> updateConfig(
-            @PathVariable String type,
-            @RequestBody @Validated({jakarta.validation.groups.Default.class, Views.Update.class}) CaptchaConfigDTO dto) {
-        captchaConfigService.updateConfig(type, dto);
-        return R.ok();
-    }
+	@Operation(summary = "更新验证码配置")
+	@SaCheckPermission("system:captcha:config")
+	@Log(title = "验证码配置", operType = OperType.UPDATE)
+	@PutMapping("/{type}")
+	public R<Void> updateConfig(@PathVariable String type, @RequestBody @Validated({
+			jakarta.validation.groups.Default.class, Views.Update.class }) CaptchaConfigDTO dto) {
+		captchaConfigService.updateConfig(type, dto);
+		return R.ok();
+	}
+
 }

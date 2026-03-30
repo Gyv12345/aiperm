@@ -17,20 +17,21 @@ import java.time.LocalDateTime;
 @SQLRestriction("deleted = 0")
 public class SysUserRole implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+	@Serial
+	private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private Long userId;
+	private Long userId;
 
-    private Long roleId;
+	private Long roleId;
 
-    private Integer deleted;
+	private Integer deleted;
 
-    private LocalDateTime createTime;
+	private LocalDateTime createTime;
 
-    private String createBy;
+	private String createBy;
+
 }

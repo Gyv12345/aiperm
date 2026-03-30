@@ -19,51 +19,51 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PasswordLoginStrategy implements LoginStrategy {
 
-    private final UserRepository userRepo;
-    private final StringRedisTemplate redisTemplate;
-    private final LoginLogService loginLogService;
+	private final UserRepository userRepo;
 
-    private static final String CAPTCHA_PREFIX = "captcha:";
+	private final StringRedisTemplate redisTemplate;
 
-    @Override
-    public String getLoginType() {
-        return LoginType.PASSWORD.getCode();
-    }
+	private final LoginLogService loginLogService;
 
-    @Override
-    public LoginVO login(String identifier, String credential, String ip, String userAgent, HttpServletRequest request) {
-        // identifier 是用户名，credential 是密码
-        // 注意：图形验证码在 Controller 层已验证
+	private static final String CAPTCHA_PREFIX = "captcha:";
 
-        SysUser user = userRepo.findByUsername(identifier)
-                .orElseThrow(() -> new BusinessException("用户名或密码错误"));
+	@Override
+	public String getLoginType() {
+		return LoginType.PASSWORD.getCode();
+	}
 
-        if (user.getStatus() != null && user.getStatus() == 0) {
-            throw new BusinessException("账号已被禁用");
-        }
+	@Override
+	public LoginVO login(String identifier, String credential, String ip, String userAgent,
+			HttpServletRequest request) {
+		// identifier 是用户名，credential 是密码
+		// 注意：图形验证码在 Controller 层已验证
 
-        if (!BCrypt.checkpw(credential, user.getPassword())) {
-            throw new BusinessException("用户名或密码错误");
-        }
+		SysUser user = userRepo.findByUsername(identifier).orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
-        StpUtil.login(user.getId());
-        userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
+		if (user.getStatus() != null && user.getStatus() == 0) {
+			throw new BusinessException("账号已被禁用");
+		}
 
-        return LoginVO.builder()
-                .token(StpUtil.getTokenValue())
-                .userInfo(buildUserInfo(user))
-                .build();
-    }
+		if (!BCrypt.checkpw(credential, user.getPassword())) {
+			throw new BusinessException("用户名或密码错误");
+		}
 
-    private LoginVO.UserInfo buildUserInfo(SysUser user) {
-        return LoginVO.UserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .build();
-    }
+		StpUtil.login(user.getId());
+		userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+		loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
+
+		return LoginVO.builder().token(StpUtil.getTokenValue()).userInfo(buildUserInfo(user)).build();
+	}
+
+	private LoginVO.UserInfo buildUserInfo(SysUser user) {
+		return LoginVO.UserInfo.builder()
+			.id(user.getId())
+			.username(user.getUsername())
+			.nickname(user.getNickname())
+			.avatar(user.getAvatar())
+			.email(user.getEmail())
+			.phone(user.getPhone())
+			.build();
+	}
+
 }

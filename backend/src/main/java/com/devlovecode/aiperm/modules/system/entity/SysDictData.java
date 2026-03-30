@@ -12,17 +12,18 @@ import lombok.EqualsAndHashCode;
 @Table(name = "sys_dict_data")
 public class SysDictData extends BaseEntity {
 
-    private String dictType;
+	private String dictType;
 
-    private String dictLabel;
+	private String dictLabel;
 
-    private String dictValue;
+	private String dictValue;
 
-    private Integer sort;
+	private Integer sort;
 
-    private Integer status;
+	private Integer status;
 
-    private String listClass;
+	private String listClass;
 
-    private String remark;
+	private String remark;
+
 }

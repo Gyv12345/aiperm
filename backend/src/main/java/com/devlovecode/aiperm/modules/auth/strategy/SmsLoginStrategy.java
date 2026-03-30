@@ -10,60 +10,63 @@ import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 @Component
-@RequiredArgsConstructor
 public class SmsLoginStrategy implements LoginStrategy {
 
-    private final UserRepository userRepo;
-    private final LoginLogService loginLogService;
+	private final UserRepository userRepo;
 
-    @Qualifier("smsCaptchaService")
-    private final CaptchaService smsCaptchaService;
+	private final LoginLogService loginLogService;
 
-    @Override
-    public String getLoginType() {
-        return LoginType.SMS.getCode();
-    }
+	private final CaptchaService smsCaptchaService;
 
-    @Override
-    public LoginVO login(String identifier, String credential, String ip, String userAgent, HttpServletRequest request) {
-        // identifier 是手机号，credential 是验证码
-        // 验证短信验证码
-        if (!smsCaptchaService.verify(identifier, credential, CaptchaScene.LOGIN)) {
-            throw new BusinessException("验证码错误或已过期");
-        }
+	public SmsLoginStrategy(UserRepository userRepo, LoginLogService loginLogService,
+			@Qualifier("smsCaptchaService") CaptchaService smsCaptchaService) {
+		this.userRepo = userRepo;
+		this.loginLogService = loginLogService;
+		this.smsCaptchaService = smsCaptchaService;
+	}
 
-        SysUser user = userRepo.findByPhone(identifier)
-                .orElseThrow(() -> new BusinessException("该手机号未注册"));
+	@Override
+	public String getLoginType() {
+		return LoginType.SMS.getCode();
+	}
 
-        if (user.getStatus() != null && user.getStatus() == 0) {
-            throw new BusinessException("账号已被禁用");
-        }
+	@Override
+	public LoginVO login(String identifier, String credential, String ip, String userAgent,
+			HttpServletRequest request) {
+		// identifier 是手机号，credential 是验证码
+		// 验证短信验证码
+		if (!smsCaptchaService.verify(identifier, credential, CaptchaScene.LOGIN)) {
+			throw new BusinessException("验证码错误或已过期");
+		}
 
-        StpUtil.login(user.getId());
-        userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
+		SysUser user = userRepo.findByPhone(identifier).orElseThrow(() -> new BusinessException("该手机号未注册"));
 
-        return LoginVO.builder()
-                .token(StpUtil.getTokenValue())
-                .userInfo(buildUserInfo(user))
-                .build();
-    }
+		if (user.getStatus() != null && user.getStatus() == 0) {
+			throw new BusinessException("账号已被禁用");
+		}
 
-    private LoginVO.UserInfo buildUserInfo(SysUser user) {
-        return LoginVO.UserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .build();
-    }
+		StpUtil.login(user.getId());
+		userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+		loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
+
+		return LoginVO.builder().token(StpUtil.getTokenValue()).userInfo(buildUserInfo(user)).build();
+	}
+
+	private LoginVO.UserInfo buildUserInfo(SysUser user) {
+		return LoginVO.UserInfo.builder()
+			.id(user.getId())
+			.username(user.getUsername())
+			.nickname(user.getNickname())
+			.avatar(user.getAvatar())
+			.email(user.getEmail())
+			.phone(user.getPhone())
+			.build();
+	}
+
 }

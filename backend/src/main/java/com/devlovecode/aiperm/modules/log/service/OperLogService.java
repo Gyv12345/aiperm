@@ -12,29 +12,30 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OperLogService {
 
-    private final OperLogRepository operLogRepo;
+	private final OperLogRepository operLogRepo;
 
-    /**
-     * 分页查询
-     */
-    public PageResult<SysOperLog> queryPage(String title, Integer status, int page, int pageSize) {
-        Page<SysOperLog> jpaPage = operLogRepo.queryPage(title, status, page, pageSize);
-        return PageResult.fromJpaPage(jpaPage);
-    }
+	/**
+	 * 分页查询
+	 */
+	public PageResult<SysOperLog> queryPage(String title, Integer status, int page, int pageSize) {
+		Page<SysOperLog> jpaPage = operLogRepo.queryPage(title, status, page, pageSize);
+		return PageResult.fromJpaPage(jpaPage);
+	}
 
-    /**
-     * 删除
-     */
-    @Transactional
-    public void delete(Long id) {
-        operLogRepo.deleteById(id);
-    }
+	/**
+	 * 删除
+	 */
+	@Transactional
+	public void delete(Long id) {
+		operLogRepo.deleteById(id);
+	}
 
-    /**
-     * 清空
-     */
-    @Transactional
-    public void clean() {
-        operLogRepo.deleteAll();
-    }
+	/**
+	 * 清空
+	 */
+	@Transactional
+	public void clean() {
+		operLogRepo.deleteAll();
+	}
+
 }

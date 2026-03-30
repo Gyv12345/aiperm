@@ -19,20 +19,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class OssController {
 
-    private final OssService ossService;
+	private final OssService ossService;
 
-    @Operation(summary = "上传文件")
-    @Log(title = "文件管理", operType = OperType.UPLOAD)
-    @PostMapping("/upload")
-    public R<OssResult> upload(@RequestParam("file") MultipartFile file) {
-        return R.ok(ossService.upload(file));
-    }
+	@Operation(summary = "上传文件")
+	@Log(title = "文件管理", operType = OperType.UPLOAD)
+	@PostMapping("/upload")
+	public R<OssResult> upload(@RequestParam("file") MultipartFile file) {
+		return R.ok(ossService.upload(file));
+	}
 
-    @Operation(summary = "删除文件")
-    @Log(title = "文件管理", operType = OperType.DELETE)
-    @DeleteMapping
-    public R<Void> delete(@RequestParam String fileName) {
-        ossService.delete(fileName);
-        return R.ok();
-    }
+	@Operation(summary = "删除文件")
+	@Log(title = "文件管理", operType = OperType.DELETE)
+	@DeleteMapping
+	public R<Void> delete(@RequestParam(name = "fileName") String fileName) {
+		ossService.delete(fileName);
+		return R.ok();
+	}
+
 }

@@ -6,7 +6,7 @@
 
     <groupId>com.devlovecode</groupId>
     <artifactId>aiperm</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <packaging>jar</packaging>
     <name>aiperm</name>
     <description>aiperm</description>
@@ -37,36 +37,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-        <repository>
-            <id>spring-milestone</id>
-            <url>https://repo.spring.io/milestone</url>
-        </repository>
-        <repository>
-            <id>spring-snapshot</id>
-            <url>https://repo.spring.io/snapshot</url>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>spring-milestone</id>
-            <url>https://repo.spring.io/milestone</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>spring-snapshot</id>
-            <url>https://repo.spring.io/snapshot</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <dependencies>
         <dependency>

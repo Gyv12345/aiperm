@@ -12,9 +12,11 @@ import java.util.Optional;
 @Repository
 public interface UserMfaRepository extends BaseJpaRepository<SysUserMfa> {
 
-    Optional<SysUserMfa> findByUserId(Long userId);
+	Optional<SysUserMfa> findByUserId(Long userId);
 
-    @Modifying
-    @Query("UPDATE SysUserMfa m SET m.status = :status, m.updateTime = :updateTime WHERE m.userId = :userId")
-    int updateStatus(@Param("userId") Long userId, @Param("status") Integer status, @Param("updateTime") java.time.LocalDateTime updateTime);
+	@Modifying
+	@Query("UPDATE SysUserMfa m SET m.status = :status, m.updateTime = :updateTime WHERE m.userId = :userId")
+	int updateStatus(@Param("userId") Long userId, @Param("status") Integer status,
+			@Param("updateTime") java.time.LocalDateTime updateTime);
+
 }

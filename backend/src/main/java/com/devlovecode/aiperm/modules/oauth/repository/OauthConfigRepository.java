@@ -12,5 +12,6 @@ import java.util.Optional;
 @Repository
 public interface OauthConfigRepository extends BaseJpaRepository<SysOauthConfig> {
 
-    Optional<SysOauthConfig> findByPlatform(String platform);
+	Optional<SysOauthConfig> findByPlatform(String platform);
+
 }

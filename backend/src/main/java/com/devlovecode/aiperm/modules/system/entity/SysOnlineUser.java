@@ -13,12 +13,21 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sys_online_user")
 public class SysOnlineUser extends BaseEntity {
-    private Long userId;
-    private String username;
-    private String token;
-    private String ip;
-    private String browser;
-    private String os;
-    private LocalDateTime loginTime;
-    private LocalDateTime lastAccessTime;
+
+	private Long userId;
+
+	private String username;
+
+	private String token;
+
+	private String ip;
+
+	private String browser;
+
+	private String os;
+
+	private LocalDateTime loginTime;
+
+	private LocalDateTime lastAccessTime;
+
 }

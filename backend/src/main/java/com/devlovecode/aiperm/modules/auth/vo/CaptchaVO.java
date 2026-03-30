@@ -18,9 +18,10 @@ import lombok.NoArgsConstructor;
 @Schema(description = "验证码响应")
 public class CaptchaVO {
 
-    @Schema(description = "验证码Key", example = "captcha_key_123")
-    private String captchaKey;
+	@Schema(description = "验证码Key", example = "captcha_key_123")
+	private String captchaKey;
 
-    @Schema(description = "验证码图片（Base64）", example = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...")
-    private String captchaImage;
+	@Schema(description = "验证码图片（Base64）", example = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...")
+	private String captchaImage;
+
 }

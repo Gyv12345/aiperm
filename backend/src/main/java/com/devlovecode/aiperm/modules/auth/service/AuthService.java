@@ -51,363 +51,359 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepo;
-    private final MenuRepository menuRepo;
-    private final ConfigRepository configRepo;
-    private final StringRedisTemplate redisTemplate;
-    private final LoginStrategyFactory loginStrategyFactory;
-    private final LoginLogService loginLogService;
+	private final UserRepository userRepo;
 
-    @Value("${auth.captcha.enabled:true}")
-    private boolean captchaEnabled;
+	private final MenuRepository menuRepo;
 
-    private static final String CAPTCHA_PREFIX = "captcha:";
-    private static final long CAPTCHA_EXPIRE = 5; // 验证码过期时间（分钟）
+	private final ConfigRepository configRepo;
 
-    /**
-     * 生成验证码
-     */
-    public CaptchaVO generateCaptcha() {
-        // 生成验证码图片
-        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(120, 40, 4, 20);
-        String code = captcha.getCode();
-        String imageBase64 = captcha.getImageBase64Data();
+	private final StringRedisTemplate redisTemplate;
 
-        // 生成验证码Key
-        String captchaKey = UUID.fastUUID().toString(true);
+	private final LoginStrategyFactory loginStrategyFactory;
 
-        // 存入Redis，5分钟过期
-        redisTemplate.opsForValue().set(
-                CAPTCHA_PREFIX + captchaKey,
-                code.toLowerCase(),
-                CAPTCHA_EXPIRE,
-                TimeUnit.MINUTES
-        );
+	private final LoginLogService loginLogService;
 
-        return CaptchaVO.builder()
-                .captchaKey(captchaKey)
-                .captchaImage(imageBase64)
-                .build();
-    }
+	@Value("${auth.captcha.enabled:true}")
+	private boolean captchaEnabled;
 
-    /**
-     * 登录
-     */
-    public LoginVO login(LoginRequest request) {
-        HttpServletRequest currentRequest = getCurrentRequest();
-        String ip = ClientIpUtils.getCurrentRequestIp();
-        String userAgent = resolveUserAgent(currentRequest);
-        try {
-            // 验证码校验
-            validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
+	private static final String CAPTCHA_PREFIX = "captcha:";
 
-            // 查询用户
-            SysUser user = userRepo.findByUsername(request.getUsername())
-                    .orElseThrow(() -> new BusinessException("用户名或密码错误"));
+	private static final long CAPTCHA_EXPIRE = 5; // 验证码过期时间（分钟）
 
-            // 检查用户状态
-            if (user.getStatus() != null && user.getStatus() == 0) {
-                throw new BusinessException("账号已被禁用");
-            }
+	/**
+	 * 生成验证码
+	 */
+	public CaptchaVO generateCaptcha() {
+		// 生成验证码图片
+		LineCaptcha captcha = CaptchaUtil.createLineCaptcha(120, 40, 4, 20);
+		String code = captcha.getCode();
+		String imageBase64 = captcha.getImageBase64Data();
 
-            // 密码校验
-            if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
-                throw new BusinessException("用户名或密码错误");
-            }
+		// 生成验证码Key
+		String captchaKey = UUID.fastUUID().toString(true);
 
-            // 执行登录
-            StpUtil.login(user.getId());
+		// 存入Redis，5分钟过期
+		redisTemplate.opsForValue()
+			.set(CAPTCHA_PREFIX + captchaKey, code.toLowerCase(), CAPTCHA_EXPIRE, TimeUnit.MINUTES);
 
-            // 更新登录信息
-            userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-            loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, currentRequest);
+		return CaptchaVO.builder().captchaKey(captchaKey).captchaImage(imageBase64).build();
+	}
 
-            // 返回登录信息
-            return LoginVO.builder()
-                    .token(StpUtil.getTokenValue())
-                    .userInfo(buildUserInfo(user))
-                    .build();
-        } catch (BusinessException e) {
-            loginLogService.recordFailed(request.getUsername(), ip, e.getMessage(), userAgent, currentRequest);
-            throw e;
-        } catch (Exception e) {
-            log.error("传统登录异常: username={}, ip={}", request.getUsername(), ip, e);
-            loginLogService.recordFailed(request.getUsername(), ip, "系统异常", userAgent, currentRequest);
-            throw e;
-        }
-    }
+	/**
+	 * 登录
+	 */
+	public LoginVO login(LoginRequest request) {
+		HttpServletRequest currentRequest = getCurrentRequest();
+		String ip = ClientIpUtils.getCurrentRequestIp();
+		String userAgent = resolveUserAgent(currentRequest);
+		try {
+			// 验证码校验
+			validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
 
-    /**
-     * 统一登录（支持多种登录方式）
-     */
-    public LoginVO unifiedLogin(UnifiedLoginDTO dto, HttpServletRequest request) {
-        String ip = ClientIpUtils.getClientIp(request);
-        String userAgent = resolveUserAgent(request);
+			// 查询用户
+			SysUser user = userRepo.findByUsername(request.getUsername())
+				.orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
-        // 密码登录需要验证图形验证码
-        if (LoginType.PASSWORD.getCode().equalsIgnoreCase(dto.getLoginType())) {
-            validateCaptcha(dto.getImageCaptchaKey(), dto.getImageCaptcha());
-        }
+			// 检查用户状态
+			if (user.getStatus() != null && user.getStatus() == 0) {
+				throw new BusinessException("账号已被禁用");
+			}
 
-        try {
-            // 获取对应的登录策略
-            LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
-            return strategy.login(dto.getIdentifier(), dto.getCredential(), ip, userAgent, request);
-        } catch (BusinessException e) {
-            loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage(), userAgent, request);
-            throw e;
-        } catch (Exception e) {
-            log.error("统一登录异常: loginType={}, identifier={}, ip={}", dto.getLoginType(), dto.getIdentifier(), ip, e);
-            loginLogService.recordFailed(dto.getIdentifier(), ip, "系统异常", userAgent, request);
-            throw e;
-        }
-    }
+			// 密码校验
+			if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
+				throw new BusinessException("用户名或密码错误");
+			}
 
-    /**
-     * 获取登录配置（控制前端显示哪些登录方式）
-     */
-    public LoginConfigVO getLoginConfig() {
-        boolean smsEnabled = getBooleanConfig("login.sms.enabled", false);
-        boolean emailEnabled = getBooleanConfig("login.email.enabled", false);
+			// 执行登录
+			StpUtil.login(user.getId());
 
-        // OAuth 配置
-        List<LoginConfigVO.OAuthConfig> oauthConfigs = new ArrayList<>();
-        if (getBooleanConfig("oauth.wework.enabled", false)) {
-            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-                    .platform("WEWORK")
-                    .displayName("企业微信")
-                    .icon("/icons/wework.svg")
-                    .enabled(true)
-                    .build());
-        }
-        if (getBooleanConfig("oauth.dingtalk.enabled", false)) {
-            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-                    .platform("DINGTALK")
-                    .displayName("钉钉")
-                    .icon("/icons/dingtalk.svg")
-                    .enabled(true)
-                    .build());
-        }
-        if (getBooleanConfig("oauth.feishu.enabled", false)) {
-            oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-                    .platform("FEISHU")
-                    .displayName("飞书")
-                    .icon("/icons/feishu.svg")
-                    .enabled(true)
-                    .build());
-        }
+			// 更新登录信息
+			userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
+			loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, currentRequest);
 
-        return LoginConfigVO.builder()
-                .passwordEnabled(true)  // 密码登录始终可用
-                .smsEnabled(smsEnabled)
-                .emailEnabled(emailEnabled)
-                .oauthConfigs(oauthConfigs)
-                .build();
-    }
+			// 返回登录信息
+			return LoginVO.builder().token(StpUtil.getTokenValue()).userInfo(buildUserInfo(user)).build();
+		}
+		catch (BusinessException e) {
+			loginLogService.recordFailed(request.getUsername(), ip, e.getMessage(), userAgent, currentRequest);
+			throw e;
+		}
+		catch (Exception e) {
+			log.error("传统登录异常: username={}, ip={}", request.getUsername(), ip, e);
+			loginLogService.recordFailed(request.getUsername(), ip, "系统异常", userAgent, currentRequest);
+			throw e;
+		}
+	}
 
-    private boolean getBooleanConfig(String key, boolean defaultValue) {
-        return configRepo.findByConfigKey(key)
-                .map(c -> "1".equals(c.getConfigValue()))
-                .orElse(defaultValue);
-    }
+	/**
+	 * 统一登录（支持多种登录方式）
+	 */
+	public LoginVO unifiedLogin(UnifiedLoginDTO dto, HttpServletRequest request) {
+		String ip = ClientIpUtils.getClientIp(request);
+		String userAgent = resolveUserAgent(request);
 
-    /**
-     * 登出
-     */
-    public void logout() {
-        StpUtil.logout();
-    }
+		// 密码登录需要验证图形验证码
+		if (LoginType.PASSWORD.getCode().equalsIgnoreCase(dto.getLoginType())) {
+			validateCaptcha(dto.getImageCaptchaKey(), dto.getImageCaptcha());
+		}
 
-    /**
-     * 获取当前用户信息
-     */
-    public LoginVO.UserInfo getCurrentUserInfo() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
-        return buildUserInfo(user);
-    }
+		try {
+			// 获取对应的登录策略
+			LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
+			return strategy.login(dto.getIdentifier(), dto.getCredential(), ip, userAgent, request);
+		}
+		catch (BusinessException e) {
+			loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage(), userAgent, request);
+			throw e;
+		}
+		catch (Exception e) {
+			log.error("统一登录异常: loginType={}, identifier={}, ip={}", dto.getLoginType(), dto.getIdentifier(), ip, e);
+			loginLogService.recordFailed(dto.getIdentifier(), ip, "系统异常", userAgent, request);
+			throw e;
+		}
+	}
 
-    /**
-     * 获取当前用户完整信息（包含角色和权限）
-     */
-    public UserInfoVO getUserInfo() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+	/**
+	 * 获取登录配置（控制前端显示哪些登录方式）
+	 */
+	public LoginConfigVO getLoginConfig() {
+		boolean smsEnabled = getBooleanConfig("login.sms.enabled", false);
+		boolean emailEnabled = getBooleanConfig("login.email.enabled", false);
 
-        List<String> roles;
-        List<String> permissions;
+		// OAuth 配置
+		List<LoginConfigVO.OAuthConfig> oauthConfigs = new ArrayList<>();
+		if (getBooleanConfig("oauth.wework.enabled", false)) {
+			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+				.platform("WEWORK")
+				.displayName("企业微信")
+				.icon("/icons/wework.svg")
+				.enabled(true)
+				.build());
+		}
+		if (getBooleanConfig("oauth.dingtalk.enabled", false)) {
+			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+				.platform("DINGTALK")
+				.displayName("钉钉")
+				.icon("/icons/dingtalk.svg")
+				.enabled(true)
+				.build());
+		}
+		if (getBooleanConfig("oauth.feishu.enabled", false)) {
+			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
+				.platform("FEISHU")
+				.displayName("飞书")
+				.icon("/icons/feishu.svg")
+				.enabled(true)
+				.build());
+		}
 
-        if (isSuperAdmin(userId)) {
-            // 超级管理员：返回所有启用的权限
-            roles = List.of("super_admin");
-            permissions = getAllPermissions();
-        } else {
-            // 普通用户：查询角色和权限
-            roles = getUserRoles(userId);
-            permissions = getUserPermissions(userId);
-        }
+		return LoginConfigVO.builder()
+			.passwordEnabled(true) // 密码登录始终可用
+			.smsEnabled(smsEnabled)
+			.emailEnabled(emailEnabled)
+			.oauthConfigs(oauthConfigs)
+			.build();
+	}
 
-        return UserInfoVO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .roles(roles)
-                .permissions(permissions)
-                .build();
-    }
+	private boolean getBooleanConfig(String key, boolean defaultValue) {
+		return configRepo.findByConfigKey(key).map(c -> "1".equals(c.getConfigValue())).orElse(defaultValue);
+	}
 
-    /**
-     * 获取当前用户可访问的菜单
-     */
-    public List<MenuVO> getUserMenus() {
-        Long userId = StpUtil.getLoginIdAsLong();
+	/**
+	 * 登出
+	 */
+	public void logout() {
+		StpUtil.logout();
+	}
 
-        List<SysMenu> menus;
-        if (isSuperAdmin(userId)) {
-            // 超级管理员：返回所有启用的菜单
-            menus = menuRepo.findAllEnabled();
-        } else {
-            // 普通用户：根据角色查询
-            List<Long> menuIds = menuRepo.findMenuIdsByUserId(userId);
-            menus = menuRepo.findByIds(menuIds);
-        }
+	/**
+	 * 获取当前用户信息
+	 */
+	public LoginVO.UserInfo getCurrentUserInfo() {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
+		return buildUserInfo(user);
+	}
 
-        // 构建树形结构
-        return buildMenuTree(menus, 0L);
-    }
+	/**
+	 * 获取当前用户完整信息（包含角色和权限）
+	 */
+	public UserInfoVO getUserInfo() {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
 
-    // ========== 私有方法 ==========
+		List<String> roles;
+		List<String> permissions;
 
-    /**
-     * 验证码校验
-     */
-    private void validateCaptcha(String captchaKey, String captcha) {
-        // 如果验证码功能关闭，跳过校验（方便测试）
-        if (!captchaEnabled) {
-            return;
-        }
+		if (isSuperAdmin(userId)) {
+			// 超级管理员：返回所有启用的权限
+			roles = List.of("super_admin");
+			permissions = getAllPermissions();
+		}
+		else {
+			// 普通用户：查询角色和权限
+			roles = getUserRoles(userId);
+			permissions = getUserPermissions(userId);
+		}
 
-        if (captchaKey == null || captchaKey.isBlank()) {
-            throw new BusinessException("验证码Key不能为空");
-        }
-        if (captcha == null || captcha.isBlank()) {
-            throw new BusinessException("验证码不能为空");
-        }
+		return UserInfoVO.builder()
+			.id(user.getId())
+			.username(user.getUsername())
+			.nickname(user.getNickname())
+			.avatar(user.getAvatar())
+			.roles(roles)
+			.permissions(permissions)
+			.build();
+	}
 
-        String key = CAPTCHA_PREFIX + captchaKey;
-        String storedCode = redisTemplate.opsForValue().get(key);
+	/**
+	 * 获取当前用户可访问的菜单
+	 */
+	public List<MenuVO> getUserMenus() {
+		Long userId = StpUtil.getLoginIdAsLong();
 
-        if (storedCode == null) {
-            throw new BusinessException("验证码已过期");
-        }
+		List<SysMenu> menus;
+		if (isSuperAdmin(userId)) {
+			// 超级管理员：返回所有启用的菜单
+			menus = menuRepo.findAllEnabled();
+		}
+		else {
+			// 普通用户：根据角色查询
+			List<Long> menuIds = menuRepo.findMenuIdsByUserId(userId);
+			menus = menuRepo.findByIds(menuIds);
+		}
 
-        if (!storedCode.equals(captcha.toLowerCase())) {
-            throw new BusinessException("验证码错误");
-        }
+		// 构建树形结构
+		return buildMenuTree(menus, 0L);
+	}
 
-        // 验证成功后删除验证码
-        redisTemplate.delete(key);
-    }
+	// ========== 私有方法 ==========
 
-    /**
-     * 构建用户信息
-     */
-    private LoginVO.UserInfo buildUserInfo(SysUser user) {
-        return LoginVO.UserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .build();
-    }
+	/**
+	 * 验证码校验
+	 */
+	private void validateCaptcha(String captchaKey, String captcha) {
+		// 如果验证码功能关闭，跳过校验（方便测试）
+		if (!captchaEnabled) {
+			return;
+		}
 
-    private HttpServletRequest getCurrentRequest() {
-        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
-            return servletRequestAttributes.getRequest();
-        }
-        return null;
-    }
+		if (captchaKey == null || captchaKey.isBlank()) {
+			throw new BusinessException("验证码Key不能为空");
+		}
+		if (captcha == null || captcha.isBlank()) {
+			throw new BusinessException("验证码不能为空");
+		}
 
-    private String resolveUserAgent(HttpServletRequest request) {
-        if (request == null) {
-            return "";
-        }
-        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        return userAgent == null ? "" : userAgent.trim();
-    }
+		String key = CAPTCHA_PREFIX + captchaKey;
+		String storedCode = redisTemplate.opsForValue().get(key);
 
-    /**
-     * 获取用户角色
-     */
-    public List<String> getUserRoles(Long userId) {
-        return menuRepo.findRoleKeysByUserId(userId);
-    }
+		if (storedCode == null) {
+			throw new BusinessException("验证码已过期");
+		}
 
-    /**
-     * 获取用户权限
-     */
-    public List<String> getUserPermissions(Long userId) {
-        return menuRepo.findPermissionsByUserId(userId);
-    }
+		if (!storedCode.equals(captcha.toLowerCase())) {
+			throw new BusinessException("验证码错误");
+		}
 
-    /**
-     * 获取所有启用的权限（超级管理员使用）
-     */
-    public List<String> getAllPermissions() {
-        return menuRepo.findAllEnabledPermissions();
-    }
+		// 验证成功后删除验证码
+		redisTemplate.delete(key);
+	}
 
-    /**
-     * 判定用户是否超级管理员
-     */
-    public boolean isSuperAdmin(Long userId) {
-        return userRepo.isAdmin(userId);
-    }
+	/**
+	 * 构建用户信息
+	 */
+	private LoginVO.UserInfo buildUserInfo(SysUser user) {
+		return LoginVO.UserInfo.builder()
+			.id(user.getId())
+			.username(user.getUsername())
+			.nickname(user.getNickname())
+			.avatar(user.getAvatar())
+			.email(user.getEmail())
+			.phone(user.getPhone())
+			.build();
+	}
 
-    /**
-     * 构建菜单树
-     */
-    private List<MenuVO> buildMenuTree(List<SysMenu> allMenus, Long parentId) {
-        Map<Long, List<SysMenu>> groupedByParent = allMenus.stream()
-                .collect(Collectors.groupingBy(SysMenu::getParentId));
+	private HttpServletRequest getCurrentRequest() {
+		RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+		if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
+			return servletRequestAttributes.getRequest();
+		}
+		return null;
+	}
 
-        List<SysMenu> roots = groupedByParent.getOrDefault(parentId, new ArrayList<>());
-        return roots.stream()
-                .map(menu -> toMenuVO(menu, groupedByParent))
-                .collect(Collectors.toList());
-    }
+	private String resolveUserAgent(HttpServletRequest request) {
+		if (request == null) {
+			return "";
+		}
+		String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+		return userAgent == null ? "" : userAgent.trim();
+	}
 
-    /**
-     * 转换为 MenuVO
-     */
-    private MenuVO toMenuVO(SysMenu menu, Map<Long, List<SysMenu>> groupedByParent) {
-        MenuVO vo = MenuVO.builder()
-                .id(menu.getId())
-                .menuName(menu.getMenuName())
-                .parentId(menu.getParentId())
-                .menuType(menu.getMenuType())
-                .path(menu.getPath())
-                .component(menu.getComponent())
-                .perms(menu.getPerms())
-                .icon(menu.getIcon())
-                .sort(menu.getSort())
-                .visible(menu.getVisible())
-                .status(menu.getStatus())
-                .build();
+	/**
+	 * 获取用户角色
+	 */
+	public List<String> getUserRoles(Long userId) {
+		return menuRepo.findRoleKeysByUserId(userId);
+	}
 
-        List<SysMenu> children = groupedByParent.getOrDefault(menu.getId(), new ArrayList<>());
-        if (!children.isEmpty()) {
-            vo.setChildren(children.stream()
-                    .map(child -> toMenuVO(child, groupedByParent))
-                    .collect(Collectors.toList()));
-        }
+	/**
+	 * 获取用户权限
+	 */
+	public List<String> getUserPermissions(Long userId) {
+		return menuRepo.findPermissionsByUserId(userId);
+	}
 
-        return vo;
-    }
+	/**
+	 * 获取所有启用的权限（超级管理员使用）
+	 */
+	public List<String> getAllPermissions() {
+		return menuRepo.findAllEnabledPermissions();
+	}
+
+	/**
+	 * 判定用户是否超级管理员
+	 */
+	public boolean isSuperAdmin(Long userId) {
+		return userRepo.isAdmin(userId);
+	}
+
+	/**
+	 * 构建菜单树
+	 */
+	private List<MenuVO> buildMenuTree(List<SysMenu> allMenus, Long parentId) {
+		Map<Long, List<SysMenu>> groupedByParent = allMenus.stream()
+			.collect(Collectors.groupingBy(SysMenu::getParentId));
+
+		List<SysMenu> roots = groupedByParent.getOrDefault(parentId, new ArrayList<>());
+		return roots.stream().map(menu -> toMenuVO(menu, groupedByParent)).collect(Collectors.toList());
+	}
+
+	/**
+	 * 转换为 MenuVO
+	 */
+	private MenuVO toMenuVO(SysMenu menu, Map<Long, List<SysMenu>> groupedByParent) {
+		MenuVO vo = MenuVO.builder()
+			.id(menu.getId())
+			.menuName(menu.getMenuName())
+			.parentId(menu.getParentId())
+			.menuType(menu.getMenuType())
+			.path(menu.getPath())
+			.component(menu.getComponent())
+			.perms(menu.getPerms())
+			.icon(menu.getIcon())
+			.sort(menu.getSort())
+			.visible(menu.getVisible())
+			.status(menu.getStatus())
+			.build();
+
+		List<SysMenu> children = groupedByParent.getOrDefault(menu.getId(), new ArrayList<>());
+		if (!children.isEmpty()) {
+			vo.setChildren(
+					children.stream().map(child -> toMenuVO(child, groupedByParent)).collect(Collectors.toList()));
+		}
+
+		return vo;
+	}
+
 }

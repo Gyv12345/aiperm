@@ -28,37 +28,38 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ProfileController {
 
-    private final ProfileService profileService;
+	private final ProfileService profileService;
 
-    @Operation(summary = "获取个人信息")
-    @GetMapping("/info")
-    public R<ProfileVO> getProfile() {
-        return R.ok(profileService.getProfile());
-    }
+	@Operation(summary = "获取个人信息")
+	@GetMapping("/info")
+	public R<ProfileVO> getProfile() {
+		return R.ok(profileService.getProfile());
+	}
 
-    @Operation(summary = "修改个人信息")
-    @Log(title = "个人中心", operType = OperType.UPDATE)
-    @PutMapping("/info")
-    @Idempotent(expireSeconds = 5, scope = AccessLimitScope.USER, key = "profile:update-info", message = "请勿重复提交个人信息")
-    public R<Void> updateProfile(@RequestBody @Valid ProfileDTO dto) {
-        profileService.updateProfile(dto);
-        return R.ok();
-    }
+	@Operation(summary = "修改个人信息")
+	@Log(title = "个人中心", operType = OperType.UPDATE)
+	@PutMapping("/info")
+	@Idempotent(expireSeconds = 5, scope = AccessLimitScope.USER, key = "profile:update-info", message = "请勿重复提交个人信息")
+	public R<Void> updateProfile(@RequestBody @Valid ProfileDTO dto) {
+		profileService.updateProfile(dto);
+		return R.ok();
+	}
 
-    @Operation(summary = "修改密码")
-    @Log(title = "个人中心", operType = OperType.UPDATE)
-    @PutMapping("/password")
-    @Idempotent(expireSeconds = 8, scope = AccessLimitScope.USER, key = "profile:update-password", message = "请勿重复提交修改密码请求")
-    public R<Void> updatePassword(@RequestBody @Valid PasswordDTO dto) {
-        profileService.updatePassword(dto);
-        return R.ok();
-    }
+	@Operation(summary = "修改密码")
+	@Log(title = "个人中心", operType = OperType.UPDATE)
+	@PutMapping("/password")
+	@Idempotent(expireSeconds = 8, scope = AccessLimitScope.USER, key = "profile:update-password",
+			message = "请勿重复提交修改密码请求")
+	public R<Void> updatePassword(@RequestBody @Valid PasswordDTO dto) {
+		profileService.updatePassword(dto);
+		return R.ok();
+	}
 
-    @Operation(summary = "获取登录日志")
-    @GetMapping("/logs")
-    public R<PageResult<LoginLogVO>> getLoginLogs(
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return R.ok(profileService.getLoginLogs(pageNum, pageSize));
-    }
+	@Operation(summary = "获取登录日志")
+	@GetMapping("/logs")
+	public R<PageResult<LoginLogVO>> getLoginLogs(@RequestParam(name = "pageNum", defaultValue = "1") int pageNum,
+			@RequestParam(name = "pageSize", defaultValue = "10") int pageSize) {
+		return R.ok(profileService.getLoginLogs(pageNum, pageSize));
+	}
+
 }

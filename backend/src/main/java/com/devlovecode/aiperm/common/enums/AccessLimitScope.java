@@ -5,18 +5,19 @@ package com.devlovecode.aiperm.common.enums;
  */
 public enum AccessLimitScope {
 
-    /**
-     * 基于当前登录用户（未登录时回退为 IP）
-     */
-    USER,
+	/**
+	 * 基于当前登录用户（未登录时回退为 IP）
+	 */
+	USER,
 
-    /**
-     * 基于客户端 IP
-     */
-    IP,
+	/**
+	 * 基于客户端 IP
+	 */
+	IP,
 
-    /**
-     * 全局共享
-     */
-    GLOBAL
+	/**
+	 * 全局共享
+	 */
+	GLOBAL
+
 }

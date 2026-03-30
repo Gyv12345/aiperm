@@ -10,35 +10,36 @@ import java.time.LocalDateTime;
 @Data
 public class SysOperLog {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String title;
+	private String title;
 
-    private Integer operType;
+	private Integer operType;
 
-    private String method;
+	private String method;
 
-    private String requestMethod;
+	private String requestMethod;
 
-    private String operUrl;
+	private String operUrl;
 
-    private String operIp;
+	private String operIp;
 
-    private String operParam;
+	private String operParam;
 
-    private String jsonResult;
+	private String jsonResult;
 
-    private Integer status;
+	private Integer status;
 
-    private String errorMsg;
+	private String errorMsg;
 
-    private Long costTime;
+	private Long costTime;
 
-    private String operUser;
+	private String operUser;
 
-    private String operName;
+	private String operName;
 
-    private LocalDateTime createTime;
+	private LocalDateTime createTime;
+
 }

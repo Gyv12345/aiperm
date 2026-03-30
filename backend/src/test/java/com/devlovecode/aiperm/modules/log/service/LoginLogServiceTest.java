@@ -22,48 +22,49 @@ import static org.mockito.Mockito.*;
 @DisplayName("登录日志服务测试")
 class LoginLogServiceTest {
 
-    @Mock
-    private LoginLogRepository loginLogRepository;
+	@Mock
+	private LoginLogRepository loginLogRepository;
 
-    @Mock
-    private RestTemplate restTemplate;
+	@Mock
+	private RestTemplate restTemplate;
 
-    @Test
-    @DisplayName("记录成功登录时应解析本地 IP、浏览器和操作系统")
-    void shouldPopulateLocalIpBrowserAndOs() {
-        LoginLogService loginLogService = new LoginLogService(loginLogRepository, restTemplate);
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                + "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+	@Test
+	@DisplayName("记录成功登录时应解析本地 IP、浏览器和操作系统")
+	void shouldPopulateLocalIpBrowserAndOs() {
+		LoginLogService loginLogService = new LoginLogService(loginLogRepository, restTemplate);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+				+ "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-        loginLogService.recordSuccess(1L, "admin", "127.0.0.1", userAgent, request);
+		loginLogService.recordSuccess(1L, "admin", "127.0.0.1", userAgent, request);
 
-        ArgumentCaptor<SysLoginLog> captor = ArgumentCaptor.forClass(SysLoginLog.class);
-        verify(loginLogRepository, timeout(1000)).save(captor.capture());
+		ArgumentCaptor<SysLoginLog> captor = ArgumentCaptor.forClass(SysLoginLog.class);
+		verify(loginLogRepository, timeout(1000)).save(captor.capture());
 
-        SysLoginLog record = captor.getValue();
-        assertEquals("内网IP", record.getLocation());
-        assertEquals("Chrome", record.getBrowser());
-        assertEquals("Windows", record.getOs());
-    }
+		SysLoginLog record = captor.getValue();
+		assertEquals("内网IP", record.getLocation());
+		assertEquals("Chrome", record.getBrowser());
+		assertEquals("Windows", record.getOs());
+	}
 
-    @Test
-    @DisplayName("相同公网 IP 应命中缓存，避免重复请求定位接口")
-    void shouldCacheGeoLocationForSamePublicIp() {
-        LoginLogService loginLogService = new LoginLogService(loginLogRepository, restTemplate);
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
-                + "(KHTML, like Gecko) Version/17.3 Safari/605.1.15";
+	@Test
+	@DisplayName("相同公网 IP 应命中缓存，避免重复请求定位接口")
+	void shouldCacheGeoLocationForSamePublicIp() {
+		LoginLogService loginLogService = new LoginLogService(loginLogRepository, restTemplate);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+				+ "(KHTML, like Gecko) Version/17.3 Safari/605.1.15";
 
-        when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenReturn(Map.of("status", "success", "country", "美国", "regionName", "加利福尼亚"));
+		when(restTemplate.getForObject(anyString(), eq(Map.class)))
+			.thenReturn(Map.of("status", "success", "country", "美国", "regionName", "加利福尼亚"));
 
-        loginLogService.recordSuccess(1L, "admin", "8.8.8.8", userAgent, request);
-        verify(loginLogRepository, timeout(1000)).save(any(SysLoginLog.class));
+		loginLogService.recordSuccess(1L, "admin", "8.8.8.8", userAgent, request);
+		verify(loginLogRepository, timeout(1000)).save(any(SysLoginLog.class));
 
-        loginLogService.recordSuccess(2L, "operator", "8.8.8.8", userAgent, request);
+		loginLogService.recordSuccess(2L, "operator", "8.8.8.8", userAgent, request);
 
-        verify(loginLogRepository, timeout(1000).times(2)).save(any(SysLoginLog.class));
-        verify(restTemplate, times(1)).getForObject(anyString(), eq(Map.class));
-    }
+		verify(loginLogRepository, timeout(1000).times(2)).save(any(SysLoginLog.class));
+		verify(restTemplate, times(1)).getForObject(anyString(), eq(Map.class));
+	}
+
 }

@@ -16,20 +16,22 @@ import java.util.Optional;
 @Repository
 public interface UserOauthRepository extends BaseJpaRepository<SysUserOauth> {
 
-    /** 根据平台和openId查找绑定关系 */
-    Optional<SysUserOauth> findByPlatformAndOpenId(String platform, String openId);
+	/** 根据平台和openId查找绑定关系 */
+	Optional<SysUserOauth> findByPlatformAndOpenId(String platform, String openId);
 
-    /** 查询用户已绑定的所有第三方账号 */
-    List<SysUserOauth> findByUserIdAndStatus(Long userId, Integer status);
+	/** 查询用户已绑定的所有第三方账号 */
+	List<SysUserOauth> findByUserIdAndStatus(Long userId, Integer status);
 
-    /** 查询用户对某平台的绑定 */
-    Optional<SysUserOauth> findByUserIdAndPlatform(Long userId, String platform);
+	/** 查询用户对某平台的绑定 */
+	Optional<SysUserOauth> findByUserIdAndPlatform(Long userId, String platform);
 
-    @Modifying
-    @Query("UPDATE SysUserOauth o SET o.lastLoginTime = :lastLoginTime WHERE o.id = :id")
-    int updateLastLoginTime(@Param("id") Long id, @Param("lastLoginTime") java.time.LocalDateTime lastLoginTime);
+	@Modifying
+	@Query("UPDATE SysUserOauth o SET o.lastLoginTime = :lastLoginTime WHERE o.id = :id")
+	int updateLastLoginTime(@Param("id") Long id, @Param("lastLoginTime") java.time.LocalDateTime lastLoginTime);
 
-    @Modifying
-    @Query("UPDATE SysUserOauth o SET o.status = 0, o.updateTime = :updateTime WHERE o.userId = :userId AND o.platform = :platform")
-    int unbind(@Param("userId") Long userId, @Param("platform") String platform, @Param("updateTime") java.time.LocalDateTime updateTime);
+	@Modifying
+	@Query("UPDATE SysUserOauth o SET o.status = 0, o.updateTime = :updateTime WHERE o.userId = :userId AND o.platform = :platform")
+	int unbind(@Param("userId") Long userId, @Param("platform") String platform,
+			@Param("updateTime") java.time.LocalDateTime updateTime);
+
 }

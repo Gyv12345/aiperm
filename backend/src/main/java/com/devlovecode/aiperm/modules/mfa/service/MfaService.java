@@ -26,272 +26,265 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class MfaService {
 
-    private final UserMfaRepository userMfaRepo;
-    private final ConfigRepository configRepo;
-    private final StringRedisTemplate redisTemplate;
+	private final UserMfaRepository userMfaRepo;
 
-    private static final Long SUPER_ADMIN_ID = 1L;
-    private static final String MFA_VERIFIED_PREFIX = "mfa:verified:";
-    private static final String MFA_TEMP_PREFIX = "mfa:temp:";
-    private static final String APP_NAME = "AIPerm";
+	private final ConfigRepository configRepo;
 
-    /**
-     * 获取当前用户的2FA状态
-     */
-    public MfaStatusVO getStatus() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        boolean bound = userMfaRepo.findByUserId(userId)
-                .map(m -> m.getStatus() != null && m.getStatus() == 1)
-                .orElse(false);
-        boolean required = SUPER_ADMIN_ID.equals(userId);
-        boolean verified = isVerified(userId);
+	private final StringRedisTemplate redisTemplate;
 
-        return MfaStatusVO.builder()
-                .bound(bound)
-                .required(required)
-                .verified(verified)
-                .build();
-    }
+	private static final Long SUPER_ADMIN_ID = 1L;
 
-    /**
-     * 生成绑定二维码（临时密钥存入Redis，绑定确认前不写库）
-     */
-    public MfaQrcodeVO generateQrCode() {
-        Long userId = StpUtil.getLoginIdAsLong();
+	private static final String MFA_VERIFIED_PREFIX = "mfa:verified:";
 
-        // 检查是否已绑定
-        boolean alreadyBound = userMfaRepo.findByUserId(userId)
-                .map(m -> m.getStatus() != null && m.getStatus() == 1)
-                .orElse(false);
-        if (alreadyBound) {
-            throw new BusinessException("您已绑定2FA，如需重新绑定请先解绑");
-        }
+	private static final String MFA_TEMP_PREFIX = "mfa:temp:";
 
-        // 生成随机密钥（Base32）
-        String secretKey = generateSecretKey();
+	private static final String APP_NAME = "AIPerm";
 
-        // 临时存入 Redis，10 分钟过期（等待用户确认绑定）
-        String tempKey = MFA_TEMP_PREFIX + userId;
-        redisTemplate.opsForValue().set(tempKey, secretKey, 10, TimeUnit.MINUTES);
+	/**
+	 * 获取当前用户的2FA状态
+	 */
+	public MfaStatusVO getStatus() {
+		Long userId = StpUtil.getLoginIdAsLong();
+		boolean bound = userMfaRepo.findByUserId(userId)
+			.map(m -> m.getStatus() != null && m.getStatus() == 1)
+			.orElse(false);
+		boolean required = SUPER_ADMIN_ID.equals(userId);
+		boolean verified = isVerified(userId);
 
-        // 生成 TOTP URI（Google Authenticator 格式）
-        // 格式：otpauth://totp/AIPerm:username?secret=xxx&issuer=AIPerm
-        String username = StpUtil.getLoginIdAsString();
-        String totpUri = "otpauth://totp/" + APP_NAME + ":" + username
-                + "?secret=" + secretKey + "&issuer=" + APP_NAME;
+		return MfaStatusVO.builder().bound(bound).required(required).verified(verified).build();
+	}
 
-        return MfaQrcodeVO.builder()
-                .totpUri(totpUri)
-                .secretKey(secretKey)
-                .build();
-    }
+	/**
+	 * 生成绑定二维码（临时密钥存入Redis，绑定确认前不写库）
+	 */
+	public MfaQrcodeVO generateQrCode() {
+		Long userId = StpUtil.getLoginIdAsLong();
 
-    /**
-     * 确认绑定（验证 TOTP 码正确后持久化密钥）
-     */
-    @Transactional
-    public void confirmBind(String code) {
-        Long userId = StpUtil.getLoginIdAsLong();
+		// 检查是否已绑定
+		boolean alreadyBound = userMfaRepo.findByUserId(userId)
+			.map(m -> m.getStatus() != null && m.getStatus() == 1)
+			.orElse(false);
+		if (alreadyBound) {
+			throw new BusinessException("您已绑定2FA，如需重新绑定请先解绑");
+		}
 
-        // 从 Redis 取出临时密钥
-        String tempKey = MFA_TEMP_PREFIX + userId;
-        String secretKey = redisTemplate.opsForValue().get(tempKey);
-        if (secretKey == null) {
-            throw new BusinessException("绑定已超时，请重新获取二维码");
-        }
+		// 生成随机密钥（Base32）
+		String secretKey = generateSecretKey();
 
-        // 验证 TOTP 码
-        if (!verifyTotp(secretKey, code)) {
-            throw new BusinessException("验证码错误");
-        }
+		// 临时存入 Redis，10 分钟过期（等待用户确认绑定）
+		String tempKey = MFA_TEMP_PREFIX + userId;
+		redisTemplate.opsForValue().set(tempKey, secretKey, 10, TimeUnit.MINUTES);
 
-        // 删除临时密钥
-        redisTemplate.delete(tempKey);
+		// 生成 TOTP URI（Google Authenticator 格式）
+		// 格式：otpauth://totp/AIPerm:username?secret=xxx&issuer=AIPerm
+		String username = StpUtil.getLoginIdAsString();
+		String totpUri = "otpauth://totp/" + APP_NAME + ":" + username + "?secret=" + secretKey + "&issuer=" + APP_NAME;
 
-        // 删除旧绑定（如有）
-        userMfaRepo.findByUserId(userId).ifPresent(old -> userMfaRepo.softDelete(old.getId(), LocalDateTime.now()));
+		return MfaQrcodeVO.builder().totpUri(totpUri).secretKey(secretKey).build();
+	}
 
-        // 写入绑定记录
-        SysUserMfa mfa = new SysUserMfa();
-        mfa.setUserId(userId);
-        mfa.setMfaType("TOTP");
-        mfa.setSecretKey(secretKey);
-        mfa.setBindTime(LocalDateTime.now());
-        mfa.setStatus(1);
-        mfa.setCreateTime(LocalDateTime.now());
-        mfa.setCreateBy(StpUtil.getLoginIdAsString());
-        userMfaRepo.save(mfa);
-    }
+	/**
+	 * 确认绑定（验证 TOTP 码正确后持久化密钥）
+	 */
+	@Transactional
+	public void confirmBind(String code) {
+		Long userId = StpUtil.getLoginIdAsLong();
 
-    /**
-     * 解绑 2FA
-     */
-    @Transactional
-    public void unbind(String code) {
-        Long userId = StpUtil.getLoginIdAsLong();
+		// 从 Redis 取出临时密钥
+		String tempKey = MFA_TEMP_PREFIX + userId;
+		String secretKey = redisTemplate.opsForValue().get(tempKey);
+		if (secretKey == null) {
+			throw new BusinessException("绑定已超时，请重新获取二维码");
+		}
 
-        // 超管不允许解绑
-        if (SUPER_ADMIN_ID.equals(userId)) {
-            throw new BusinessException("超级管理员不允许解绑2FA");
-        }
+		// 验证 TOTP 码
+		if (!verifyTotp(secretKey, code)) {
+			throw new BusinessException("验证码错误");
+		}
 
-        SysUserMfa mfa = userMfaRepo.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException("您未绑定2FA"));
+		// 删除临时密钥
+		redisTemplate.delete(tempKey);
 
-        // 解绑前需先验证
-        if (!verifyTotp(mfa.getSecretKey(), code)) {
-            throw new BusinessException("验证码错误");
-        }
+		// 删除旧绑定（如有）
+		userMfaRepo.findByUserId(userId).ifPresent(old -> userMfaRepo.softDelete(old.getId(), LocalDateTime.now()));
 
-        userMfaRepo.softDelete(mfa.getId(), LocalDateTime.now());
-        redisTemplate.delete(MFA_VERIFIED_PREFIX + userId);
-    }
+		// 写入绑定记录
+		SysUserMfa mfa = new SysUserMfa();
+		mfa.setUserId(userId);
+		mfa.setMfaType("TOTP");
+		mfa.setSecretKey(secretKey);
+		mfa.setBindTime(LocalDateTime.now());
+		mfa.setStatus(1);
+		mfa.setCreateTime(LocalDateTime.now());
+		mfa.setCreateBy(StpUtil.getLoginIdAsString());
+		userMfaRepo.save(mfa);
+	}
 
-    /**
-     * 验证 2FA（敏感操作前调用）
-     */
-    public void verify(String code) {
-        Long userId = StpUtil.getLoginIdAsLong();
+	/**
+	 * 解绑 2FA
+	 */
+	@Transactional
+	public void unbind(String code) {
+		Long userId = StpUtil.getLoginIdAsLong();
 
-        SysUserMfa mfa = userMfaRepo.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException("您未绑定2FA，请先绑定"));
+		// 超管不允许解绑
+		if (SUPER_ADMIN_ID.equals(userId)) {
+			throw new BusinessException("超级管理员不允许解绑2FA");
+		}
 
-        if (!verifyTotp(mfa.getSecretKey(), code)) {
-            throw new BusinessException("验证码错误");
-        }
+		SysUserMfa mfa = userMfaRepo.findByUserId(userId).orElseThrow(() -> new BusinessException("您未绑定2FA"));
 
-        // 写入 Redis 验证状态（有效期可配置，默认30分钟）
-        int expireMinutes = getVerifyExpireMinutes();
-        redisTemplate.opsForValue().set(
-                MFA_VERIFIED_PREFIX + userId,
-                "1",
-                expireMinutes,
-                TimeUnit.MINUTES
-        );
-    }
+		// 解绑前需先验证
+		if (!verifyTotp(mfa.getSecretKey(), code)) {
+			throw new BusinessException("验证码错误");
+		}
 
-    /**
-     * 检查用户是否已在有效期内验证过2FA
-     */
-    public boolean isVerified(Long userId) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(MFA_VERIFIED_PREFIX + userId));
-    }
+		userMfaRepo.softDelete(mfa.getId(), LocalDateTime.now());
+		redisTemplate.delete(MFA_VERIFIED_PREFIX + userId);
+	}
 
-    // ===== 私有方法 =====
+	/**
+	 * 验证 2FA（敏感操作前调用）
+	 */
+	public void verify(String code) {
+		Long userId = StpUtil.getLoginIdAsLong();
 
-    /**
-     * 生成 Base32 格式的随机密钥
-     */
-    private String generateSecretKey() {
-        // Base32 字符集
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-        StringBuilder sb = new StringBuilder();
-        java.util.Random random = new java.util.Random();
-        for (int i = 0; i < 16; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
+		SysUserMfa mfa = userMfaRepo.findByUserId(userId).orElseThrow(() -> new BusinessException("您未绑定2FA，请先绑定"));
 
-    /**
-     * 验证 TOTP 码
-     * 使用 HMAC-SHA1 算法，时间窗口为 30 秒
-     */
-    private boolean verifyTotp(String secretKey, String code) {
-        try {
-            if (code == null || code.length() != 6) {
-                return false;
-            }
+		if (!verifyTotp(mfa.getSecretKey(), code)) {
+			throw new BusinessException("验证码错误");
+		}
 
-            // 解码 Base32 密钥
-            byte[] key = decodeBase32(secretKey);
+		// 写入 Redis 验证状态（有效期可配置，默认30分钟）
+		int expireMinutes = getVerifyExpireMinutes();
+		redisTemplate.opsForValue().set(MFA_VERIFIED_PREFIX + userId, "1", expireMinutes, TimeUnit.MINUTES);
+	}
 
-            // 获取当前时间窗口
-            long currentTimeWindow = System.currentTimeMillis() / 1000 / 30;
+	/**
+	 * 检查用户是否已在有效期内验证过2FA
+	 */
+	public boolean isVerified(Long userId) {
+		return Boolean.TRUE.equals(redisTemplate.hasKey(MFA_VERIFIED_PREFIX + userId));
+	}
 
-            // 允许前后1个窗口的误差（共3个窗口）
-            for (int i = -1; i <= 1; i++) {
-                long timeWindow = currentTimeWindow + i;
-                String expectedCode = generateTotp(key, timeWindow);
-                if (expectedCode.equals(code)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            log.error("TOTP 验证异常", e);
-            return false;
-        }
-    }
+	// ===== 私有方法 =====
 
-    /**
-     * 生成 TOTP 码
-     */
-    private String generateTotp(byte[] key, long timeWindow) {
-        byte[] data = new byte[8];
-        long value = timeWindow;
-        for (int i = 7; i >= 0; i--) {
-            data[i] = (byte) (value & 0xFF);
-            value >>= 8;
-        }
+	/**
+	 * 生成 Base32 格式的随机密钥
+	 */
+	private String generateSecretKey() {
+		// Base32 字符集
+		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+		StringBuilder sb = new StringBuilder();
+		java.util.Random random = new java.util.Random();
+		for (int i = 0; i < 16; i++) {
+			sb.append(chars.charAt(random.nextInt(chars.length())));
+		}
+		return sb.toString();
+	}
 
-        // HMAC-SHA1
-        javax.crypto.Mac mac;
-        try {
-            mac = javax.crypto.Mac.getInstance("HmacSHA1");
-            mac.init(new javax.crypto.spec.SecretKeySpec(key, "HmacSHA1"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        byte[] hash = mac.doFinal(data);
+	/**
+	 * 验证 TOTP 码 使用 HMAC-SHA1 算法，时间窗口为 30 秒
+	 */
+	private boolean verifyTotp(String secretKey, String code) {
+		try {
+			if (code == null || code.length() != 6) {
+				return false;
+			}
 
-        // 动态截断
-        int offset = hash[hash.length - 1] & 0x0F;
-        int binary = ((hash[offset] & 0x7F) << 24)
-                | ((hash[offset + 1] & 0xFF) << 16)
-                | ((hash[offset + 2] & 0xFF) << 8)
-                | (hash[offset + 3] & 0xFF);
+			// 解码 Base32 密钥
+			byte[] key = decodeBase32(secretKey);
 
-        int otp = binary % 1000000;
-        return String.format("%06d", otp);
-    }
+			// 获取当前时间窗口
+			long currentTimeWindow = System.currentTimeMillis() / 1000 / 30;
 
-    /**
-     * Base32 解码
-     */
-    private byte[] decodeBase32(String base32) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-        base32 = base32.toUpperCase().replaceAll("[^A-Z2-7]", "");
+			// 允许前后1个窗口的误差（共3个窗口）
+			for (int i = -1; i <= 1; i++) {
+				long timeWindow = currentTimeWindow + i;
+				String expectedCode = generateTotp(key, timeWindow);
+				if (expectedCode.equals(code)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		catch (Exception e) {
+			log.error("TOTP 验证异常", e);
+			return false;
+		}
+	}
 
-        int outputLength = base32.length() * 5 / 8;
-        byte[] output = new byte[outputLength];
+	/**
+	 * 生成 TOTP 码
+	 */
+	private String generateTotp(byte[] key, long timeWindow) {
+		byte[] data = new byte[8];
+		long value = timeWindow;
+		for (int i = 7; i >= 0; i--) {
+			data[i] = (byte) (value & 0xFF);
+			value >>= 8;
+		}
 
-        int buffer = 0;
-        int bitsLeft = 0;
-        int index = 0;
+		// HMAC-SHA1
+		javax.crypto.Mac mac;
+		try {
+			mac = javax.crypto.Mac.getInstance("HmacSHA1");
+			mac.init(new javax.crypto.spec.SecretKeySpec(key, "HmacSHA1"));
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		byte[] hash = mac.doFinal(data);
 
-        for (char c : base32.toCharArray()) {
-            int value = chars.indexOf(c);
-            if (value < 0) continue;
+		// 动态截断
+		int offset = hash[hash.length - 1] & 0x0F;
+		int binary = ((hash[offset] & 0x7F) << 24) | ((hash[offset + 1] & 0xFF) << 16)
+				| ((hash[offset + 2] & 0xFF) << 8) | (hash[offset + 3] & 0xFF);
 
-            buffer = (buffer << 5) | value;
-            bitsLeft += 5;
+		int otp = binary % 1000000;
+		return String.format("%06d", otp);
+	}
 
-            if (bitsLeft >= 8) {
-                output[index++] = (byte) (buffer >> (bitsLeft - 8));
-                bitsLeft -= 8;
-            }
-        }
+	/**
+	 * Base32 解码
+	 */
+	private byte[] decodeBase32(String base32) {
+		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+		base32 = base32.toUpperCase().replaceAll("[^A-Z2-7]", "");
 
-        return output;
-    }
+		int outputLength = base32.length() * 5 / 8;
+		byte[] output = new byte[outputLength];
 
-    private int getVerifyExpireMinutes() {
-        return configRepo.findByConfigKey("mfa.verify_expire_minutes")
-                .map(c -> {
-                    try { return Integer.parseInt(c.getConfigValue()); }
-                    catch (Exception e) { return 30; }
-                })
-                .orElse(30);
-    }
+		int buffer = 0;
+		int bitsLeft = 0;
+		int index = 0;
+
+		for (char c : base32.toCharArray()) {
+			int value = chars.indexOf(c);
+			if (value < 0)
+				continue;
+
+			buffer = (buffer << 5) | value;
+			bitsLeft += 5;
+
+			if (bitsLeft >= 8) {
+				output[index++] = (byte) (buffer >> (bitsLeft - 8));
+				bitsLeft -= 8;
+			}
+		}
+
+		return output;
+	}
+
+	private int getVerifyExpireMinutes() {
+		return configRepo.findByConfigKey("mfa.verify_expire_minutes").map(c -> {
+			try {
+				return Integer.parseInt(c.getConfigValue());
+			}
+			catch (Exception e) {
+				return 30;
+			}
+		}).orElse(30);
+	}
+
 }

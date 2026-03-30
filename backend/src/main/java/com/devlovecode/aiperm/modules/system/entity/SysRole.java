@@ -17,19 +17,19 @@ import lombok.EqualsAndHashCode;
 @Table(name = "sys_role")
 public class SysRole extends BaseEntity {
 
-    private String roleName;
+	private String roleName;
 
-    private String roleCode;
+	private String roleCode;
 
-    private Integer sort;
+	private Integer sort;
 
-    private Integer status;
+	private Integer status;
 
-    private String remark;
+	private String remark;
 
-    /**
-     * 数据权限范围
-     * 1-全部数据，2-本部门数据，3-本部门及下级部门数据，4-仅本人数据
-     */
-    private Integer dataScope;
+	/**
+	 * 数据权限范围 1-全部数据，2-本部门数据，3-本部门及下级部门数据，4-仅本人数据
+	 */
+	private Integer dataScope;
+
 }

@@ -12,10 +12,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OperLogRepository extends JpaRepository<SysOperLog, Long>, JpaSpecificationExecutor<SysOperLog> {
 
-    default Page<SysOperLog> queryPage(String title, Integer status, int pageNum, int pageSize) {
-        return findAll(SpecificationUtils.and(
-                SpecificationUtils.like("title", title),
-                SpecificationUtils.eq("status", status)
-        ), PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
-    }
+	default Page<SysOperLog> queryPage(String title, Integer status, int pageNum, int pageSize) {
+		return findAll(
+				SpecificationUtils.and(SpecificationUtils.like("title", title),
+						SpecificationUtils.eq("status", status)),
+				PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
+	}
+
 }

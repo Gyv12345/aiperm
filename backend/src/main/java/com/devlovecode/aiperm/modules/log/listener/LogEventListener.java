@@ -17,36 +17,39 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class LogEventListener {
 
-    private final OperLogRepository operLogRepo;
+	private final OperLogRepository operLogRepo;
 
-    @Async
-    @EventListener
-    public void onLogEvent(LogEvent event) {
-        try {
-            SysOperLog operLog = new SysOperLog();
-            operLog.setTitle(event.getTitle());
-            operLog.setOperType(event.getOperType());
-            operLog.setMethod(event.getMethod());
-            operLog.setRequestMethod(event.getRequestMethod());
-            operLog.setOperUrl(event.getOperUrl());
-            operLog.setOperIp(event.getOperIp());
-            operLog.setOperParam(event.getOperParam());
-            operLog.setJsonResult(event.getJsonResult());
-            operLog.setStatus(event.getStatus());
-            operLog.setErrorMsg(event.getErrorMsg());
-            operLog.setCostTime(event.getCostTime());
-            operLog.setCreateTime(LocalDateTime.now());
+	@Async
+	@EventListener
+	public void onLogEvent(LogEvent event) {
+		try {
+			SysOperLog operLog = new SysOperLog();
+			operLog.setTitle(event.getTitle());
+			operLog.setOperType(event.getOperType());
+			operLog.setMethod(event.getMethod());
+			operLog.setRequestMethod(event.getRequestMethod());
+			operLog.setOperUrl(event.getOperUrl());
+			operLog.setOperIp(event.getOperIp());
+			operLog.setOperParam(event.getOperParam());
+			operLog.setJsonResult(event.getJsonResult());
+			operLog.setStatus(event.getStatus());
+			operLog.setErrorMsg(event.getErrorMsg());
+			operLog.setCostTime(event.getCostTime());
+			operLog.setCreateTime(LocalDateTime.now());
 
-            try {
-                String loginId = StpUtil.getLoginIdAsString();
-                operLog.setOperUser(loginId);
-            } catch (Exception ignored) {
-                operLog.setOperUser("anonymous");
-            }
+			try {
+				String loginId = StpUtil.getLoginIdAsString();
+				operLog.setOperUser(loginId);
+			}
+			catch (Exception ignored) {
+				operLog.setOperUser("anonymous");
+			}
 
-            operLogRepo.save(operLog);
-        } catch (Exception e) {
-            log.error("保存操作日志失败", e);
-        }
-    }
+			operLogRepo.save(operLog);
+		}
+		catch (Exception e) {
+			log.error("保存操作日志失败", e);
+		}
+	}
+
 }

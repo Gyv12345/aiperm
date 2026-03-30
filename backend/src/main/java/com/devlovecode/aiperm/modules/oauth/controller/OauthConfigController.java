@@ -23,22 +23,22 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OauthConfigController {
 
-    private final OauthConfigService oauthConfigService;
+	private final OauthConfigService oauthConfigService;
 
-    @Operation(summary = "获取OAuth平台配置")
-    @SaCheckPermission("system:oauth:config")
-    @GetMapping("/{platform}")
-    public R<OauthConfigVO> getConfig(@PathVariable String platform) {
-        return R.ok(oauthConfigService.getConfig(platform));
-    }
+	@Operation(summary = "获取OAuth平台配置")
+	@SaCheckPermission("system:oauth:config")
+	@GetMapping("/{platform}")
+	public R<OauthConfigVO> getConfig(@PathVariable String platform) {
+		return R.ok(oauthConfigService.getConfig(platform));
+	}
 
-    @Operation(summary = "更新OAuth平台配置")
-    @SaCheckPermission("system:oauth:config")
-    @Log(title = "OAuth配置管理", operType = OperType.UPDATE)
-    @PutMapping("/{platform}")
-    public R<Void> updateConfig(@PathVariable String platform,
-                                @RequestBody OauthConfigDTO dto) {
-        oauthConfigService.updateConfig(platform, dto);
-        return R.ok();
-    }
+	@Operation(summary = "更新OAuth平台配置")
+	@SaCheckPermission("system:oauth:config")
+	@Log(title = "OAuth配置管理", operType = OperType.UPDATE)
+	@PutMapping("/{platform}")
+	public R<Void> updateConfig(@PathVariable String platform, @RequestBody OauthConfigDTO dto) {
+		oauthConfigService.updateConfig(platform, dto);
+		return R.ok();
+	}
+
 }

@@ -14,20 +14,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoginStrategyFactory {
 
-    private final List<LoginStrategy> strategies;
-    private Map<String, LoginStrategy> strategyMap;
+	private final List<LoginStrategy> strategies;
 
-    @PostConstruct
-    public void init() {
-        strategyMap = strategies.stream()
-                .collect(Collectors.toMap(LoginStrategy::getLoginType, Function.identity()));
-    }
+	private Map<String, LoginStrategy> strategyMap;
 
-    public LoginStrategy getStrategy(String loginType) {
-        LoginStrategy strategy = strategyMap.get(loginType.toUpperCase());
-        if (strategy == null) {
-            throw new BusinessException("不支持的登录方式：" + loginType);
-        }
-        return strategy;
-    }
+	@PostConstruct
+	public void init() {
+		strategyMap = strategies.stream().collect(Collectors.toMap(LoginStrategy::getLoginType, Function.identity()));
+	}
+
+	public LoginStrategy getStrategy(String loginType) {
+		LoginStrategy strategy = strategyMap.get(loginType.toUpperCase());
+		if (strategy == null) {
+			throw new BusinessException("不支持的登录方式：" + loginType);
+		}
+		return strategy;
+	}
+
 }

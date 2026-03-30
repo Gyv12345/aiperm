@@ -17,13 +17,14 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class SysNotice extends BaseEntity {
 
-    private String title;
+	private String title;
 
-    private String content;
+	private String content;
 
-    private Integer type;
+	private Integer type;
 
-    private Integer status;
+	private Integer status;
 
-    private LocalDateTime publishTime;
+	private LocalDateTime publishTime;
+
 }

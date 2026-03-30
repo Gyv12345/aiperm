@@ -27,40 +27,42 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MfaPolicyController {
 
-    private final MfaPolicyService mfaPolicyService;
+	private final MfaPolicyService mfaPolicyService;
 
-    @Operation(summary = "查询所有2FA策略")
-    @SaCheckPermission("system:mfa:policy")
-    @GetMapping
-    public R<List<MfaPolicyVO>> list() {
-        return R.ok(mfaPolicyService.listAll());
-    }
+	@Operation(summary = "查询所有2FA策略")
+	@SaCheckPermission("system:mfa:policy")
+	@GetMapping
+	public R<List<MfaPolicyVO>> list() {
+		return R.ok(mfaPolicyService.listAll());
+	}
 
-    @Operation(summary = "创建2FA策略")
-    @SaCheckPermission("system:mfa:policy")
-    @Log(title = "2FA策略管理", operType = OperType.CREATE)
-    @PostMapping
-    public R<Void> create(@RequestBody @Validated({jakarta.validation.groups.Default.class, Views.Create.class}) MfaPolicyDTO dto) {
-        mfaPolicyService.create(dto);
-        return R.ok();
-    }
+	@Operation(summary = "创建2FA策略")
+	@SaCheckPermission("system:mfa:policy")
+	@Log(title = "2FA策略管理", operType = OperType.CREATE)
+	@PostMapping
+	public R<Void> create(
+			@RequestBody @Validated({ jakarta.validation.groups.Default.class, Views.Create.class }) MfaPolicyDTO dto) {
+		mfaPolicyService.create(dto);
+		return R.ok();
+	}
 
-    @Operation(summary = "更新2FA策略")
-    @SaCheckPermission("system:mfa:policy")
-    @Log(title = "2FA策略管理", operType = OperType.UPDATE)
-    @PutMapping("/{id}")
-    public R<Void> update(@PathVariable Long id,
-                          @RequestBody @Validated({jakarta.validation.groups.Default.class, Views.Update.class}) MfaPolicyDTO dto) {
-        mfaPolicyService.update(id, dto);
-        return R.ok();
-    }
+	@Operation(summary = "更新2FA策略")
+	@SaCheckPermission("system:mfa:policy")
+	@Log(title = "2FA策略管理", operType = OperType.UPDATE)
+	@PutMapping("/{id}")
+	public R<Void> update(@PathVariable Long id,
+			@RequestBody @Validated({ jakarta.validation.groups.Default.class, Views.Update.class }) MfaPolicyDTO dto) {
+		mfaPolicyService.update(id, dto);
+		return R.ok();
+	}
 
-    @Operation(summary = "删除2FA策略")
-    @SaCheckPermission("system:mfa:policy")
-    @Log(title = "2FA策略管理", operType = OperType.DELETE)
-    @DeleteMapping("/{id}")
-    public R<Void> delete(@PathVariable Long id) {
-        mfaPolicyService.delete(id);
-        return R.ok();
-    }
+	@Operation(summary = "删除2FA策略")
+	@SaCheckPermission("system:mfa:policy")
+	@Log(title = "2FA策略管理", operType = OperType.DELETE)
+	@DeleteMapping("/{id}")
+	public R<Void> delete(@PathVariable Long id) {
+		mfaPolicyService.delete(id);
+		return R.ok();
+	}
+
 }

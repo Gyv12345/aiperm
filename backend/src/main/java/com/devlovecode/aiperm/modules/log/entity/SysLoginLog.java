@@ -15,19 +15,31 @@ import java.time.LocalDateTime;
 @SQLRestriction("coalesce(deleted, 0) = 0")
 @Data
 public class SysLoginLog {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    private Long userId;
-    private String username;
-    private String ip;
-    private String location;
-    private String browser;
-    private String os;
-    private Integer status;
-    private String msg;
-    private LocalDateTime loginTime;
-    private Integer deleted;
-    private LocalDateTime createTime;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	private Long userId;
+
+	private String username;
+
+	private String ip;
+
+	private String location;
+
+	private String browser;
+
+	private String os;
+
+	private Integer status;
+
+	private String msg;
+
+	private LocalDateTime loginTime;
+
+	private Integer deleted;
+
+	private LocalDateTime createTime;
+
 }

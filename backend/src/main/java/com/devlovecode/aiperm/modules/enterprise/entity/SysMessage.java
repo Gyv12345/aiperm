@@ -17,15 +17,16 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class SysMessage extends BaseEntity {
 
-    private Long senderId;
+	private Long senderId;
 
-    private Long receiverId;
+	private Long receiverId;
 
-    private String title;
+	private String title;
 
-    private String content;
+	private String content;
 
-    private Integer isRead;
+	private Integer isRead;
 
-    private LocalDateTime readTime;
+	private LocalDateTime readTime;
+
 }

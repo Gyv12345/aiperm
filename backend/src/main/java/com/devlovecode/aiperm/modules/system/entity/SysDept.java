@@ -22,23 +22,24 @@ import java.util.List;
 @Table(name = "sys_dept")
 public class SysDept extends BaseEntity {
 
-    private String deptName;
+	private String deptName;
 
-    private Long parentId;
+	private Long parentId;
 
-    private Integer sort;
+	private Integer sort;
 
-    private String leader;
+	private String leader;
 
-    private String phone;
+	private String phone;
 
-    private String email;
+	private String email;
 
-    private Integer status;
+	private Integer status;
 
-    private String remark;
+	private String remark;
 
-    @Transient
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<SysDept> children = new ArrayList<>();
+	@Transient
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	private List<SysDept> children = new ArrayList<>();
+
 }

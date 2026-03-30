@@ -30,140 +30,134 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProfileService {
 
-    private final UserRepository userRepo;
-    private final DeptRepository deptRepo;
-    private final PostRepository postRepo;
-    private final RoleRepository roleRepo;
-    private final LoginLogRepository loginLogRepo;
+	private final UserRepository userRepo;
 
-    /**
-     * 获取当前用户个人信息
-     */
-    public ProfileVO getProfile() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+	private final DeptRepository deptRepo;
 
-        return toVO(user);
-    }
+	private final PostRepository postRepo;
 
-    /**
-     * 修改个人信息
-     */
-    @Transactional
-    public void updateProfile(ProfileDTO dto) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+	private final RoleRepository roleRepo;
 
-        user.setNickname(dto.getNickname());
-        user.setRealName(dto.getRealName());
-        user.setEmail(dto.getEmail());
-        user.setPhone(dto.getPhone());
-        user.setGender(dto.getGender());
-        user.setAvatar(dto.getAvatar());
-        user.setUpdateBy(user.getUsername());
+	private final LoginLogRepository loginLogRepo;
 
-        userRepo.save(user);
-    }
+	/**
+	 * 获取当前用户个人信息
+	 */
+	public ProfileVO getProfile() {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
 
-    /**
-     * 修改密码
-     */
-    @Transactional
-    public void updatePassword(PasswordDTO dto) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+		return toVO(user);
+	}
 
-        // 验证旧密码
-        if (!BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
-            throw new BusinessException("旧密码错误");
-        }
+	/**
+	 * 修改个人信息
+	 */
+	@Transactional
+	public void updateProfile(ProfileDTO dto) {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
 
-        // 新密码不能与旧密码相同
-        if (BCrypt.checkpw(dto.getNewPassword(), user.getPassword())) {
-            throw new BusinessException("新密码不能与旧密码相同");
-        }
+		user.setNickname(dto.getNickname());
+		user.setRealName(dto.getRealName());
+		user.setEmail(dto.getEmail());
+		user.setPhone(dto.getPhone());
+		user.setGender(dto.getGender());
+		user.setAvatar(dto.getAvatar());
+		user.setUpdateBy(user.getUsername());
 
-        // 更新密码
-        userRepo.updatePassword(userId, BCrypt.hashpw(dto.getNewPassword()), LocalDateTime.now());
-    }
+		userRepo.save(user);
+	}
 
-    /**
-     * 获取登录日志
-     */
-    public PageResult<LoginLogVO> getLoginLogs(int pageNum, int pageSize) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        SysUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
-        org.springframework.data.domain.Page<SysLoginLog> jpaPage = loginLogRepo.queryPageByUser(
-                userId,
-                user.getUsername(),
-                pageNum,
-                pageSize
-        );
-        return PageResult.fromJpaPage(jpaPage).map(this::toLogVO);
-    }
+	/**
+	 * 修改密码
+	 */
+	@Transactional
+	public void updatePassword(PasswordDTO dto) {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
 
-    /**
-     * 转换为 ProfileVO
-     */
-    private ProfileVO toVO(SysUser entity) {
-        ProfileVO vo = new ProfileVO();
-        vo.setId(entity.getId());
-        vo.setUsername(entity.getUsername());
-        vo.setNickname(entity.getNickname());
-        vo.setRealName(entity.getRealName());
-        vo.setEmail(entity.getEmail());
-        vo.setPhone(entity.getPhone());
-        vo.setGender(entity.getGender());
-        vo.setAvatar(entity.getAvatar());
-        vo.setDeptId(entity.getDeptId());
-        vo.setStatus(entity.getStatus());
-        vo.setLastLoginIp(entity.getLastLoginIp());
-        vo.setLastLoginTime(entity.getLastLoginTime());
-        vo.setCreateTime(entity.getCreateTime());
+		// 验证旧密码
+		if (!BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
+			throw new BusinessException("旧密码错误");
+		}
 
-        // 填充部门名称
-        if (entity.getDeptId() != null) {
-            deptRepo.findById(entity.getDeptId())
-                    .ifPresent(dept -> vo.setDeptName(dept.getDeptName()));
-        }
+		// 新密码不能与旧密码相同
+		if (BCrypt.checkpw(dto.getNewPassword(), user.getPassword())) {
+			throw new BusinessException("新密码不能与旧密码相同");
+		}
 
-        // 填充岗位信息
-        if (entity.getPostId() != null) {
-            postRepo.findById(entity.getPostId())
-                    .ifPresent(post -> vo.setPostName(post.getPostName()));
-        }
+		// 更新密码
+		userRepo.updatePassword(userId, BCrypt.hashpw(dto.getNewPassword()), LocalDateTime.now());
+	}
 
-        // 填充角色信息
-        List<Long> roleIds = userRepo.findRoleIdsByUserId(entity.getId());
-        if (roleIds != null && !roleIds.isEmpty()) {
-            List<String> roleNames = new ArrayList<>();
-            for (Long roleId : roleIds) {
-                roleRepo.findById(roleId)
-                        .ifPresent(role -> roleNames.add(role.getRoleName()));
-            }
-            vo.setRoleNames(roleNames);
-        }
+	/**
+	 * 获取登录日志
+	 */
+	public PageResult<LoginLogVO> getLoginLogs(int pageNum, int pageSize) {
+		Long userId = StpUtil.getLoginIdAsLong();
+		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
+		org.springframework.data.domain.Page<SysLoginLog> jpaPage = loginLogRepo.queryPageByUser(userId,
+				user.getUsername(), pageNum, pageSize);
+		return PageResult.fromJpaPage(jpaPage).map(this::toLogVO);
+	}
 
-        return vo;
-    }
+	/**
+	 * 转换为 ProfileVO
+	 */
+	private ProfileVO toVO(SysUser entity) {
+		ProfileVO vo = new ProfileVO();
+		vo.setId(entity.getId());
+		vo.setUsername(entity.getUsername());
+		vo.setNickname(entity.getNickname());
+		vo.setRealName(entity.getRealName());
+		vo.setEmail(entity.getEmail());
+		vo.setPhone(entity.getPhone());
+		vo.setGender(entity.getGender());
+		vo.setAvatar(entity.getAvatar());
+		vo.setDeptId(entity.getDeptId());
+		vo.setStatus(entity.getStatus());
+		vo.setLastLoginIp(entity.getLastLoginIp());
+		vo.setLastLoginTime(entity.getLastLoginTime());
+		vo.setCreateTime(entity.getCreateTime());
 
-    /**
-     * 转换为 LoginLogVO
-     */
-    private LoginLogVO toLogVO(SysLoginLog entity) {
-        LoginLogVO vo = new LoginLogVO();
-        vo.setId(entity.getId());
-        vo.setIp(entity.getIp());
-        vo.setLocation(entity.getLocation());
-        vo.setBrowser(entity.getBrowser());
-        vo.setOs(entity.getOs());
-        vo.setStatus(entity.getStatus());
-        vo.setMsg(entity.getMsg());
-        vo.setLoginTime(entity.getLoginTime());
-        return vo;
-    }
+		// 填充部门名称
+		if (entity.getDeptId() != null) {
+			deptRepo.findById(entity.getDeptId()).ifPresent(dept -> vo.setDeptName(dept.getDeptName()));
+		}
+
+		// 填充岗位信息
+		if (entity.getPostId() != null) {
+			postRepo.findById(entity.getPostId()).ifPresent(post -> vo.setPostName(post.getPostName()));
+		}
+
+		// 填充角色信息
+		List<Long> roleIds = userRepo.findRoleIdsByUserId(entity.getId());
+		if (roleIds != null && !roleIds.isEmpty()) {
+			List<String> roleNames = new ArrayList<>();
+			for (Long roleId : roleIds) {
+				roleRepo.findById(roleId).ifPresent(role -> roleNames.add(role.getRoleName()));
+			}
+			vo.setRoleNames(roleNames);
+		}
+
+		return vo;
+	}
+
+	/**
+	 * 转换为 LoginLogVO
+	 */
+	private LoginLogVO toLogVO(SysLoginLog entity) {
+		LoginLogVO vo = new LoginLogVO();
+		vo.setId(entity.getId());
+		vo.setIp(entity.getIp());
+		vo.setLocation(entity.getLocation());
+		vo.setBrowser(entity.getBrowser());
+		vo.setOs(entity.getOs());
+		vo.setStatus(entity.getStatus());
+		vo.setMsg(entity.getMsg());
+		vo.setLoginTime(entity.getLoginTime());
+		return vo;
+	}
+
 }

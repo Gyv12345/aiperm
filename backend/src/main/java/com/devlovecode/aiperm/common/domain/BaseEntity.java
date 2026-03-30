@@ -9,8 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 基础实体类
- * 所有实体类的父类，包含通用字段
+ * 基础实体类 所有实体类的父类，包含通用字段
  *
  * @author devlovecode
  */
@@ -19,30 +18,31 @@ import java.time.LocalDateTime;
 @SQLRestriction("deleted = 0")
 public class BaseEntity implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+	@Serial
+	private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private LocalDateTime createTime;
+	private LocalDateTime createTime;
 
-    private LocalDateTime updateTime;
+	private LocalDateTime updateTime;
 
-    private String createBy;
+	private String createBy;
 
-    private String updateBy;
+	private String updateBy;
 
-    private Integer deleted;
+	private Integer deleted;
 
-    @Version
-    private Integer version;
+	@Version
+	private Integer version;
 
-    @PrePersist
-    public void prePersist() {
-        if (deleted == null) {
-            deleted = 0;
-        }
-    }
+	@PrePersist
+	public void prePersist() {
+		if (deleted == null) {
+			deleted = 0;
+		}
+	}
+
 }

@@ -16,12 +16,21 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SysUserOauth extends BaseEntity {
-    private Long userId;
-    private String platform;         // WEWORK/DINGTALK/FEISHU
-    private String openId;           // 第三方平台用户标识
-    private String unionId;          // 企业统一标识（可选）
-    private String nickname;
-    private String avatar;
-    private LocalDateTime lastLoginTime;
-    private Integer status;          // 1正常，0已解绑
+
+	private Long userId;
+
+	private String platform; // WEWORK/DINGTALK/FEISHU
+
+	private String openId; // 第三方平台用户标识
+
+	private String unionId; // 企业统一标识（可选）
+
+	private String nickname;
+
+	private String avatar;
+
+	private LocalDateTime lastLoginTime;
+
+	private Integer status; // 1正常，0已解绑
+
 }

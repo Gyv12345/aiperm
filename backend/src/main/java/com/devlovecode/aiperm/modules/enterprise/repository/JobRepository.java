@@ -15,20 +15,21 @@ import java.util.Optional;
  */
 public interface JobRepository extends BaseJpaRepository<SysJob> {
 
-    /**
-     * 查询所有启用中的任务
-     */
-    @Query("FROM SysJob j WHERE j.status = 1 AND j.deleted = 0")
-    List<SysJob> findAllEnabled();
+	/**
+	 * 查询所有启用中的任务
+	 */
+	@Query("FROM SysJob j WHERE j.status = 1 AND j.deleted = 0")
+	List<SysJob> findAllEnabled();
 
-    Optional<SysJob> findByIdAndDeleted(Long id, Integer deleted);
+	Optional<SysJob> findByIdAndDeleted(Long id, Integer deleted);
 
-    /**
-     * 更新任务状态
-     */
-    @Modifying
-    @Query("UPDATE SysJob j SET j.status = :status, j.updateTime = :updateTime, j.updateBy = :updateBy " +
-           "WHERE j.id = :id AND j.deleted = 0")
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status,
-                     @Param("updateBy") String updateBy, @Param("updateTime") LocalDateTime updateTime);
+	/**
+	 * 更新任务状态
+	 */
+	@Modifying
+	@Query("UPDATE SysJob j SET j.status = :status, j.updateTime = :updateTime, j.updateBy = :updateBy "
+			+ "WHERE j.id = :id AND j.deleted = 0")
+	int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateBy") String updateBy,
+			@Param("updateTime") LocalDateTime updateTime);
+
 }

@@ -8,12 +8,15 @@ import cn.hutool.core.util.RandomUtil;
  * @author devlovecode
  */
 public class CaptchaUtil {
-    private CaptchaUtil() {}
 
-    /**
-     * 生成数字验证码
-     */
-    public static String generateCode(int length) {
-        return RandomUtil.randomNumbers(length);
-    }
+	private CaptchaUtil() {
+	}
+
+	/**
+	 * 生成数字验证码
+	 */
+	public static String generateCode(int length) {
+		return RandomUtil.randomNumbers(length);
+	}
+
 }

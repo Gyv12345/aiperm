@@ -20,34 +20,35 @@ import java.time.LocalDateTime;
 @Table(name = "sys_user")
 public class SysUser extends BaseEntity {
 
-    private String username;
+	private String username;
 
-    @JsonIgnore
-    private String password;
+	@JsonIgnore
+	private String password;
 
-    private String nickname;
+	private String nickname;
 
-    private String realName;
+	private String realName;
 
-    private String email;
+	private String email;
 
-    private String phone;
+	private String phone;
 
-    private Integer gender;
+	private Integer gender;
 
-    private String avatar;
+	private String avatar;
 
-    private Long deptId;
+	private Long deptId;
 
-    private Long postId;
+	private Long postId;
 
-    private Integer isAdmin;
+	private Integer isAdmin;
 
-    private Integer status;
+	private Integer status;
 
-    private String remark;
+	private String remark;
 
-    private String lastLoginIp;
+	private String lastLoginIp;
 
-    private LocalDateTime lastLoginTime;
+	private LocalDateTime lastLoginTime;
+
 }

@@ -15,11 +15,12 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class SysConfig extends BaseEntity {
 
-    private String configKey;
+	private String configKey;
 
-    private String configValue;
+	private String configValue;
 
-    private String configType;
+	private String configType;
 
-    private String remark;
+	private String remark;
+
 }

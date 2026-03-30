@@ -13,15 +13,24 @@ import java.time.LocalDateTime;
 @Table(name = "sys_captcha_log")
 public class SysCaptchaLog {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String type;
-    private String target;
-    private String code;
-    private String scene;
-    private Integer status;        // 1成功,0失败
-    private String failReason;
-    private String ip;
-    private LocalDateTime createTime;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	private String type;
+
+	private String target;
+
+	private String code;
+
+	private String scene;
+
+	private Integer status; // 1成功,0失败
+
+	private String failReason;
+
+	private String ip;
+
+	private LocalDateTime createTime;
+
 }

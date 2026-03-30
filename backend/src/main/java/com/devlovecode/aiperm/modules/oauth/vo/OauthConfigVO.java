@@ -7,12 +7,21 @@ import lombok.Data;
  */
 @Data
 public class OauthConfigVO {
-    private Long id;
-    private String platform;
-    private Integer enabled;
-    private String corpId;
-    private String agentId;
-    private String appKey;      // 脱敏：前4位+****
-    private String callbackUrl;
-    private String remark;
+
+	private Long id;
+
+	private String platform;
+
+	private Integer enabled;
+
+	private String corpId;
+
+	private String agentId;
+
+	private String appKey; // 脱敏：前4位+****
+
+	private String callbackUrl;
+
+	private String remark;
+
 }

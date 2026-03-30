@@ -13,25 +13,25 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends BaseJpaRepository<SysPost> {
 
-    /**
-     * 检查岗位编码是否存在
-     */
-    boolean existsByPostCode(String postCode);
+	/**
+	 * 检查岗位编码是否存在
+	 */
+	boolean existsByPostCode(String postCode);
 
-    /**
-     * 检查岗位编码是否存在（排除指定ID）
-     */
-    @Query("SELECT COUNT(p) > 0 FROM SysPost p WHERE p.postCode = :postCode AND p.id != :id AND p.deleted = 0")
-    boolean existsByPostCodeExcludeId(@Param("postCode") String postCode, @Param("id") Long excludeId);
+	/**
+	 * 检查岗位编码是否存在（排除指定ID）
+	 */
+	@Query("SELECT COUNT(p) > 0 FROM SysPost p WHERE p.postCode = :postCode AND p.id != :id AND p.deleted = 0")
+	boolean existsByPostCodeExcludeId(@Param("postCode") String postCode, @Param("id") Long excludeId);
 
-    /**
-     * 分页查询
-     */
-    default Page<SysPost> queryPage(String postName, String postCode, Integer status, int pageNum, int pageSize) {
-        return findAll(SpecificationUtils.and(
-                SpecificationUtils.like("postName", postName),
-                SpecificationUtils.like("postCode", postCode),
-                SpecificationUtils.eq("status", status)
-        ), PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
-    }
+	/**
+	 * 分页查询
+	 */
+	default Page<SysPost> queryPage(String postName, String postCode, Integer status, int pageNum, int pageSize) {
+		return findAll(
+				SpecificationUtils.and(SpecificationUtils.like("postName", postName),
+						SpecificationUtils.like("postCode", postCode), SpecificationUtils.eq("status", status)),
+				PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
+	}
+
 }

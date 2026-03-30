@@ -19,52 +19,54 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class OauthConfigService {
 
-    private final OauthConfigRepository oauthConfigRepo;
+	private final OauthConfigRepository oauthConfigRepo;
 
-    public OauthConfigVO getConfig(String platform) {
-        SysOauthConfig config = oauthConfigRepo.findByPlatform(platform.toUpperCase())
-                .orElseThrow(() -> new BusinessException("平台配置不存在：" + platform));
-        return toVO(config);
-    }
+	public OauthConfigVO getConfig(String platform) {
+		SysOauthConfig config = oauthConfigRepo.findByPlatform(platform.toUpperCase())
+			.orElseThrow(() -> new BusinessException("平台配置不存在：" + platform));
+		return toVO(config);
+	}
 
-    @Transactional
-    public void updateConfig(String platform, OauthConfigDTO dto) {
-        SysOauthConfig config = oauthConfigRepo.findByPlatform(platform.toUpperCase())
-                .orElseThrow(() -> new BusinessException("平台配置不存在：" + platform));
+	@Transactional
+	public void updateConfig(String platform, OauthConfigDTO dto) {
+		SysOauthConfig config = oauthConfigRepo.findByPlatform(platform.toUpperCase())
+			.orElseThrow(() -> new BusinessException("平台配置不存在：" + platform));
 
-        config.setEnabled(dto.getEnabled());
-        config.setCorpId(dto.getCorpId());
-        config.setAgentId(dto.getAgentId());
+		config.setEnabled(dto.getEnabled());
+		config.setCorpId(dto.getCorpId());
+		config.setAgentId(dto.getAgentId());
 
-        if (dto.getAppKey() != null && !dto.getAppKey().contains("****")) {
-            config.setAppKey(dto.getAppKey());
-        }
-        if (dto.getAppSecret() != null && !dto.getAppSecret().isBlank()) {
-            config.setAppSecret(dto.getAppSecret());
-        }
-        config.setCallbackUrl(dto.getCallbackUrl());
-        config.setRemark(dto.getRemark());
-        config.setUpdateBy(StpUtil.getLoginIdAsString());
-        config.setUpdateTime(LocalDateTime.now());
+		if (dto.getAppKey() != null && !dto.getAppKey().contains("****")) {
+			config.setAppKey(dto.getAppKey());
+		}
+		if (dto.getAppSecret() != null && !dto.getAppSecret().isBlank()) {
+			config.setAppSecret(dto.getAppSecret());
+		}
+		config.setCallbackUrl(dto.getCallbackUrl());
+		config.setRemark(dto.getRemark());
+		config.setUpdateBy(StpUtil.getLoginIdAsString());
+		config.setUpdateTime(LocalDateTime.now());
 
-        oauthConfigRepo.save(config);
-    }
+		oauthConfigRepo.save(config);
+	}
 
-    private OauthConfigVO toVO(SysOauthConfig entity) {
-        OauthConfigVO vo = new OauthConfigVO();
-        vo.setId(entity.getId());
-        vo.setPlatform(entity.getPlatform());
-        vo.setEnabled(entity.getEnabled());
-        vo.setCorpId(entity.getCorpId());
-        vo.setAgentId(entity.getAgentId());
-        vo.setAppKey(desensitize(entity.getAppKey()));
-        vo.setCallbackUrl(entity.getCallbackUrl());
-        vo.setRemark(entity.getRemark());
-        return vo;
-    }
+	private OauthConfigVO toVO(SysOauthConfig entity) {
+		OauthConfigVO vo = new OauthConfigVO();
+		vo.setId(entity.getId());
+		vo.setPlatform(entity.getPlatform());
+		vo.setEnabled(entity.getEnabled());
+		vo.setCorpId(entity.getCorpId());
+		vo.setAgentId(entity.getAgentId());
+		vo.setAppKey(desensitize(entity.getAppKey()));
+		vo.setCallbackUrl(entity.getCallbackUrl());
+		vo.setRemark(entity.getRemark());
+		return vo;
+	}
 
-    private String desensitize(String value) {
-        if (value == null || value.length() <= 4) return value;
-        return value.substring(0, 4) + "****";
-    }
+	private String desensitize(String value) {
+		if (value == null || value.length() <= 4)
+			return value;
+		return value.substring(0, 4) + "****";
+	}
+
 }

@@ -9,8 +9,13 @@ import lombok.Data;
 @Data
 @Builder
 public class OAuthUserInfo {
-    private String openId;
-    private String unionId;
-    private String nickname;
-    private String avatar;
+
+	private String openId;
+
+	private String unionId;
+
+	private String nickname;
+
+	private String avatar;
+
 }

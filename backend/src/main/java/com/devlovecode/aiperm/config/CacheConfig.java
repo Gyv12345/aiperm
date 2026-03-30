@@ -15,16 +15,15 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig {
 
-    @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(30)) // 默认缓存 30 分钟
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.json()))
-                .disableCachingNullValues();
+	@Bean
+	public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+		RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+			.entryTtl(Duration.ofMinutes(30)) // 默认缓存 30 分钟
+			.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
+			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.json()))
+			.disableCachingNullValues();
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
-                .build();
-    }
+		return RedisCacheManager.builder(connectionFactory).cacheDefaults(config).build();
+	}
+
 }
