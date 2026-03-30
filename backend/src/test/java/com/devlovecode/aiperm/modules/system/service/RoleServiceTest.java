@@ -51,7 +51,7 @@ class RoleServiceTest {
         roleService.update(roleId, dto);
 
         assertEquals(2, entity.getDataScope());
-        verify(roleRepo).update(entity);
+        verify(roleRepo).save(entity);
     }
 
     @Test
@@ -79,6 +79,6 @@ class RoleServiceTest {
         roleService.update(roleId, dto);
 
         assertEquals(4, entity.getDataScope());
-        verify(roleRepo).update(entity);
+        verify(roleRepo).save(entity);
     }
 }
