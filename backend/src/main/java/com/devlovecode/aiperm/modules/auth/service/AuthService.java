@@ -26,9 +26,13 @@ import com.devlovecode.aiperm.modules.system.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -90,7 +94,9 @@ public class AuthService {
      * 登录
      */
     public LoginVO login(LoginRequest request) {
+        HttpServletRequest currentRequest = getCurrentRequest();
         String ip = ClientIpUtils.getCurrentRequestIp();
+        String userAgent = resolveUserAgent(currentRequest);
         try {
             // 验证码校验
             validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
@@ -114,7 +120,7 @@ public class AuthService {
 
             // 更新登录信息
             userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-            loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
+            loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, currentRequest);
 
             // 返回登录信息
             return LoginVO.builder()
@@ -122,11 +128,11 @@ public class AuthService {
                     .userInfo(buildUserInfo(user))
                     .build();
         } catch (BusinessException e) {
-            loginLogService.recordFailed(request.getUsername(), ip, e.getMessage());
+            loginLogService.recordFailed(request.getUsername(), ip, e.getMessage(), userAgent, currentRequest);
             throw e;
         } catch (Exception e) {
             log.error("传统登录异常: username={}, ip={}", request.getUsername(), ip, e);
-            loginLogService.recordFailed(request.getUsername(), ip, "系统异常");
+            loginLogService.recordFailed(request.getUsername(), ip, "系统异常", userAgent, currentRequest);
             throw e;
         }
     }
@@ -136,6 +142,7 @@ public class AuthService {
      */
     public LoginVO unifiedLogin(UnifiedLoginDTO dto, HttpServletRequest request) {
         String ip = ClientIpUtils.getClientIp(request);
+        String userAgent = resolveUserAgent(request);
 
         // 密码登录需要验证图形验证码
         if (LoginType.PASSWORD.getCode().equalsIgnoreCase(dto.getLoginType())) {
@@ -145,13 +152,13 @@ public class AuthService {
         try {
             // 获取对应的登录策略
             LoginStrategy strategy = loginStrategyFactory.getStrategy(dto.getLoginType());
-            return strategy.login(dto.getIdentifier(), dto.getCredential(), ip);
+            return strategy.login(dto.getIdentifier(), dto.getCredential(), ip, userAgent, request);
         } catch (BusinessException e) {
-            loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage());
+            loginLogService.recordFailed(dto.getIdentifier(), ip, e.getMessage(), userAgent, request);
             throw e;
         } catch (Exception e) {
             log.error("统一登录异常: loginType={}, identifier={}, ip={}", dto.getLoginType(), dto.getIdentifier(), ip, e);
-            loginLogService.recordFailed(dto.getIdentifier(), ip, "系统异常");
+            loginLogService.recordFailed(dto.getIdentifier(), ip, "系统异常", userAgent, request);
             throw e;
         }
     }
@@ -317,6 +324,22 @@ public class AuthService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .build();
+    }
+
+    private HttpServletRequest getCurrentRequest() {
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
+            return servletRequestAttributes.getRequest();
+        }
+        return null;
+    }
+
+    private String resolveUserAgent(HttpServletRequest request) {
+        if (request == null) {
+            return "";
+        }
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        return userAgent == null ? "" : userAgent.trim();
     }
 
     /**

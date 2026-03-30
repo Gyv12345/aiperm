@@ -9,6 +9,7 @@ import com.devlovecode.aiperm.modules.captcha.service.CaptchaService;
 import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -31,7 +32,7 @@ public class EmailLoginStrategy implements LoginStrategy {
     }
 
     @Override
-    public LoginVO login(String identifier, String credential, String ip) {
+    public LoginVO login(String identifier, String credential, String ip, String userAgent, HttpServletRequest request) {
         // identifier 是邮箱，credential 是验证码
         // 验证邮箱验证码
         if (!emailCaptchaService.verify(identifier, credential, CaptchaScene.LOGIN)) {
@@ -47,7 +48,7 @@ public class EmailLoginStrategy implements LoginStrategy {
 
         StpUtil.login(user.getId());
         userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
+        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
 
         return LoginVO.builder()
                 .token(StpUtil.getTokenValue())

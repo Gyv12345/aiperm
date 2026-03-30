@@ -8,6 +8,7 @@ import com.devlovecode.aiperm.modules.auth.vo.LoginVO;
 import com.devlovecode.aiperm.modules.log.service.LoginLogService;
 import com.devlovecode.aiperm.modules.system.entity.SysUser;
 import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,7 @@ public class PasswordLoginStrategy implements LoginStrategy {
     }
 
     @Override
-    public LoginVO login(String identifier, String credential, String ip) {
+    public LoginVO login(String identifier, String credential, String ip, String userAgent, HttpServletRequest request) {
         // identifier 是用户名，credential 是密码
         // 注意：图形验证码在 Controller 层已验证
 
@@ -47,7 +48,7 @@ public class PasswordLoginStrategy implements LoginStrategy {
 
         StpUtil.login(user.getId());
         userRepo.updateLoginInfo(user.getId(), ip, LocalDateTime.now());
-        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip);
+        loginLogService.recordSuccess(user.getId(), user.getUsername(), ip, userAgent, request);
 
         return LoginVO.builder()
                 .token(StpUtil.getTokenValue())
