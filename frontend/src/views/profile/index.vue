@@ -336,7 +336,7 @@ onMounted(() => {
 
               <el-form-item label="状态">
                 <DictTag
-                  :options="sys_status"
+                  :options="sys_status || []"
                   :value="profile?.status"
                 />
               </el-form-item>
