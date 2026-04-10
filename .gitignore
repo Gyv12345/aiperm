@@ -42,6 +42,9 @@ frontend/node_modules/
 frontend/.vite/
 frontend/*.local
 
+# 后端构建产物
+backend/target/
+
 # 根目录 node_modules（如果存在）
 /node_modules/
 /package.json
