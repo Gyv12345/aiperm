@@ -76,3 +76,7 @@ backend/.env
 
 # Playwright CLI 缓存
 .playwright-cli/
+
+# 本地 AI 协作资产
+.agents/
+.claude/

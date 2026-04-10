@@ -18,4 +18,15 @@ public class TaskSchedulerConfig {
 		return scheduler;
 	}
 
+	@Bean
+	public ThreadPoolTaskScheduler onlineUserTaskScheduler() {
+		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+		scheduler.setPoolSize(1);
+		scheduler.setThreadNamePrefix("online-user-scheduler-");
+		scheduler.setWaitForTasksToCompleteOnShutdown(true);
+		scheduler.setAwaitTerminationSeconds(15);
+		scheduler.initialize();
+		return scheduler;
+	}
+
 }

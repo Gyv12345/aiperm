@@ -28,6 +28,8 @@ public class OnlineUserService {
 
 	private final OnlineUserRepository onlineUserRepo;
 
+	private final OnlineUserHeartbeatService onlineUserHeartbeatService;
+
 	private final SystemAccess systemAccess;
 
 	private final ExcelExportHelper excelExportHelper;
@@ -56,9 +58,9 @@ public class OnlineUserService {
 		entity.setUpdateTime(now);
 		entity.setUpdateBy(username);
 		onlineUserRepo.save(entity);
+		onlineUserHeartbeatService.recordHeartbeat(token, now);
 	}
 
-	@Transactional
 	public void touchCurrentSession() {
 		if (!StpUtil.isLogin()) {
 			return;
@@ -67,12 +69,7 @@ public class OnlineUserService {
 		if (token == null || token.isBlank()) {
 			return;
 		}
-		onlineUserRepo.findByTokenAndDeleted(token, 0).ifPresent(entity -> {
-			entity.setLastAccessTime(LocalDateTime.now());
-			entity.setUpdateTime(LocalDateTime.now());
-			entity.setUpdateBy(entity.getUsername());
-			onlineUserRepo.save(entity);
-		});
+		onlineUserHeartbeatService.recordHeartbeat(token, LocalDateTime.now());
 	}
 
 	@Transactional
@@ -81,23 +78,27 @@ public class OnlineUserService {
 		if (token == null || token.isBlank()) {
 			return;
 		}
+		onlineUserHeartbeatService.removeHeartbeat(token);
 		onlineUserRepo.findByTokenAndDeleted(token, 0)
 			.ifPresent(entity -> onlineUserRepo.softDelete(entity.getId(), LocalDateTime.now()));
 	}
 
+	@Transactional
 	public long countActiveSessions() {
-		cleanupInvalidSessions();
+		syncOnlineSessions();
 		return onlineUserRepo.countByDeleted(0);
 	}
 
+	@Transactional
 	public PageResult<OnlineUserVO> queryPage(String username, String ip, Integer page, Integer pageSize) {
-		cleanupInvalidSessions();
+		syncOnlineSessions();
 		Page<SysOnlineUser> jpaPage = onlineUserRepo.queryPage(username, ip, page, pageSize);
 		return PageResult.fromJpaPage(jpaPage).map(this::toVO);
 	}
 
+	@Transactional
 	public List<OnlineUserVO> listForExport(String username, String ip) {
-		cleanupInvalidSessions();
+		syncOnlineSessions();
 		return onlineUserRepo.findAllByDeletedOrderByLastAccessTimeDesc(0)
 			.stream()
 			.filter(item -> username == null || username.isBlank() || item.getUsername().contains(username))
@@ -115,6 +116,7 @@ public class OnlineUserService {
 	public void forceLogout(Long id) {
 		SysOnlineUser entity = onlineUserRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("在线会话不存在"));
 		StpUtil.logoutByTokenValue(entity.getToken());
+		onlineUserHeartbeatService.removeHeartbeat(entity.getToken());
 		onlineUserRepo.softDelete(entity.getId(), LocalDateTime.now());
 	}
 
@@ -126,9 +128,15 @@ public class OnlineUserService {
 		for (Long id : ids) {
 			onlineUserRepo.findByIdAndDeleted(id, 0).ifPresent(entity -> {
 				StpUtil.logoutByTokenValue(entity.getToken());
+				onlineUserHeartbeatService.removeHeartbeat(entity.getToken());
 				onlineUserRepo.softDelete(entity.getId(), LocalDateTime.now());
 			});
 		}
+	}
+
+	private void syncOnlineSessions() {
+		onlineUserHeartbeatService.flushToDatabase();
+		cleanupInvalidSessions();
 	}
 
 	private void cleanupInvalidSessions() {
@@ -136,6 +144,7 @@ public class OnlineUserService {
 		LocalDateTime now = LocalDateTime.now();
 		for (SysOnlineUser session : sessions) {
 			if (isTokenInvalid(session.getToken())) {
+				onlineUserHeartbeatService.removeHeartbeat(session.getToken());
 				onlineUserRepo.softDelete(session.getId(), now);
 			}
 		}
