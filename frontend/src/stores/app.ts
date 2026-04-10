@@ -5,9 +5,9 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
 export const APP_THEME_COLOR_PRESETS = [
-  { label: '蓝色', value: '#409eff' },
+  { label: '架构蓝', value: '#0060a9' },
+  { label: '云青蓝', value: '#409eff' },
   { label: '绿色', value: '#67c23a' },
-  { label: '紫色', value: '#9c27b0' },
   { label: '橙色', value: '#e6a23c' },
   { label: '红色', value: '#f56c6c' },
 ] as const
@@ -15,7 +15,7 @@ export const APP_THEME_COLOR_PRESETS = [
 const DEFAULT_SETTINGS = {
   sidebarCollapsed: false,
   theme: 'system' as ThemeMode,
-  themeColor: '#409eff',
+  themeColor: '#0060a9',
   showBreadcrumb: true,
   showTabs: false,
   showWatermark: false,
@@ -151,9 +151,16 @@ export const useAppStore = defineStore(
 
       const html = document.documentElement
       const primary = normalizeHexColor(themeColor.value) || DEFAULT_SETTINGS.themeColor
+      const primaryHover = mixColor(primary, '#ffffff', 0.12)
+      const primaryContainer = mixColor(primary, '#ffffff', 0.32)
+      const primaryFixed = mixColor(primary, '#ffffff', 0.86)
+      const primaryFixedVariant = mixColor(primary, '#000000', 0.12)
 
       html.style.setProperty('--color-primary', primary)
-      html.style.setProperty('--color-primary-hover', mixColor(primary, '#ffffff', 0.18))
+      html.style.setProperty('--color-primary-hover', primaryHover)
+      html.style.setProperty('--color-primary-container', primaryContainer)
+      html.style.setProperty('--color-primary-fixed', primaryFixed)
+      html.style.setProperty('--color-primary-fixed-variant', primaryFixedVariant)
       html.style.setProperty('--el-color-primary', primary)
       html.style.setProperty('--el-color-primary-light-3', mixColor(primary, '#ffffff', 0.3))
       html.style.setProperty('--el-color-primary-light-5', mixColor(primary, '#ffffff', 0.5))

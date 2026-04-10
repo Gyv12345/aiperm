@@ -17,25 +17,21 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="main-layout flex h-screen">
-    <!-- 侧边栏 -->
+  <div class="main-layout">
     <AppSidebar />
 
-    <!-- 主内容区 -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- 顶部导航 -->
+    <div class="layout-main">
       <AppHeader>
         <template #title>
           {{ pageTitle }}
         </template>
       </AppHeader>
 
-      <div class="content-shell relative flex flex-1 flex-col overflow-hidden">
+      <div class="content-shell">
         <AppWatermark />
         <AppTabs />
 
-        <!-- 内容区域 -->
-        <main class="main-content flex-1 overflow-auto p-4">
+        <main class="main-content">
           <router-view />
         </main>
       </div>
@@ -49,14 +45,53 @@ const pageTitle = computed(() => {
 
 <style scoped>
 .main-layout {
+  display: flex;
   width: 100%;
   height: 100vh;
+  background: transparent;
+}
+
+.layout-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 18px 0;
+}
+
+.content-shell {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 24%),
+    var(--color-surface-container-low);
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .main-content {
   position: relative;
   z-index: 10;
-  background-color: var(--color-bg-page);
-  transition: background-color 0.3s ease;
+  flex: 1;
+  overflow: auto;
+  padding: 12px 12px 28px;
+}
+
+@media (max-width: 960px) {
+  .layout-main {
+    padding: 14px 14px 14px 0;
+  }
+
+  .content-shell {
+    border-radius: 24px;
+  }
+
+  .main-content {
+    padding: 10px 10px 22px;
+  }
 }
 </style>

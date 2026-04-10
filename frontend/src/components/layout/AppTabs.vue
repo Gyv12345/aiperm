@@ -146,9 +146,8 @@ watch(
   position: relative;
   z-index: 20;
   flex-shrink: 0;
-  padding: 10px 16px 0;
-  background-color: var(--color-bg-page);
-  border-bottom: 1px solid var(--color-border);
+  padding: 0 18px 18px;
+  background: transparent;
 }
 
 .app-tabs__scroll {
@@ -156,7 +155,10 @@ watch(
   gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 10px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 0 0 1px var(--color-border);
   scrollbar-width: none;
 }
 
@@ -169,25 +171,31 @@ watch(
   align-items: center;
   gap: 6px;
   max-width: 180px;
-  padding: 0 10px;
-  height: 32px;
+  padding: 0 12px;
+  height: 38px;
   color: var(--color-text-secondary);
-  background-color: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  background: var(--color-surface-container-high);
+  border-radius: 16px 16px 12px 12px;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .app-tab-item:hover {
   color: var(--color-primary);
-  border-color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .app-tab-item.is-active {
+  transform: translateY(-2px);
   color: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
+  background: var(--color-surface-container-lowest);
+  box-shadow:
+    0 12px 28px rgba(28, 41, 59, 0.08),
+    inset 0 0 0 1px rgba(64, 158, 255, 0.14);
 }
 
 .app-tab-item__title {
@@ -215,5 +223,11 @@ watch(
 
 .app-tab-item__close:hover {
   background-color: var(--color-bg-hover);
+}
+
+@media (max-width: 960px) {
+  .app-tabs {
+    padding: 0 14px 14px;
+  }
 }
 </style>

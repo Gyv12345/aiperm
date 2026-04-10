@@ -17,6 +17,14 @@ const username = computed(() => userStore.username || '未登录')
 const notifications = ref<NoticeVO[]>([])
 const noticeLoading = ref(false)
 const noticeCount = computed(() => notifications.value.length)
+const currentDateLabel = computed(() =>
+  new Intl.DateTimeFormat('zh-CN', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(new Date())
+)
+const themeLabel = computed(() => appStore.resolvedTheme === 'dark' ? 'Dark mode' : 'Light mode')
 
 // 处理登出
 async function handleLogout() {
@@ -93,26 +101,35 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="app-header h-16 flex items-center justify-between px-6">
-    <!-- 左侧标题 -->
-    <div class="flex items-center">
-      <h2 class="text-lg font-semibold header-title">
+  <header
+    class="app-header"
+    :class="{ 'app-header--dark': appStore.isDark }"
+  >
+    <div class="app-header__title-block">
+      <p class="app-header__eyebrow">
+        Architectural Ledger
+      </p>
+      <h2 class="header-title">
         <slot name="title">
           仪表板
         </slot>
       </h2>
     </div>
 
-    <!-- 右侧操作区 -->
-    <div class="flex items-center space-x-4">
-      <!-- 通知提醒 -->
+    <div class="app-header__actions">
+      <div class="app-header__meta">
+        <span>{{ currentDateLabel }}</span>
+        <span class="app-header__meta-dot" />
+        <span>{{ themeLabel }}</span>
+      </div>
+
       <el-dropdown
         trigger="click"
         placement="bottom-end"
         @command="handleNoticeCommand"
       >
         <div
-          class="notice-trigger flex items-center justify-center cursor-pointer"
+          class="icon-trigger"
           @click="handleNoticeOpen"
         >
           <el-badge
@@ -166,9 +183,8 @@ onUnmounted(() => {
         </template>
       </el-dropdown>
 
-      <!-- 系统设置 -->
       <div
-        class="settings-trigger flex items-center justify-center cursor-pointer"
+        class="icon-trigger"
         @click="appStore.toggleSettingsPanel"
       >
         <el-icon :size="18">
@@ -176,17 +192,19 @@ onUnmounted(() => {
         </el-icon>
       </div>
 
-      <!-- 用户下拉菜单 -->
       <el-dropdown trigger="click">
-        <div class="user-dropdown flex items-center cursor-pointer">
+        <div class="user-dropdown">
           <el-avatar
             :size="32"
-            class="mr-2"
+            class="user-dropdown__avatar"
           >
             <el-icon><User /></el-icon>
           </el-avatar>
-          <span class="username">{{ username }}</span>
-          <el-icon class="ml-1">
+          <div class="user-dropdown__content">
+            <span class="user-dropdown__eyebrow">Operator</span>
+            <span class="username">{{ username }}</span>
+          </div>
+          <el-icon class="user-dropdown__arrow">
             <ArrowDown />
           </el-icon>
         </div>
@@ -212,28 +230,143 @@ onUnmounted(() => {
 
 <style scoped>
 .app-header {
-  background-color: var(--color-bg-header);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 30px;
+  border-radius: 26px;
+  background: var(--color-bg-header);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  backdrop-filter: blur(14px);
 }
 
 .header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--color-text-primary);
 }
 
-.notice-trigger,
-.settings-trigger {
-  color: var(--color-text-primary);
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+.app-header__title-block {
+  min-width: 0;
 }
 
-.notice-trigger:hover,
-.settings-trigger:hover {
+.app-header__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-header__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  min-height: 38px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.app-header__meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.icon-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-trigger:hover {
+  transform: translateY(-1px);
   background-color: var(--color-bg-hover);
   color: var(--color-primary);
+}
+
+.user-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.user-dropdown__avatar {
+  background: var(--gradient-primary);
+  color: #ffffff;
+}
+
+.user-dropdown__content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-dropdown__eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.user-dropdown__arrow {
+  color: var(--color-text-muted);
+}
+
+.app-header--dark .app-header__meta,
+.app-header--dark .icon-trigger,
+.app-header--dark .user-dropdown {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.app-header--dark .app-header__meta {
+  color: rgba(243, 246, 250, 0.88);
+}
+
+.app-header--dark .icon-trigger {
+  color: rgba(243, 246, 250, 0.88);
+}
+
+.app-header--dark .icon-trigger:hover,
+.app-header--dark .user-dropdown:hover {
+  background: rgba(77, 160, 239, 0.16);
+  color: var(--color-primary-container);
+}
+
+.app-header--dark .user-dropdown__eyebrow,
+.app-header--dark .user-dropdown__arrow {
+  color: rgba(243, 246, 250, 0.62);
 }
 
 .notice-item-content {
@@ -254,19 +387,34 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-.user-dropdown {
-  color: var(--color-text-primary);
-}
-
 .user-dropdown:hover {
   color: var(--color-primary);
 }
 
 .username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
 :deep(.notice-menu .el-dropdown-menu__item) {
   align-items: flex-start;
+}
+
+@media (max-width: 960px) {
+  .app-header {
+    padding: 0 18px;
+  }
+
+  .app-header__meta {
+    display: none;
+  }
+
+  .user-dropdown__content {
+    display: none;
+  }
 }
 </style>

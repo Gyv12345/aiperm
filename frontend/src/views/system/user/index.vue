@@ -578,11 +578,46 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="user-page p-4">
-    <!-- 搜索区域 -->
-    <el-card class="search-card mb-4 overflow-hidden transition-all duration-300">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-base font-medium text-gray-700 dark:text-gray-200">搜索条件</span>
+  <div class="user-page page-shell">
+    <section class="user-hero">
+      <div class="user-hero__copy">
+        <p class="page-kicker">
+          System Directory
+        </p>
+        <h1 class="page-title">
+          用户管理
+        </h1>
+        <p class="page-subtitle">
+          维护身份、角色与组织归属，让权限结构保持可读与可控。
+        </p>
+      </div>
+
+      <div class="user-hero__metrics">
+        <article class="user-hero__metric">
+          <span class="user-hero__metric-label">总用户</span>
+          <strong class="user-hero__metric-value">{{ pagination.total }}</strong>
+        </article>
+        <article class="user-hero__metric">
+          <span class="user-hero__metric-label">当前页</span>
+          <strong class="user-hero__metric-value">{{ tableData.length }}</strong>
+        </article>
+        <article class="user-hero__metric">
+          <span class="user-hero__metric-label">已勾选</span>
+          <strong class="user-hero__metric-value">{{ selectedRows.length }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <el-card class="search-card">
+      <div class="panel-heading">
+        <div>
+          <p class="page-kicker">
+            Directory Filters
+          </p>
+          <h2 class="panel-heading__title">
+            筛选与检索
+          </h2>
+        </div>
         <el-button
           text
           type="primary"
@@ -698,37 +733,49 @@ onMounted(() => {
       </el-collapse-transition>
     </el-card>
 
-    <!-- 表格区域 -->
     <el-card class="table-card">
-      <!-- 工具栏 -->
+      <div class="panel-heading panel-heading--table">
+        <div>
+          <p class="page-kicker">
+            Access Ledger
+          </p>
+          <h2 class="panel-heading__title">
+            用户目录
+          </h2>
+        </div>
+        <div class="panel-heading__summary">
+          共 {{ pagination.total }} 条记录
+        </div>
+      </div>
+
       <TableToolbar>
         <template #actions>
           <el-button
+            v-permission="'system:user:create'"
             type="primary"
             :icon="Plus"
-            v-permission="'system:user:create'"
             @click="handleCreate"
           >
             新增用户
           </el-button>
           <el-button
-            :icon="Download"
             v-permission="'system:user:export'"
+            :icon="Download"
             @click="handleExport"
           >
             导出
           </el-button>
           <el-button
-            :icon="Download"
             v-permission="'system:user:import'"
+            :icon="Download"
             @click="handleDownloadTemplate"
           >
             模板
           </el-button>
           <el-button
+            v-permission="'system:user:import'"
             :icon="Upload"
             :loading="importLoading"
-            v-permission="'system:user:import'"
             @click="triggerImport"
           >
             导入
@@ -1010,7 +1057,7 @@ onMounted(() => {
         class="user-form"
       >
         <div class="form-section mb-6">
-          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="section-title">
             基本信息
           </div>
           <el-row :gutter="20">
@@ -1075,7 +1122,7 @@ onMounted(() => {
         </div>
 
         <div class="form-section mb-6">
-          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="section-title">
             联系方式
           </div>
           <el-row :gutter="20">
@@ -1105,7 +1152,7 @@ onMounted(() => {
         </div>
 
         <div class="form-section mb-6">
-          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="section-title">
             组织架构
           </div>
           <el-row :gutter="20">
@@ -1164,7 +1211,7 @@ onMounted(() => {
         </div>
 
         <div class="form-section">
-          <div class="section-title text-sm font-medium text-gray-600 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="section-title">
             其他设置
           </div>
           <el-row :gutter="20">
@@ -1320,22 +1367,91 @@ onMounted(() => {
 
 <style scoped>
 .user-page {
-  min-height: calc(100vh - 120px);
+  min-height: 100%;
+  gap: 18px;
 }
 
-/* 搜索卡片 */
-.search-card {
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+.user-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(64, 158, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.14)),
+    var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-sm);
 }
 
-.search-card :deep(.el-card__body) {
-  padding: 16px 20px;
+.user-hero__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-hero__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 360px;
+}
+
+.user-hero__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: var(--color-surface-container-low);
+}
+
+.user-hero__metric-label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.user-hero__metric-value {
+  color: var(--color-text-primary);
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel-heading--table {
+  margin-bottom: 20px;
+}
+
+.panel-heading__title {
+  margin-top: 4px;
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.panel-heading__summary {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--color-surface-container-low);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .collapse-btn {
-  padding: 4px 8px;
-  font-size: 13px;
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 .search-form :deep(.el-form-item) {
@@ -1346,31 +1462,22 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
-/* 表格卡片 */
-.table-card {
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-/* 表格样式 */
 .user-table :deep(.el-table__header-wrapper) {
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
-.table-header-cell {
-  background-color: var(--color-bg-page) !important;
-  font-weight: 600;
+.user-table :deep(.el-table__body-wrapper) {
+  border-radius: 0 0 22px 22px;
 }
 
-/* 用户信息单元格 */
 .user-info-cell {
   padding: 8px 0;
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   flex-shrink: 0;
 }
 
@@ -1387,13 +1494,11 @@ onMounted(() => {
   margin-top: 2px;
 }
 
-/* 角色文本 */
 .role-text {
   color: var(--el-color-primary);
   font-size: 13px;
 }
 
-/* 操作按钮 */
 .action-buttons {
   gap: 4px;
 }
@@ -1402,56 +1507,67 @@ onMounted(() => {
   margin-left: 4px;
 }
 
-/* 联系方式 */
 .contact-info {
   line-height: 1.6;
 }
 
-/* 分页 */
 .pagination-wrapper {
   padding: 16px 0 0;
 }
 
-/* 对话框 */
 .user-dialog :deep(.el-dialog__header) {
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 16px;
+  padding-bottom: 0;
   margin-bottom: 0;
-}
-
-.user-dialog :deep(.el-dialog__body) {
-  padding: 20px 24px;
 }
 
 .user-form :deep(.el-form-item) {
   margin-bottom: 18px;
 }
 
+.section-title {
+  margin-bottom: 14px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .form-section:last-child {
   margin-bottom: 0 !important;
 }
 
-/* 深色模式适配 */
-:root.dark .search-card,
-:root.dark .table-card {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-:root.dark .section-title {
-  border-color: #374151;
-}
-
-:root.dark .user-dialog :deep(.el-dialog__header) {
-  border-color: #374151;
-}
-
-/* 过渡动画 */
 .rotate-180 {
   transform: rotate(180deg);
 }
 
-/* 响应式 */
+@media (max-width: 1200px) {
+  .user-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-hero__metrics {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 768px) {
+  .user-hero,
+  .search-card :deep(.el-card__body),
+  .table-card :deep(.el-card__body) {
+    padding: 20px;
+  }
+
+  .user-hero__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .search-form :deep(.el-form-item) {
     width: 100%;
     margin-right: 0;

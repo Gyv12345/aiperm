@@ -1,47 +1,164 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch} from 'vue'
+import {useRouter} from 'vue-router'
+import {useAppStore} from '@/stores/app'
 import {dashboardApi} from '@/api/dashboard'
 import {noticeApi, type NoticeVO} from '@/api/enterprise/notice'
 
-// 统计数据（从后端获取）
+const router = useRouter()
+const appStore = useAppStore()
+
 const stats = shallowRef([
   {
     title: '用户总数',
+    eyebrow: 'Identity footprint',
     value: 0,
     icon: 'User',
-    gradient: 'from-blue-500 to-blue-600',
-    key: 'userCount'
+    key: 'userCount',
+    accent: '#0060a9',
+    tone: 'linear-gradient(180deg, rgba(0, 96, 169, 0.14) 0%, rgba(0, 96, 169, 0) 100%)',
+    soft: 'rgba(0, 96, 169, 0.12)',
   },
   {
     title: '角色数量',
+    eyebrow: 'Authorization fabric',
     value: 0,
     icon: 'UserFilled',
-    gradient: 'from-emerald-500 to-emerald-600',
-    key: 'roleCount'
+    key: 'roleCount',
+    accent: '#1f8f6a',
+    tone: 'linear-gradient(180deg, rgba(31, 143, 106, 0.14) 0%, rgba(31, 143, 106, 0) 100%)',
+    soft: 'rgba(31, 143, 106, 0.12)',
   },
   {
     title: '菜单数量',
+    eyebrow: 'Navigation topology',
     value: 0,
     icon: 'Menu',
-    gradient: 'from-orange-500 to-orange-600',
-    key: 'menuCount'
+    key: 'menuCount',
+    accent: '#c77720',
+    tone: 'linear-gradient(180deg, rgba(199, 119, 32, 0.14) 0%, rgba(199, 119, 32, 0) 100%)',
+    soft: 'rgba(199, 119, 32, 0.12)',
   },
   {
     title: '在线用户',
+    eyebrow: 'Realtime presence',
     value: 0,
     icon: 'Connection',
-    gradient: 'from-violet-500 to-violet-600',
-    key: 'onlineCount'
+    key: 'onlineCount',
+    accent: '#6a57cf',
+    tone: 'linear-gradient(180deg, rgba(106, 87, 207, 0.16) 0%, rgba(106, 87, 207, 0) 100%)',
+    soft: 'rgba(106, 87, 207, 0.12)',
   },
 ])
 
-// 加载状态
+const systemInfo = shallowRef([
+  { label: '系统版本', value: 'v1.0.0', icon: 'Document', accent: '#0060a9', soft: 'rgba(0, 96, 169, 0.12)' },
+  { label: '数据库', value: 'MySQL 8.0', icon: 'Coin', accent: '#1f8f6a', soft: 'rgba(31, 143, 106, 0.12)' },
+  { label: '缓存服务', value: 'Redis 7.x', icon: 'Timer', accent: '#c77720', soft: 'rgba(199, 119, 32, 0.12)' },
+  { label: '认证框架', value: 'Sa-Token', icon: 'Key', accent: '#6a57cf', soft: 'rgba(106, 87, 207, 0.12)' },
+])
+
+const backendSecurity = shallowRef([
+  {
+    name: 'Sa-Token 认证',
+    desc: 'Token 存储在 Redis，支持分布式部署',
+    icon: 'Key',
+    accent: '#0060a9',
+    soft: 'rgba(0, 96, 169, 0.12)',
+  },
+  {
+    name: 'BCrypt 密码加密',
+    desc: '单向哈希加密，降低凭据泄露风险',
+    icon: 'Lock',
+    accent: '#1f8f6a',
+    soft: 'rgba(31, 143, 106, 0.12)',
+  },
+  {
+    name: '图形验证码',
+    desc: '防止暴力破解，5 分钟有效',
+    icon: 'Picture',
+    accent: '#c77720',
+    soft: 'rgba(199, 119, 32, 0.12)',
+  },
+  {
+    name: '接口权限控制',
+    desc: '@SaCheckPermission 细粒度收口',
+    icon: 'Shield',
+    accent: '#6a57cf',
+    soft: 'rgba(106, 87, 207, 0.12)',
+  },
+  {
+    name: '数据权限隔离',
+    desc: '部门与个人范围自动过滤',
+    icon: 'Filter',
+    accent: '#c45d84',
+    soft: 'rgba(196, 93, 132, 0.12)',
+  },
+  {
+    name: '双因素认证',
+    desc: 'TOTP 动态验证码，支持 Google Authenticator',
+    icon: 'Iphone',
+    accent: '#b66d1a',
+    soft: 'rgba(182, 109, 26, 0.12)',
+  },
+])
+
+const frontendSecurity = shallowRef([
+  {
+    name: '路由守卫',
+    desc: 'beforeEach 阻断未授权访问',
+    icon: 'Guide',
+    accent: '#0060a9',
+    soft: 'rgba(0, 96, 169, 0.12)',
+  },
+  {
+    name: 'Token 管理',
+    desc: '自动注入 Token，401 自动回退登录',
+    icon: 'Ticket',
+    accent: '#1f8f6a',
+    soft: 'rgba(31, 143, 106, 0.12)',
+  },
+  {
+    name: '权限指令',
+    desc: 'v-permission 控制按钮与入口级操作',
+    icon: 'Aim',
+    accent: '#c77720',
+    soft: 'rgba(199, 119, 32, 0.12)',
+  },
+  {
+    name: '动态路由',
+    desc: '根据菜单权限构造运行时导航图',
+    icon: 'Route',
+    accent: '#6a57cf',
+    soft: 'rgba(106, 87, 207, 0.12)',
+  },
+])
+
+const frontendStack = shallowRef([
+  { name: 'Vue 3.5', desc: '渐进式 UI 运行时', accent: '#1f8f6a', soft: 'rgba(31, 143, 106, 0.12)' },
+  { name: 'TypeScript 5.9', desc: '类型系统与编辑期约束', accent: '#0060a9', soft: 'rgba(0, 96, 169, 0.12)' },
+  { name: 'Vite 7', desc: '轻量构建与极速反馈', accent: '#6a57cf', soft: 'rgba(106, 87, 207, 0.12)' },
+  { name: 'Element Plus', desc: '组件基础层', accent: '#c77720', soft: 'rgba(199, 119, 32, 0.12)' },
+  { name: 'Pinia', desc: '界面状态容器', accent: '#c45d84', soft: 'rgba(196, 93, 132, 0.12)' },
+  { name: 'UnoCSS', desc: '原子化视觉编排', accent: '#3a86b4', soft: 'rgba(58, 134, 180, 0.12)' },
+])
+
+const backendStack = shallowRef([
+  { name: 'Spring Boot 4.0', desc: '企业服务编排框架', accent: '#1f8f6a', soft: 'rgba(31, 143, 106, 0.12)' },
+  { name: 'Java 25', desc: '平台运行时', accent: '#c77720', soft: 'rgba(199, 119, 32, 0.12)' },
+  { name: 'Sa-Token', desc: '认证与权限基座', accent: '#0060a9', soft: 'rgba(0, 96, 169, 0.12)' },
+  { name: 'Spring Data JPA', desc: '持久层与数据抽象', accent: '#6a57cf', soft: 'rgba(106, 87, 207, 0.12)' },
+  { name: 'MySQL 8.0', desc: '关系型数据核心', accent: '#3a86b4', soft: 'rgba(58, 134, 180, 0.12)' },
+  { name: 'Redis 7.x', desc: '缓存与会话加速', accent: '#c45d84', soft: 'rgba(196, 93, 132, 0.12)' },
+])
+
 const loading = ref(false)
 const announcements = ref<NoticeVO[]>([])
 const announcementIndex = ref(0)
 const noticeViewportRef = ref<HTMLElement>()
 const noticeMeasureRef = ref<HTMLElement>()
 const shouldMarqueeCurrentLine = ref(false)
+const isLoaded = ref(false)
 
 const announcementLines = computed(() =>
   announcements.value
@@ -54,10 +171,27 @@ const announcementLines = computed(() =>
     })
     .filter(Boolean)
 )
+
 const currentAnnouncementLine = computed(() => {
   if (announcementLines.value.length === 0) return ''
   return announcementLines.value[announcementIndex.value] || announcementLines.value[0]
 })
+
+const todayLabel = computed(() =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date())
+)
+
+const heroMetrics = computed(() => [
+  { label: '账户资产', value: stats.value[0]?.value ?? 0 },
+  { label: '角色矩阵', value: stats.value[1]?.value ?? 0 },
+  { label: '在线会话', value: stats.value[3]?.value ?? 0 },
+])
+
 let announcementTimer: number | undefined
 let announcementRotateTimer: number | undefined
 
@@ -88,129 +222,23 @@ const startAnnouncementRotate = () => {
   }, 5000)
 }
 
-// 系统信息
-const systemInfo = shallowRef([
-  { label: '系统版本', value: 'v1.0.0', icon: 'Document' },
-  { label: '数据库', value: 'MySQL 8.0', icon: 'Coin' },
-  { label: '缓存服务', value: 'Redis 7.x', icon: 'Timer' },
-  { label: '认证框架', value: 'Sa-Token', icon: 'Key' },
-])
-
-// 后端安全特性
-const backendSecurity = shallowRef([
-  {
-    name: 'Sa-Token 认证',
-    desc: 'Token 存储在 Redis，支持分布式部署',
-    icon: 'Key',
-    color: 'red'
-  },
-  {
-    name: 'BCrypt 密码加密',
-    desc: '单向哈希加密，防止密码泄露',
-    icon: 'Lock',
-    color: 'amber'
-  },
-  {
-    name: '图形验证码',
-    desc: '防止暴力破解，5分钟有效期',
-    icon: 'Picture',
-    color: 'blue'
-  },
-  {
-    name: '接口权限控制',
-    desc: '@SaCheckPermission 细粒度权限',
-    icon: 'Shield',
-    color: 'emerald'
-  },
-  {
-    name: '数据权限隔离',
-    desc: '部门/个人数据权限自动过滤',
-    icon: 'Filter',
-    color: 'violet'
-  },
-  {
-    name: '双因素认证 (2FA)',
-    desc: 'TOTP 动态验证码，支持 Google Authenticator',
-    icon: 'Iphone',
-    color: 'orange'
-  },
-  {
-    name: '操作日志审计',
-    desc: '@Log 注解自动记录操作轨迹',
-    icon: 'Document',
-    color: 'sky'
-  },
-])
-
-// 前端安全特性
-const frontendSecurity = shallowRef([
-  {
-    name: '路由守卫',
-    desc: 'beforeEach 拦截未授权访问',
-    icon: 'Guide',
-    color: 'blue'
-  },
-  {
-    name: 'Token 管理',
-    desc: '自动携带 Token，401 自动跳转登录',
-    icon: 'Ticket',
-    color: 'emerald'
-  },
-  {
-    name: '权限指令',
-    desc: 'v-permission 按钮级别权限控制',
-    icon: 'Aim',
-    color: 'orange'
-  },
-  {
-    name: '动态路由',
-    desc: '根据用户菜单权限动态生成路由',
-    icon: 'Route',
-    color: 'violet'
-  },
-])
-
-// 前端技术栈
-const frontendStack = shallowRef([
-  { name: 'Vue 3.5', desc: '渐进式 JavaScript 框架', color: 'emerald' },
-  { name: 'TypeScript 5.9', desc: '类型安全的 JavaScript', color: 'blue' },
-  { name: 'Vite 7', desc: '下一代前端构建工具', color: 'purple' },
-  { name: 'Element Plus', desc: 'Vue 3 组件库', color: 'sky' },
-  { name: 'Pinia', desc: 'Vue 状态管理', color: 'amber' },
-  { name: 'UnoCSS', desc: '原子化 CSS 引擎', color: 'rose' },
-])
-
-// 后端技术栈
-const backendStack = shallowRef([
-  { name: 'Spring Boot 4.0', desc: 'Java 微服务框架', color: 'green' },
-  { name: 'Java 25', desc: '最新平台版本', color: 'orange' },
-  { name: 'Sa-Token', desc: '轻量级权限认证框架', color: 'red' },
-  { name: 'Spring Data JPA', desc: 'ORM 数据库操作', color: 'teal' },
-  { name: 'MySQL 8.0', desc: '关系型数据库', color: 'blue' },
-  { name: 'Redis 7.x', desc: '高性能缓存服务', color: 'red' },
-])
-
-// 动画状态
-const isLoaded = ref(false)
-
-// 获取统计数据
 const fetchStats = async () => {
   loading.value = true
   try {
     const data = await dashboardApi.getStats()
-    // 更新统计数据
     stats.value = stats.value.map(stat => ({
       ...stat,
-      value: data[stat.key as keyof typeof data] || 0
+      value: data[stat.key as keyof typeof data] || 0,
     }))
-  } catch (error) {
+  }
+  catch (error) {
     console.error('获取统计数据失败:', error)
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
 
-// 获取首页公告（type=2）
 const fetchAnnouncements = async () => {
   try {
     announcements.value = await noticeApi.feed(2, 10)
@@ -220,9 +248,18 @@ const fetchAnnouncements = async () => {
     startAnnouncementRotate()
     await nextTick()
     detectAnnouncementOverflow()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('获取公告失败:', error)
   }
+}
+
+function goToUserCenter() {
+  router.push('/system/user')
+}
+
+function goToNoticeCenter() {
+  router.push('/enterprise/notice')
 }
 
 watch(currentAnnouncementLine, async () => {
@@ -231,15 +268,13 @@ watch(currentAnnouncementLine, async () => {
 })
 
 onMounted(() => {
-  // 获取统计数据
   fetchStats()
   fetchAnnouncements()
   announcementTimer = window.setInterval(fetchAnnouncements, 60_000)
   window.addEventListener('resize', detectAnnouncementOverflow)
-  // 延迟触发动画
-  setTimeout(() => {
+  window.setTimeout(() => {
     isLoaded.value = true
-  }, 100)
+  }, 120)
 })
 
 onUnmounted(() => {
@@ -254,51 +289,68 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="dashboard-page min-h-screen p-4 md:p-6">
-    <!-- 装饰背景 -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-violet-400/20 dark:from-blue-600/10 dark:to-violet-600/10 rounded-full blur-3xl" />
-      <div class="absolute top-1/2 -left-20 w-60 h-60 bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 dark:from-emerald-600/10 dark:to-cyan-600/10 rounded-full blur-3xl" />
-      <div class="absolute -bottom-20 right-1/4 w-72 h-72 bg-gradient-to-br from-orange-400/15 to-rose-400/15 dark:from-orange-600/10 dark:to-rose-600/10 rounded-full blur-3xl" />
-    </div>
-
-    <div class="relative z-10 space-y-6 max-w-7xl mx-auto">
-      <!-- 欢迎区域 -->
-      <div
-        class="welcome-section transition-all duration-700"
-        :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'"
+  <div
+    class="dashboard-page"
+    :class="{ 'dashboard-page--dark': appStore.isDark }"
+  >
+    <div class="page-shell dashboard-shell">
+      <section
+        class="dashboard-hero"
+        :class="{ 'is-loaded': isLoaded }"
       >
-        <div class="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-              AIPerm RBAC 权限管理系统
-            </h1>
-            <p class="mt-1 text-slate-500 dark:text-slate-400">
-              专业的企业级权限管理解决方案，安全、高效、灵活
-            </p>
-          </div>
-          <div class="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
-            <el-icon class="text-lg">
-              <Clock />
-            </el-icon>
-            <span>{{ new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</span>
+        <div class="dashboard-hero__copy">
+          <p class="page-kicker">
+            Architectural Ledger
+          </p>
+          <h1 class="page-title dashboard-hero__title">
+            权限结构总览
+          </h1>
+          <p class="page-subtitle dashboard-hero__subtitle">
+            以更安静的层次查看用户、角色、菜单与在线态，让权限系统像一张可读的建筑图纸。
+          </p>
+          <div class="dashboard-hero__actions">
+            <el-button
+              type="primary"
+              @click="goToUserCenter"
+            >
+              进入用户管理
+            </el-button>
+            <el-button @click="goToNoticeCenter">
+              查看公告中心
+            </el-button>
           </div>
         </div>
-      </div>
 
-      <div
+        <div class="dashboard-hero__panel">
+          <span class="dashboard-hero__chip">{{ todayLabel }}</span>
+          <div class="dashboard-hero__metrics">
+            <div
+              v-for="metric in heroMetrics"
+              :key="metric.label"
+              class="dashboard-hero__metric"
+            >
+              <span class="dashboard-hero__metric-label">{{ metric.label }}</span>
+              <span class="dashboard-hero__metric-value">{{ metric.value }}</span>
+            </div>
+          </div>
+          <p class="dashboard-hero__footnote">
+            结构越清晰，权限边界越不容易失真。
+          </p>
+        </div>
+      </section>
+
+      <section
         v-if="currentAnnouncementLine"
-        class="notice-panel rounded-2xl bg-white/95 dark:bg-slate-800/95 border border-slate-100 dark:border-slate-700 px-4 py-3 flex items-start gap-3 transition-all duration-700"
-        :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'"
-        :style="{ transitionDelay: '140ms' }"
+        class="dashboard-notice"
+        :class="{ 'is-loaded': isLoaded }"
       >
-        <div class="notice-badge-inline flex items-center gap-1.5 text-sm font-medium">
+        <div class="dashboard-notice__label">
           <el-icon><Bell /></el-icon>
-          <span>公告</span>
+          <span>公告带</span>
         </div>
         <div
           ref="noticeViewportRef"
-          class="notice-content flex-1"
+          class="dashboard-notice__viewport"
         >
           <transition
             name="notice-slide-up"
@@ -306,18 +358,18 @@ onUnmounted(() => {
           >
             <div
               :key="`${announcementIndex}-${currentAnnouncementLine}`"
-              class="notice-line-wrapper"
+              class="dashboard-notice__line-wrapper"
             >
               <template v-if="shouldMarqueeCurrentLine">
-                <div class="notice-marquee-track">
-                  <span class="notice-line notice-line--nowrap">{{ currentAnnouncementLine }}</span>
-                  <span class="notice-marquee-gap" />
-                  <span class="notice-line notice-line--nowrap">{{ currentAnnouncementLine }}</span>
-                  <span class="notice-marquee-gap" />
+                <div class="dashboard-notice__marquee-track">
+                  <span class="dashboard-notice__line dashboard-notice__line--nowrap">{{ currentAnnouncementLine }}</span>
+                  <span class="dashboard-notice__marquee-gap" />
+                  <span class="dashboard-notice__line dashboard-notice__line--nowrap">{{ currentAnnouncementLine }}</span>
+                  <span class="dashboard-notice__marquee-gap" />
                 </div>
               </template>
               <template v-else>
-                <div class="notice-line">
+                <div class="dashboard-notice__line">
                   {{ currentAnnouncementLine }}
                 </div>
               </template>
@@ -325,354 +377,393 @@ onUnmounted(() => {
           </transition>
           <span
             ref="noticeMeasureRef"
-            class="notice-line notice-line--measure"
+            class="dashboard-notice__line dashboard-notice__line--measure"
           >
             {{ currentAnnouncementLine }}
           </span>
         </div>
-      </div>
+      </section>
 
-      <!-- 统计卡片 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div
+      <section class="dashboard-stat-grid">
+        <article
           v-for="(stat, index) in stats"
           :key="stat.title"
-          class="stat-card group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-5 transition-all duration-500 cursor-pointer hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-          :style="{ transitionDelay: `${index * 80}ms` }"
-          :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
+          class="stat-panel"
+          :class="{ 'is-loaded': isLoaded }"
+          :style="{ transitionDelay: `${index * 80}ms`, '--accent': stat.accent, '--soft': stat.soft, '--tone': stat.tone }"
         >
-          <!-- 悬停渐变背景 -->
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-5 dark:group-hover:opacity-10 transition-opacity duration-300"
-            :class="`bg-gradient-to-br ${stat.gradient}`"
-          />
-
-          <div class="relative flex items-start justify-between">
-            <div class="flex-1">
-              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
-                {{ stat.title }}
-              </p>
-              <div class="mt-2 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                  {{ stat.value }}
-                </span>
-              </div>
-            </div>
-            <div
-              class="flex items-center justify-center w-12 h-12 rounded-xl text-white shadow-lg transition-transform duration-300 group-hover:scale-110"
-              :class="`bg-gradient-to-br ${stat.gradient}`"
-            >
-              <el-icon class="text-xl">
+          <div class="stat-panel__tone" />
+          <div class="stat-panel__header">
+            <div class="stat-panel__icon">
+              <el-icon>
                 <component :is="stat.icon" />
               </el-icon>
             </div>
+            <span class="stat-panel__label">{{ stat.title }}</span>
           </div>
+          <p class="stat-panel__eyebrow">
+            {{ stat.eyebrow }}
+          </p>
+          <p class="stat-panel__value">
+            {{ stat.value }}
+          </p>
+        </article>
+      </section>
 
-          <!-- 底部进度条装饰 -->
-          <div class="absolute bottom-0 left-0 right-0 h-1 overflow-hidden">
-            <div
-              class="h-full w-full transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-out"
-              :class="`bg-gradient-to-r ${stat.gradient}`"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- 安全特性区域 -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 后端安全特性 -->
-        <div
-          class="security-card rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-          :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-          :style="{ transitionDelay: '400ms' }"
+      <section class="dashboard-columns">
+        <article
+          class="dashboard-panel"
+          :class="{ 'is-loaded': isLoaded }"
         >
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-slate-800/50 dark:to-slate-800/50">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <el-icon class="text-emerald-500">
-                <Shield />
-              </el-icon>
-              后端安全特性
-            </h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              多层次安全防护，保障系统安全
-            </p>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-2 gap-3">
-              <div
-                v-for="item in backendSecurity"
-                :key="item.name"
-                class="security-item group p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/50 hover:border-emerald-200 dark:hover:border-emerald-700 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/20 transition-all duration-300 cursor-default"
-              >
-                <div class="flex items-center gap-2 mb-1.5">
-                  <div
-                    class="w-7 h-7 rounded-lg flex items-center justify-center"
-                    :class="`bg-${item.color}-100 dark:bg-${item.color}-900/30`"
-                  >
-                    <el-icon
-                      class="text-sm"
-                      :class="`text-${item.color}-500`"
-                    >
-                      <component :is="item.icon" />
-                    </el-icon>
-                  </div>
-                  <span class="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                    {{ item.name }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 pl-9">
-                  {{ item.desc }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 前端安全特性 -->
-        <div
-          class="security-card rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-          :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-          :style="{ transitionDelay: '480ms' }"
-        >
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800/50 dark:to-slate-800/50">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <el-icon class="text-blue-500">
-                <Monitor />
-              </el-icon>
-              前端安全特性
-            </h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              前端多层次权限控制
-            </p>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-2 gap-3">
-              <div
-                v-for="item in frontendSecurity"
-                :key="item.name"
-                class="security-item group p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/50 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all duration-300 cursor-default"
-              >
-                <div class="flex items-center gap-2 mb-1.5">
-                  <div
-                    class="w-7 h-7 rounded-lg flex items-center justify-center"
-                    :class="`bg-${item.color}-100 dark:bg-${item.color}-900/30`"
-                  >
-                    <el-icon
-                      class="text-sm"
-                      :class="`text-${item.color}-500`"
-                    >
-                      <component :is="item.icon" />
-                    </el-icon>
-                  </div>
-                  <span class="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                    {{ item.name }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 pl-9">
-                  {{ item.desc }}
-                </p>
-              </div>
-            </div>
-
-            <!-- 权限指令示例 -->
-            <div class="mt-4 p-3 rounded-lg bg-slate-100/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
-              <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                权限指令示例：
+          <header class="dashboard-panel__header">
+            <div>
+              <p class="page-kicker">
+                Security Matrix
               </p>
-              <code class="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">
-                v-permission="'system:user:create'"
-              </code>
+              <h2 class="dashboard-panel__title">
+                安全矩阵
+              </h2>
             </div>
-          </div>
-        </div>
-      </div>
+            <span class="dashboard-panel__caption">Backend & Frontend</span>
+          </header>
 
-      <!-- 技术栈区域 -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 前端技术栈 -->
-        <div
-          class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-          :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-          :style="{ transitionDelay: '560ms' }"
-        >
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <el-icon class="text-blue-500">
-                <Monitor />
-              </el-icon>
-              前端技术栈
-            </h2>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div
-                v-for="tech in frontendStack"
-                :key="tech.name"
-                class="tech-card group p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/50 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-700 transition-all duration-300 cursor-default"
-              >
-                <div class="flex items-center gap-2 mb-1">
+          <div class="security-grid">
+            <div class="security-column">
+              <div class="security-column__title">
+                后端防线
+              </div>
+              <div class="security-list">
+                <article
+                  v-for="item in backendSecurity"
+                  :key="item.name"
+                  class="security-entry"
+                >
                   <div
-                    class="w-2 h-2 rounded-full"
-                    :class="`bg-${tech.color}-500`"
-                  />
-                  <span class="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                    {{ tech.name }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 pl-4">
-                  {{ tech.desc }}
-                </p>
+                    class="security-entry__icon"
+                    :style="{ color: item.accent, background: item.soft }"
+                  >
+                    <el-icon>
+                      <component :is="item.icon" />
+                    </el-icon>
+                  </div>
+                  <div class="security-entry__body">
+                    <h3>{{ item.name }}</h3>
+                    <p>{{ item.desc }}</p>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div class="security-column">
+              <div class="security-column__title">
+                前端防线
+              </div>
+              <div class="security-list">
+                <article
+                  v-for="item in frontendSecurity"
+                  :key="item.name"
+                  class="security-entry"
+                >
+                  <div
+                    class="security-entry__icon"
+                    :style="{ color: item.accent, background: item.soft }"
+                  >
+                    <el-icon>
+                      <component :is="item.icon" />
+                    </el-icon>
+                  </div>
+                  <div class="security-entry__body">
+                    <h3>{{ item.name }}</h3>
+                    <p>{{ item.desc }}</p>
+                  </div>
+                </article>
               </div>
             </div>
           </div>
-        </div>
+        </article>
 
-        <!-- 后端技术栈 -->
-        <div
-          class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-          :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-          :style="{ transitionDelay: '640ms' }"
+        <article
+          class="dashboard-panel"
+          :class="{ 'is-loaded': isLoaded }"
         >
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <el-icon class="text-orange-500">
-                <SetUp />
-              </el-icon>
-              后端技术栈
-            </h2>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div
-                v-for="tech in backendStack"
-                :key="tech.name"
-                class="tech-card group p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/50 hover:border-slate-200 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-700 transition-all duration-300 cursor-default"
-              >
-                <div class="flex items-center gap-2 mb-1">
-                  <div
-                    class="w-2 h-2 rounded-full"
-                    :class="`bg-${tech.color}-500`"
-                  />
-                  <span class="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                    {{ tech.name }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 pl-4">
-                  {{ tech.desc }}
-                </p>
-              </div>
+          <header class="dashboard-panel__header">
+            <div>
+              <p class="page-kicker">
+                Platform Ledger
+              </p>
+              <h2 class="dashboard-panel__title">
+                平台资产
+              </h2>
             </div>
-          </div>
-        </div>
-      </div>
+            <span class="dashboard-panel__caption">Topology & Stack</span>
+          </header>
 
-      <!-- 系统信息 -->
-      <div
-        class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-700 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50"
-        :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
-        :style="{ transitionDelay: '720ms' }"
-      >
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-          <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <el-icon class="text-violet-500">
-              <InfoFilled />
-            </el-icon>
-            系统信息
-          </h2>
-        </div>
-        <div class="p-5">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div
-              v-for="info in systemInfo"
-              :key="info.label"
-              class="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-700/50"
+          <div class="info-grid">
+            <article
+              v-for="item in systemInfo"
+              :key="item.label"
+              class="info-card"
             >
-              <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-600 flex items-center justify-center">
-                <el-icon class="text-slate-500 dark:text-slate-300 text-lg">
-                  <component :is="info.icon" />
+              <div
+                class="info-card__icon"
+                :style="{ color: item.accent, background: item.soft }"
+              >
+                <el-icon>
+                  <component :is="item.icon" />
                 </el-icon>
               </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs text-slate-400 dark:text-slate-500">
-                  {{ info.label }}
+              <div>
+                <p class="info-card__label">
+                  {{ item.label }}
                 </p>
-                <p class="font-medium text-slate-700 dark:text-slate-200">
-                  {{ info.value }}
+                <p class="info-card__value">
+                  {{ item.value }}
                 </p>
               </div>
-            </div>
+            </article>
           </div>
-        </div>
-      </div>
 
-      <!-- 底部版权 -->
-      <div
-        class="text-center py-4 text-sm text-slate-400 dark:text-slate-500 transition-all duration-700"
-        :class="isLoaded ? 'opacity-100' : 'opacity-0'"
-        :style="{ transitionDelay: '800ms' }"
+          <div class="stack-grid">
+            <section class="stack-section">
+              <div class="stack-section__title">
+                Frontend
+              </div>
+              <div class="stack-list">
+                <article
+                  v-for="tech in frontendStack"
+                  :key="tech.name"
+                  class="stack-entry"
+                >
+                  <span
+                    class="stack-entry__dot"
+                    :style="{ background: tech.accent }"
+                  />
+                  <div class="stack-entry__body">
+                    <h3>{{ tech.name }}</h3>
+                    <p>{{ tech.desc }}</p>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="stack-section">
+              <div class="stack-section__title">
+                Backend
+              </div>
+              <div class="stack-list">
+                <article
+                  v-for="tech in backendStack"
+                  :key="tech.name"
+                  class="stack-entry"
+                >
+                  <span
+                    class="stack-entry__dot"
+                    :style="{ background: tech.accent }"
+                  />
+                  <div class="stack-entry__body">
+                    <h3>{{ tech.name }}</h3>
+                    <p>{{ tech.desc }}</p>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <footer
+        class="dashboard-footer"
+        :class="{ 'is-loaded': isLoaded }"
       >
-        <p>
-          Powered by
-          <span class="text-blue-500 dark:text-blue-400 font-medium">AIPerm</span>
-          · © 2024 河南爱编程网络科技有限公司
-        </p>
-      </div>
+        Powered by <span>AIPerm</span> · Structural silence for administrative clarity
+      </footer>
     </div>
   </div>
 </template>
 
 <style scoped>
 .dashboard-page {
-  min-height: calc(100vh - 64px);
+  min-height: 100%;
 }
 
-/* 统计卡片悬停效果 */
-.stat-card {
-  transform-origin: center;
+.dashboard-shell {
+  gap: 20px;
+  padding: 8px;
 }
 
-.stat-card:hover {
-  transform: translateY(-4px);
+.dashboard-hero,
+.dashboard-notice,
+.stat-panel,
+.dashboard-panel,
+.dashboard-footer {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
 }
 
-/* 技术卡片悬停效果 */
-.tech-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+.dashboard-hero.is-loaded,
+.dashboard-notice.is-loaded,
+.stat-panel.is-loaded,
+.dashboard-panel.is-loaded {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-/* 安全特性卡片悬停效果 */
-.security-item:hover {
-  transform: translateY(-1px);
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: 22px;
+  padding: 28px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(64, 158, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.22)),
+    var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-md);
 }
 
-.notice-badge-inline {
-  color: var(--el-color-primary);
-  flex-shrink: 0;
+.dashboard-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
 }
 
-.notice-content {
+.dashboard-hero__title {
+  max-width: 12ch;
+}
+
+.dashboard-hero__subtitle {
+  max-width: 52ch;
+}
+
+.dashboard-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.dashboard-hero__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 26px;
+  background: var(--color-surface-container-low);
+}
+
+.dashboard-hero__chip {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dashboard-hero__metrics {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-hero__metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-hero__metric-label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-hero__metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.dashboard-hero__footnote {
+  margin-top: auto;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.dashboard-page--dark .dashboard-hero__panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 42%),
+    rgba(14, 20, 26, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-page--dark .dashboard-hero__chip {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(243, 246, 250, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-page--dark .dashboard-hero__metric-label {
+  color: rgba(243, 246, 250, 0.82);
+}
+
+.dashboard-page--dark .dashboard-hero__metric-value {
+  color: #f8fbff;
+}
+
+.dashboard-page--dark .dashboard-hero__footnote {
+  color: rgba(243, 246, 250, 0.72);
+}
+
+.dashboard-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 24px;
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-notice__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-notice__viewport {
   position: relative;
+  flex: 1;
   overflow: hidden;
 }
 
-.notice-line-wrapper {
+.dashboard-notice__line-wrapper {
   overflow: hidden;
 }
 
-.notice-line {
+.dashboard-notice__line {
   color: var(--color-text-secondary);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.notice-line--nowrap {
+.dashboard-notice__line--nowrap {
   white-space: nowrap;
 }
 
-.notice-line--measure {
+.dashboard-notice__line--measure {
   position: absolute;
   inset-inline-start: 0;
   inset-block-start: 0;
@@ -681,17 +772,229 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.notice-marquee-track {
+.dashboard-notice__marquee-track {
   display: inline-flex;
-  align-items: center;
   min-width: max-content;
-  white-space: nowrap;
+  align-items: center;
   animation: notice-marquee 16s linear infinite;
 }
 
-.notice-marquee-gap {
+.dashboard-notice__marquee-gap {
   width: 3rem;
   flex-shrink: 0;
+}
+
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 26px;
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-panel__tone {
+  position: absolute;
+  inset: 0;
+  background: var(--tone);
+  pointer-events: none;
+}
+
+.stat-panel__header,
+.stat-panel__icon {
+  position: relative;
+  z-index: 1;
+}
+
+.stat-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stat-panel__icon {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 20px;
+}
+
+.stat-panel__label {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.stat-panel__eyebrow {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stat-panel__value {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  color: var(--color-text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 18px;
+}
+
+.dashboard-panel {
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.dashboard-panel__title {
+  margin-top: 4px;
+  font-size: 1.25rem;
+  color: var(--color-text-primary);
+}
+
+.dashboard-panel__caption {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--color-surface-container-low);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.security-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.security-column__title,
+.stack-section__title {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.security-list,
+.stack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-entry,
+.stack-entry,
+.info-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--color-surface-container-low);
+}
+
+.security-entry__icon,
+.info-card__icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.security-entry__body h3,
+.stack-entry__body h3 {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.security-entry__body p,
+.stack-entry__body p,
+.info-card__label {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.info-card__value {
+  margin-top: 4px;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.stack-entry__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dashboard-footer {
+  padding: 8px 4px 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.dashboard-footer span {
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 @keyframes notice-marquee {
@@ -728,24 +1031,62 @@ onUnmounted(() => {
   transform: translateY(-18px);
 }
 
-/* 减少动画偏好 */
+@media (max-width: 1200px) {
+  .dashboard-stat-grid,
+  .dashboard-columns,
+  .security-grid,
+  .stack-grid,
+  .info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-shell {
+    gap: 16px;
+    padding: 4px;
+  }
+
+  .dashboard-hero,
+  .dashboard-notice,
+  .dashboard-panel,
+  .stat-panel {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .dashboard-stat-grid,
+  .dashboard-columns,
+  .security-grid,
+  .stack-grid,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-notice {
+    flex-direction: column;
+  }
+
+  .dashboard-hero__panel {
+    padding: 18px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .stat-card,
-  .tech-card,
-  .security-card,
-  .welcome-section {
+  .dashboard-hero,
+  .dashboard-notice,
+  .stat-panel,
+  .dashboard-panel,
+  .dashboard-footer {
     transition: none !important;
   }
 
-  .stat-card:hover,
-  .tech-card:hover,
-  .security-item:hover {
-    transform: none;
-  }
-
-  .notice-marquee-track {
+  .dashboard-notice__marquee-track {
     animation: none;
   }
-
 }
 </style>

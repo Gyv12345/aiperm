@@ -16,14 +16,48 @@
 </script>
 
 <template>
-  <div class="flex items-center justify-between mb-3">
-    <!-- 左侧：操作按钮区（新增、导出等） -->
-    <div class="flex items-center gap-2">
+  <div class="table-toolbar">
+    <div class="table-toolbar__actions">
       <slot name="actions" />
     </div>
-    <!-- 右侧：工具图标区（刷新、列设置等） -->
-    <div class="flex items-center gap-1">
+    <div class="table-toolbar__tools">
       <slot name="tools" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--color-surface-container-low);
+}
+
+.table-toolbar__actions,
+.table-toolbar__tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-toolbar__tools {
+  justify-content: flex-end;
+}
+
+@media (max-width: 960px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-toolbar__tools {
+    justify-content: flex-start;
+  }
+}
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
+import {computed, ref, watch, type Component} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useAppStore} from '@/stores/app'
 import {usePermissionStore} from '@/stores/permission'
@@ -149,105 +149,113 @@ function findMenuById(menus: MenuItem[], id: number): MenuItem | null {
 // 获取图标组件
 function getIconComponent(iconName: string | null | undefined) {
   if (!iconName) return null
-  return (ElementPlusIconsVue as Record<string, any>)[iconName]
+  return (ElementPlusIconsVue as Record<string, Component>)[iconName]
 }
 </script>
 
 <template>
   <aside
-    class="sidebar flex flex-col text-white transition-all duration-300"
-    :class="collapsed ? 'w-16' : 'w-64'"
+    class="sidebar"
+    :class="{ 'sidebar--collapsed': collapsed }"
   >
-    <!-- Logo 区域 -->
-    <div class="sidebar-header h-16 flex items-center justify-center border-b">
-      <h1
-        v-if="!collapsed"
-        class="text-xl font-bold"
-      >
-        AIPerm
-      </h1>
-      <el-icon
-        v-else
-        class="text-2xl"
-      >
-        <Box />
-      </el-icon>
-    </div>
-
-    <!-- 菜单列表 -->
-    <el-menu
-      :default-active="getActiveMenuIndex()"
-      :default-openeds="openedMenu ? [openedMenu] : []"
-      :collapse="collapsed"
-      :collapse-transition="false"
-      :unique-opened="true"
-      background-color="transparent"
-      text-color="rgba(255, 255, 255, 0.85)"
-      active-text-color="var(--color-primary)"
-      class="sidebar-menu border-none flex-1"
-      @select="handleSelect"
-      @open="handleMenuOpen"
-    >
-      <!-- 首页 -->
-      <el-menu-item index="dashboard">
-        <el-icon>
-          <HomeFilled />
-        </el-icon>
-        <span>首页</span>
-      </el-menu-item>
-
-      <!-- 动态菜单 -->
-      <template
-        v-for="menu in dynamicMenus"
-        :key="menu.id"
-      >
-        <!-- 目录类型：有子菜单 -->
-        <el-sub-menu
-          v-if="menu.menuType === '1' && menu.children && menu.children.length > 0"
-          :index="`menu-${menu.id}`"
+    <div class="sidebar-inner">
+      <div class="sidebar-header">
+        <div class="brand-mark">
+          <span>AI</span>
+        </div>
+        <div
+          v-if="!collapsed"
+          class="brand-copy"
         >
-          <template #title>
+          <p class="brand-copy__eyebrow">
+            Architectural Ledger
+          </p>
+          <h1 class="brand-copy__title">
+            AIPerm
+          </h1>
+          <p class="brand-copy__subtitle">
+            RBAC workspace
+          </p>
+        </div>
+      </div>
+
+      <p
+        v-if="!collapsed"
+        class="sidebar-section-label"
+      >
+        Navigation
+      </p>
+
+      <el-menu
+        :default-active="getActiveMenuIndex()"
+        :default-openeds="openedMenu ? [openedMenu] : []"
+        :collapse="collapsed"
+        :collapse-transition="false"
+        :unique-opened="true"
+        background-color="transparent"
+        text-color="rgba(255, 255, 255, 0.85)"
+        active-text-color="var(--color-primary-container)"
+        class="sidebar-menu"
+        @select="handleSelect"
+        @open="handleMenuOpen"
+      >
+        <el-menu-item index="dashboard">
+          <el-icon>
+            <HomeFilled />
+          </el-icon>
+          <span>首页</span>
+        </el-menu-item>
+
+        <template
+          v-for="menu in dynamicMenus"
+          :key="menu.id"
+        >
+          <el-sub-menu
+            v-if="menu.menuType === '1' && menu.children && menu.children.length > 0"
+            :index="`menu-${menu.id}`"
+          >
+            <template #title>
+              <el-icon>
+                <component :is="getIconComponent(menu.icon) || Document" />
+              </el-icon>
+              <span>{{ menu.menuName }}</span>
+            </template>
+            <el-menu-item
+              v-for="child in menu.children"
+              :key="child.id"
+              :index="`menu-${child.id}`"
+            >
+              <el-icon>
+                <component :is="getIconComponent(child.icon) || Document" />
+              </el-icon>
+              <span>{{ child.menuName }}</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <el-menu-item
+            v-else-if="menu.menuType === '2'"
+            :index="`menu-${menu.id}`"
+          >
             <el-icon>
               <component :is="getIconComponent(menu.icon) || Document" />
             </el-icon>
             <span>{{ menu.menuName }}</span>
-          </template>
-          <!-- 子菜单 -->
-          <el-menu-item
-            v-for="child in menu.children"
-            :key="child.id"
-            :index="`menu-${child.id}`"
-          >
-            <el-icon>
-              <component :is="getIconComponent(child.icon) || Document" />
-            </el-icon>
-            <span>{{ child.menuName }}</span>
           </el-menu-item>
-        </el-sub-menu>
+        </template>
+      </el-menu>
 
-        <!-- 菜单类型：无子菜单 -->
-        <el-menu-item
-          v-else-if="menu.menuType === '2'"
-          :index="`menu-${menu.id}`"
+      <div class="sidebar-footer">
+        <button
+          type="button"
+          class="sidebar-toggle"
+          @click="toggleSidebar"
         >
-          <el-icon>
-            <component :is="getIconComponent(menu.icon) || Document" />
+          <el-icon class="text-lg">
+            <Expand v-if="collapsed" />
+            <Fold v-else />
           </el-icon>
-          <span>{{ menu.menuName }}</span>
-        </el-menu-item>
-      </template>
-    </el-menu>
-
-    <!-- 折叠按钮 -->
-    <div class="sidebar-footer p-2 border-t">
-      <div
-        class="flex items-center justify-center py-2 rounded cursor-pointer hover:bg-white/10"
-        @click="toggleSidebar"
-      >
-        <el-icon class="text-lg">
-          <Expand v-if="collapsed" />
-          <Fold v-else />
-        </el-icon>
+          <span v-if="!collapsed">收起导航</span>
+        </button>
       </div>
     </div>
   </aside>
@@ -255,53 +263,187 @@ function getIconComponent(iconName: string | null | undefined) {
 
 <style scoped>
 .sidebar {
+  width: 288px;
   min-height: 100vh;
-  background-color: #1f2937; /* 默认深色背景 */
-  background-color: var(--color-bg-sidebar, #1f2937);
-  border-right: 1px solid #374151;
-  border-right-color: var(--color-border-sidebar, #374151);
+  padding: 18px 0 18px 18px;
+  color: var(--color-text-sidebar);
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+
+.sidebar--collapsed {
+  width: 104px;
+}
+
+.sidebar-inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 18px 12px 12px;
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
+    var(--color-bg-sidebar);
+  box-shadow:
+    inset 0 0 0 1px var(--color-border-sidebar),
+    0 26px 56px rgba(7, 10, 14, 0.18);
 }
 
 .sidebar-header {
-  border-color: var(--color-border-sidebar);
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 8px 18px;
 }
 
-.sidebar-footer {
-  border-color: var(--color-border-sidebar);
+.brand-mark {
+  display: inline-flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
+.brand-copy__eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-sidebar-muted);
+}
+
+.brand-copy__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-sidebar);
+}
+
+.brand-copy__subtitle {
+  font-size: 12px;
+  color: var(--color-text-sidebar-muted);
+}
+
+.sidebar-section-label {
+  padding: 0 12px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-sidebar-muted);
 }
 
 .sidebar-menu {
-  border-right: none;
+  flex: 1;
+  padding-top: 4px;
 }
 
-.sidebar-menu:not(.el-menu--collapse) {
-  width: 256px;
+.sidebar-footer {
+  padding-top: 10px;
+}
+
+.sidebar-toggle {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-sidebar);
+  min-height: 44px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 :deep(.el-menu) {
-  border-right: none;
   background-color: transparent !important;
 }
 
+:deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
-  height: 48px;
-  line-height: 48px;
+  position: relative;
+  margin: 4px 0;
+  height: 46px;
+  border-radius: 16px;
+  color: rgba(245, 247, 251, 0.86) !important;
+  line-height: 46px;
 }
 
+:deep(.el-menu-item .el-icon),
+:deep(.el-sub-menu__title .el-icon) {
+  font-size: 16px;
+}
+
+:deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-:deep(.el-menu-item) {
-  height: 48px;
-  line-height: 48px;
-}
-
-:deep(.el-menu-item:hover) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
 }
 
 :deep(.el-menu-item.is-active) {
-  background-color: rgba(64, 158, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--color-primary-container) !important;
+}
+
+:deep(.el-menu-item.is-active)::before {
+  content: '';
+  position: absolute;
+  inset: 10px auto 10px 0;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--color-primary-container);
+}
+
+:deep(.el-sub-menu.is-active > .el-sub-menu__title) {
+  color: #ffffff !important;
+}
+
+:deep(.el-sub-menu .el-menu-item) {
+  margin-left: 10px;
+  height: 42px;
+  line-height: 42px;
+}
+
+:deep(.el-menu--collapse .el-menu-item),
+:deep(.el-menu--collapse .el-sub-menu__title) {
+  justify-content: center;
+}
+
+:deep(.el-menu--collapse .el-sub-menu__title .el-sub-menu__icon-arrow) {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .sidebar {
+    width: 272px;
+    padding: 14px 0 14px 14px;
+  }
+
+  .sidebar--collapsed {
+    width: 92px;
+  }
+
+  .sidebar-inner {
+    border-radius: 24px;
+  }
 }
 </style>

@@ -49,8 +49,8 @@ async function handleReset() {
     :lock-scroll="true"
     class="settings-panel-drawer"
   >
-    <div class="h-full flex flex-col bg-[var(--color-bg-card)] text-[var(--color-text-primary)]">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+    <div class="settings-panel">
+      <div class="settings-panel__header">
         <span class="text-base font-semibold">
           系统设置
         </span>
@@ -65,8 +65,8 @@ async function handleReset() {
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto">
-        <section class="px-5 py-4 border-b border-[var(--color-border)]">
+      <div class="settings-panel__body">
+        <section class="settings-section">
           <div class="settings-section-title mb-3">
             主题模式
           </div>
@@ -84,7 +84,7 @@ async function handleReset() {
           </div>
         </section>
 
-        <section class="px-5 py-4 border-b border-[var(--color-border)]">
+        <section class="settings-section">
           <div class="settings-section-title mb-3">
             主题色
           </div>
@@ -106,7 +106,7 @@ async function handleReset() {
           </div>
         </section>
 
-        <section class="px-5 py-4 border-b border-[var(--color-border)]">
+        <section class="settings-section">
           <div class="settings-section-title mb-3">
             侧边栏
           </div>
@@ -116,7 +116,7 @@ async function handleReset() {
           </div>
         </section>
 
-        <section class="px-5 py-4 border-b border-[var(--color-border)]">
+        <section class="settings-section">
           <div class="settings-section-title mb-3">
             界面显示
           </div>
@@ -137,7 +137,7 @@ async function handleReset() {
         </section>
       </div>
 
-      <div class="px-5 py-4 border-t border-[var(--color-border)]">
+      <div class="settings-panel__footer">
         <el-button
           link
           class="reset-button !px-0"
@@ -152,11 +152,42 @@ async function handleReset() {
 
 <style scoped>
 .settings-panel-drawer :deep(.el-drawer) {
-  background-color: var(--color-bg-card);
+  background-color: transparent;
 }
 
 .settings-panel-drawer :deep(.el-drawer__body) {
   padding: 0;
+}
+
+.settings-panel {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 14px;
+  color: var(--color-text-primary);
+}
+
+.settings-panel__header,
+.settings-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px 14px;
+}
+
+.settings-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .settings-panel-drawer :deep(.el-button.is-plain) {
