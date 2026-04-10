@@ -68,4 +68,8 @@ export const jobApi = {
   /** 恢复定时任务 */
   resume: (id: number) =>
     request.put<void>(`/enterprise/job/${id}/resume`),
+
+  /** 立即执行一次 */
+  runOnce: (id: number) =>
+    request.put<void>(`/enterprise/job/${id}/run`),
 }

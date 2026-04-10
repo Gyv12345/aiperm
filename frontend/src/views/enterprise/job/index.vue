@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
-import {Delete, Edit, Plus, Refresh, Search, VideoPause, VideoPlay} from '@element-plus/icons-vue'
+import {CaretRight, Delete, Edit, Plus, Refresh, Search, Tickets, VideoPause, VideoPlay} from '@element-plus/icons-vue'
+import {useRouter} from 'vue-router'
 import {jobApi, type JobDTO, type JobVO} from '@/api/enterprise/job'
 import type {PageResult, TableColumn} from '@/types'
+
+const router = useRouter()
 
 // 表格列配置
 const columns = ref<TableColumn[]>([
@@ -23,6 +26,7 @@ const formRef = ref<FormInstance>()
 // 加载状态
 const loading = ref(false)
 const formLoading = ref(false)
+const runLoadingId = ref<number | null>(null)
 
 // 表格数据
 const tableData = ref<JobVO[]>([])
@@ -208,6 +212,33 @@ async function handleResume(row: JobVO) {
   }
 }
 
+async function handleRunOnce(row: JobVO) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要立即执行任务「${row.jobName}」一次吗？`,
+      '执行确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+
+    runLoadingId.value = row.id
+    await jobApi.runOnce(row.id!)
+    ElMessage.success('任务已触发执行')
+  }
+  catch (error: unknown) {
+    if (error !== 'cancel') {
+      console.error('立即执行任务失败:', error)
+      ElMessage.error('立即执行任务失败')
+    }
+  }
+  finally {
+    runLoadingId.value = null
+  }
+}
+
 // 提交表单
 async function handleSubmit() {
   if (!formRef.value) return
@@ -372,9 +403,17 @@ onMounted(() => {
           <el-button
             type="primary"
             :icon="Plus"
+            v-permission="'enterprise:job:create'"
             @click="handleCreate"
           >
             新增任务
+          </el-button>
+          <el-button
+            :icon="Tickets"
+            v-permission="'monitor:job-log:list'"
+            @click="router.push('/monitor/job-log')"
+          >
+            任务日志
           </el-button>
         </template>
         <template #tools>
@@ -462,7 +501,7 @@ onMounted(() => {
         <!-- 操作列 -->
         <el-table-column
           label="操作"
-          width="200"
+          width="260"
           fixed="right"
         >
           <template #default="{ row }">
@@ -470,15 +509,27 @@ onMounted(() => {
               type="primary"
               link
               :icon="Edit"
+              v-permission="'enterprise:job:update'"
               @click="handleUpdate(row)"
             >
               编辑
+            </el-button>
+            <el-button
+              type="success"
+              link
+              :icon="CaretRight"
+              :loading="runLoadingId === row.id"
+              v-permission="'enterprise:job:execute'"
+              @click="handleRunOnce(row)"
+            >
+              执行一次
             </el-button>
             <el-button
               v-if="row.status === 1"
               type="warning"
               link
               :icon="VideoPause"
+              v-permission="'enterprise:job:update'"
               @click="handlePause(row)"
             >
               暂停
@@ -488,6 +539,7 @@ onMounted(() => {
               type="success"
               link
               :icon="VideoPlay"
+              v-permission="'enterprise:job:update'"
               @click="handleResume(row)"
             >
               恢复
@@ -496,6 +548,7 @@ onMounted(() => {
               type="danger"
               link
               :icon="Delete"
+              v-permission="'enterprise:job:delete'"
               @click="handleDelete(row)"
             >
               删除
