@@ -30,34 +30,34 @@ const collapsed = computed(() => appStore.sidebarCollapsed)
 // 当前打开的子菜单（只保持一个打开）
 const openedMenu = ref<string>('')
 
+function normalizePath(path?: string | null): string {
+  if (!path) {
+    return '/'
+  }
+  const withLeadingSlash = path.startsWith('/') ? path : `/${path}`
+  return withLeadingSlash.replace(/\/{2,}/g, '/')
+}
+
+function buildMenuFullPath(parentPath: string, menuPath?: string | null): string {
+  const normalizedMenuPath = normalizePath(menuPath)
+  if (!parentPath || parentPath === '/') {
+    return normalizedMenuPath
+  }
+  return normalizePath(`${parentPath}/${normalizedMenuPath}`)
+}
+
 // 根据当前路由自动展开包含当前页面的父菜单
 watch(
   () => route.path,
   (path) => {
-    // 查找当前路由对应的父菜单
-    const parentMenu = findParentMenuByPath(menuItems.value, path)
+    const currentMenu = findMenuByPath(menuItems.value, path)
+    const parentMenu = currentMenu ? findParent(menuItems.value, currentMenu.parentId) : null
     if (parentMenu) {
       openedMenu.value = `menu-${parentMenu.id}`
     }
   },
   { immediate: true }
 )
-
-// 根据路径查找父菜单
-function findParentMenuByPath(menus: MenuItem[], targetPath: string): MenuItem | null {
-  for (const menu of menus) {
-    if (menu.menuType === '1' && menu.children) {
-      for (const child of menu.children) {
-        const childPath = child.path?.startsWith('/') ? child.path : `/${child.path}`
-        const fullPath = menu.path ? `${menu.path}/${child.path}` : childPath
-        if (fullPath === targetPath || childPath === targetPath) {
-          return menu
-        }
-      }
-    }
-  }
-  return null
-}
 
 // 切换侧边栏
 function toggleSidebar() {
@@ -66,13 +66,8 @@ function toggleSidebar() {
 
 // 构建菜单路径
 function buildMenuPath(menu: MenuItem): string {
-  // 菜单类型，查找父菜单构建完整路径
   const parent = findParent(menuItems.value, menu.parentId)
-  if (parent && parent.path) {
-    const parentPath = parent.path.startsWith('/') ? parent.path : `/${parent.path}`
-    return `${parentPath}/${menu.path}`
-  }
-  return menu.path?.startsWith('/') ? menu.path : `/${menu.path}`
+  return buildMenuFullPath(parent ? buildMenuPath(parent) : '', menu.path)
 }
 
 // 查找父菜单
@@ -115,7 +110,6 @@ function handleMenuOpen(index: string) {
 
 // 获取当前激活菜单的索引
 function getActiveMenuIndex(): string {
-  // 首页特殊处理
   if (route.path === '/dashboard') {
     return 'dashboard'
   }
@@ -124,21 +118,17 @@ function getActiveMenuIndex(): string {
 }
 
 // 根据路径查找菜单
-function findMenuByPath(menus: MenuItem[], targetPath: string): MenuItem | null {
+function findMenuByPath(menus: MenuItem[], targetPath: string, parentPath = ''): MenuItem | null {
   for (const menu of menus) {
-    // 检查子菜单
-    if (menu.children) {
-      for (const child of menu.children) {
-        const childPath = child.path?.startsWith('/') ? child.path : `/${child.path}`
-        if (childPath === targetPath) {
-          return child
-        }
-      }
-    }
-    // 检查当前菜单
-    const menuPath = menu.path?.startsWith('/') ? menu.path : `/${menu.path}`
-    if (menuPath === targetPath) {
+    const fullPath = buildMenuFullPath(parentPath, menu.path)
+    if (menu.menuType === '2' && fullPath === targetPath) {
       return menu
+    }
+    if (menu.children) {
+      const found = findMenuByPath(menu.children as MenuItem[], targetPath, fullPath)
+      if (found) {
+        return found
+      }
     }
   }
   return null
