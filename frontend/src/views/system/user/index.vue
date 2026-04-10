@@ -4,6 +4,7 @@ import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'elemen
 import {
   ArrowUp,
   Delete,
+  Download,
   Edit,
   Female,
   Key,
@@ -12,13 +13,14 @@ import {
   Plus,
   Refresh,
   Search,
+  Upload,
   User
 } from '@element-plus/icons-vue'
 import {userApi, type UserDTO, type UserVO} from '@/api/system/user'
 import {roleApi, type RoleVO} from '@/api/system/role'
 import {deptApi, type DeptVO} from '@/api/system/dept'
 import {postApi, type PostVO} from '@/api/system/post'
-import type {PageResult, TableColumn} from '@/types'
+import type {ImportResult, PageResult, TableColumn} from '@/types'
 import {useDict} from '@/composables/useDict'
 
 // 字典
@@ -85,9 +87,11 @@ async function handleBatchDelete() {
 // 表单引用
 const formRef = ref<FormInstance>()
 const resetPasswordFormRef = ref<FormInstance>()
+const importInputRef = ref<HTMLInputElement>()
 
 // 加载状态
 const loading = ref(false)
+const importLoading = ref(false)
 
 // 表格数据
 const tableData = ref<UserVO[]>([])
@@ -288,7 +292,7 @@ function handleCreate() {
     deptId: undefined,
     postIds: undefined,
     roleIds: [],
-    status: 0,
+    status: 1,
     remark: '',
   })
   dialogVisible.value = true
@@ -307,12 +311,94 @@ function handleUpdate(row: UserVO) {
     gender: row.gender || 0,
     avatar: row.avatar || '',
     deptId: row.deptId,
-    postIds: row.postIds,
+    postIds: row.postIds?.length ? row.postIds : (row.postId ? [row.postId] : []),
     roleIds: row.roleIds || [],
-    status: row.status || 0,
+    status: row.status ?? 1,
     remark: '',
   })
   dialogVisible.value = true
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function buildImportResultMessage(result: ImportResult) {
+  const lines = [
+    `成功 ${result.successCount} 条`,
+    `失败 ${result.failureCount} 条`,
+  ]
+  result.errors.slice(0, 8).forEach(item => {
+    lines.push(`第 ${item.rowNumber} 行：${item.message}`)
+  })
+  if (result.errors.length > 8) {
+    lines.push(`其余 ${result.errors.length - 8} 条请修正后重试`)
+  }
+  return lines.map(item => escapeHtml(item)).join('<br/>')
+}
+
+async function showImportResult(result: ImportResult) {
+  if (result.failureCount > 0) {
+    await ElMessageBox.alert(buildImportResultMessage(result), '导入结果', {
+      confirmButtonText: '知道了',
+      dangerouslyUseHTMLString: true,
+    })
+    return
+  }
+  ElMessage.success(`导入成功，共 ${result.successCount} 条`)
+}
+
+async function handleExport() {
+  try {
+    await userApi.export({
+      username: queryForm.username || undefined,
+      phone: queryForm.phone || undefined,
+      status: queryForm.status,
+    })
+  }
+  catch (error) {
+    console.error('导出用户失败:', error)
+  }
+}
+
+async function handleDownloadTemplate() {
+  try {
+    await userApi.downloadImportTemplate()
+  }
+  catch (error) {
+    console.error('下载导入模板失败:', error)
+  }
+}
+
+function triggerImport() {
+  importInputRef.value?.click()
+}
+
+async function handleImportChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) {
+    return
+  }
+
+  importLoading.value = true
+  try {
+    const result = await userApi.importUsers(file)
+    await showImportResult(result)
+    fetchUserList()
+  }
+  catch (error) {
+    console.error('导入用户失败:', error)
+  }
+  finally {
+    importLoading.value = false
+  }
 }
 
 // 删除用户
@@ -437,6 +523,7 @@ async function handleSubmit() {
       gender: formData.gender,
       avatar: formData.avatar || undefined,
       deptId: formData.deptId,
+      postId: formData.postIds?.[0],
       postIds: formData.postIds,
       roleIds: formData.roleIds,
       status: formData.status,
@@ -619,9 +706,32 @@ onMounted(() => {
           <el-button
             type="primary"
             :icon="Plus"
+            v-permission="'system:user:create'"
             @click="handleCreate"
           >
             新增用户
+          </el-button>
+          <el-button
+            :icon="Download"
+            v-permission="'system:user:export'"
+            @click="handleExport"
+          >
+            导出
+          </el-button>
+          <el-button
+            :icon="Download"
+            v-permission="'system:user:import'"
+            @click="handleDownloadTemplate"
+          >
+            模板
+          </el-button>
+          <el-button
+            :icon="Upload"
+            :loading="importLoading"
+            v-permission="'system:user:import'"
+            @click="triggerImport"
+          >
+            导入
           </el-button>
         </template>
         <template #tools>
@@ -875,6 +985,14 @@ onMounted(() => {
       </div>
     </el-card>
 
+    <input
+      ref="importInputRef"
+      type="file"
+      accept=".xlsx,.xls"
+      class="hidden"
+      @change="handleImportChange"
+    >
+
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -1053,10 +1171,10 @@ onMounted(() => {
             <el-col :span="12">
               <el-form-item label="状态">
                 <el-radio-group v-model="formData.status">
-                  <el-radio :value="0">
+                  <el-radio :value="1">
                     正常
                   </el-radio>
-                  <el-radio :value="1">
+                  <el-radio :value="0">
                     停用
                   </el-radio>
                 </el-radio-group>

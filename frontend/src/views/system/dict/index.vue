@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import {computed, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
-import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue'
+import {Delete, Download, Edit, Plus, Search, Upload} from '@element-plus/icons-vue'
 import {dictApi, type DictDataDTO, type DictDataVO, type DictTypeDTO, type DictTypeVO} from '@/api/system/dict'
+import type {ImportResult, PageResult} from '@/types'
 
 // 字典类型相关
 const dictTypeList = ref<DictTypeVO[]>([])
@@ -24,6 +25,8 @@ const typeDialogVisible = ref(false)
 const typeDialogTitle = ref('')
 const typeFormRef = ref<FormInstance>()
 const typeFormLoading = ref(false)
+const dataImportInputRef = ref<HTMLInputElement>()
+const dataImportLoading = ref(false)
 
 const dataDialogVisible = ref(false)
 const dataDialogTitle = ref('')
@@ -112,20 +115,19 @@ const dataRules = computed<FormRules>(() => ({
 async function fetchDictTypeList() {
   dictTypeLoading.value = true
   try {
-    const data = await dictApi.typeAll()
+    const result = await dictApi.typeList({
+      page: 1,
+      pageSize: 500,
+      dictName: searchForm.dictName || undefined,
+      dictType: searchForm.dictType || undefined,
+    }) as PageResult<DictTypeVO>
+    const data = result.list || []
     // 根据搜索条件过滤
-    let list = data
-    if (searchForm.dictName) {
-      list = list.filter(item => item.dictName?.includes(searchForm.dictName))
-    }
-    if (searchForm.dictType) {
-      list = list.filter(item => item.dictType?.includes(searchForm.dictType))
-    }
-    dictTypeList.value = list
+    dictTypeList.value = data
 
     // 如果有选中的字典类型，重新获取字典数据
     if (selectedDictType.value) {
-      const found = list.find(item => item.id === selectedDictType.value?.id)
+      const found = data.find(item => item.id === selectedDictType.value?.id)
       if (found) {
         selectedDictType.value = found
       }
@@ -204,6 +206,107 @@ function handleResetSearch() {
   searchForm.dictName = ''
   searchForm.dictType = ''
   fetchDictTypeList()
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function buildImportResultMessage(result: ImportResult) {
+  const lines = [
+    `成功 ${result.successCount} 条`,
+    `失败 ${result.failureCount} 条`,
+  ]
+  result.errors.slice(0, 8).forEach(item => {
+    lines.push(`第 ${item.rowNumber} 行：${item.message}`)
+  })
+  if (result.errors.length > 8) {
+    lines.push(`其余 ${result.errors.length - 8} 条请修正后重试`)
+  }
+  return lines.map(item => escapeHtml(item)).join('<br/>')
+}
+
+async function showImportResult(result: ImportResult) {
+  if (result.failureCount > 0) {
+    await ElMessageBox.alert(buildImportResultMessage(result), '导入结果', {
+      confirmButtonText: '知道了',
+      dangerouslyUseHTMLString: true,
+    })
+    return
+  }
+  ElMessage.success(`导入成功，共 ${result.successCount} 条`)
+}
+
+async function handleExportTypes() {
+  try {
+    await dictApi.typeExport({
+      dictName: searchForm.dictName || undefined,
+      dictType: searchForm.dictType || undefined,
+    })
+  }
+  catch (error) {
+    console.error('导出字典类型失败:', error)
+  }
+}
+
+async function handleExportData() {
+  if (!selectedDictType.value?.dictType) {
+    ElMessage.warning('请先选择字典类型')
+    return
+  }
+  try {
+    await dictApi.dataExport(selectedDictType.value.dictType)
+  }
+  catch (error) {
+    console.error('导出字典数据失败:', error)
+  }
+}
+
+async function handleDownloadDataTemplate() {
+  try {
+    await dictApi.dataDownloadImportTemplate()
+  }
+  catch (error) {
+    console.error('下载字典模板失败:', error)
+  }
+}
+
+function triggerDataImport() {
+  if (!selectedDictType.value) {
+    ElMessage.warning('请先选择字典类型')
+    return
+  }
+  dataImportInputRef.value?.click()
+}
+
+async function handleDataImportChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) {
+    return
+  }
+
+  dataImportLoading.value = true
+  try {
+    const result = await dictApi.dataImport(file)
+    await showImportResult(result)
+    fetchDictTypeList()
+    if (selectedDictType.value?.dictType) {
+      fetchDictDataList()
+    }
+  }
+  catch (error) {
+    console.error('导入字典数据失败:', error)
+  }
+  finally {
+    dataImportLoading.value = false
+  }
 }
 
 // 新增字典类型
@@ -419,14 +522,25 @@ onMounted(() => {
       <template #header>
         <div class="flex items-center justify-between">
           <span class="font-bold">字典类型</span>
-          <el-button
-            type="primary"
-            size="small"
-            :icon="Plus"
-            @click="handleAddType"
-          >
-            新增
-          </el-button>
+          <div class="flex items-center gap-2">
+            <el-button
+              type="primary"
+              size="small"
+              :icon="Plus"
+              v-permission="'system:dict:create'"
+              @click="handleAddType"
+            >
+              新增
+            </el-button>
+            <el-button
+              size="small"
+              :icon="Download"
+              v-permission="'system:dict:export'"
+              @click="handleExportTypes"
+            >
+              导出
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -571,15 +685,45 @@ onMounted(() => {
               ({{ selectedDictType.dictName }} - {{ selectedDictType.dictType }})
             </span>
           </span>
-          <el-button
-            type="primary"
-            size="small"
-            :icon="Plus"
-            :disabled="!selectedDictType"
-            @click="handleAddData"
-          >
-            新增
-          </el-button>
+          <div class="flex items-center gap-2">
+            <el-button
+              type="primary"
+              size="small"
+              :icon="Plus"
+              :disabled="!selectedDictType"
+              v-permission="'system:dict:create'"
+              @click="handleAddData"
+            >
+              新增
+            </el-button>
+            <el-button
+              size="small"
+              :icon="Download"
+              :disabled="!selectedDictType"
+              v-permission="'system:dict:export'"
+              @click="handleExportData"
+            >
+              导出
+            </el-button>
+            <el-button
+              size="small"
+              :icon="Download"
+              v-permission="'system:dict:import'"
+              @click="handleDownloadDataTemplate"
+            >
+              模板
+            </el-button>
+            <el-button
+              size="small"
+              :icon="Upload"
+              :disabled="!selectedDictType"
+              :loading="dataImportLoading"
+              v-permission="'system:dict:import'"
+              @click="triggerDataImport"
+            >
+              导入
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -686,6 +830,14 @@ onMounted(() => {
         class="mt-20"
       />
     </el-card>
+
+    <input
+      ref="dataImportInputRef"
+      type="file"
+      accept=".xlsx,.xls"
+      class="hidden"
+      @change="handleDataImportChange"
+    >
 
     <!-- 字典类型弹窗 -->
     <el-dialog

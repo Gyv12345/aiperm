@@ -25,6 +25,17 @@ export interface PageParams {
   pageSize?: number
 }
 
+export interface ImportError {
+  rowNumber: number
+  message: string
+}
+
+export interface ImportResult {
+  successCount: number
+  failureCount: number
+  errors: ImportError[]
+}
+
 // 表格列配置（用于 ColumnSetting 组件）
 export interface TableColumn {
   key: string       // 对应 el-table-column 的 prop

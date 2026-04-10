@@ -3,11 +3,8 @@
  * 对应后端 SysDictTypeController 和 SysDictDataController
  */
 import request from '@/utils/request'
-import type {PageParams, PageResult} from '@/types'
+import type {ImportResult, PageParams, PageResult} from '@/types'
 
-// ==================== 类型定义 ====================
-
-/** 字典类型实体 */
 export interface DictTypeVO {
   id: number
   dictName: string
@@ -20,7 +17,6 @@ export interface DictTypeVO {
   updateBy: string
 }
 
-/** 字典数据实体 */
 export interface DictDataVO {
   id: number
   dictType: string
@@ -38,7 +34,6 @@ export interface DictDataVO {
   updateBy: string
 }
 
-/** 字典类型查询/创建/更新 DTO */
 export interface DictTypeDTO extends PageParams {
   id?: number
   dictName?: string
@@ -47,7 +42,6 @@ export interface DictTypeDTO extends PageParams {
   remark?: string
 }
 
-/** 字典数据查询/创建/更新 DTO */
 export interface DictDataDTO extends PageParams {
   id?: number
   dictType?: string
@@ -61,50 +55,46 @@ export interface DictDataDTO extends PageParams {
   isDefault?: number
 }
 
-// ==================== API 函数 ====================
-
 export const dictApi = {
-  // ==================== 字典类型 ====================
-
-  /** 分页查询字典类型 */
   typeList: (params: DictTypeDTO) =>
     request.get<PageResult<DictTypeVO>>('/system/dict/type', { params }),
 
-  /** 查询所有启用的字典类型 */
   typeAll: () =>
     request.get<DictTypeVO[]>('/system/dict/type/all'),
 
-  /** 根据 ID 查询字典类型 */
+  typeExport: (params: DictTypeDTO) =>
+    request.download('/system/dict/type/export', { params }, 'dict-types.xlsx'),
+
   typeGetById: (id: number) =>
     request.get<DictTypeVO>(`/system/dict/type/${id}`),
 
-  /** 创建字典类型 */
   typeCreate: (data: DictTypeDTO) =>
     request.post<number>('/system/dict/type', data),
 
-  /** 更新字典类型 */
   typeUpdate: (id: number, data: DictTypeDTO) =>
     request.put<void>(`/system/dict/type/${id}`, data),
 
-  /** 删除字典类型 */
   typeDelete: (id: number) =>
     request.delete<void>(`/system/dict/type/${id}`),
 
-  // ==================== 字典数据 ====================
-
-  /** 根据字典类型查询字典数据 */
   dataList: (dictType: string) =>
     request.get<DictDataVO[]>('/system/dict/data/list', { params: { dictType } }),
 
-  /** 创建字典数据 */
+  dataExport: (dictType?: string) =>
+    request.download('/system/dict/data/export', { params: { dictType } }, 'dict-data.xlsx'),
+
+  dataDownloadImportTemplate: () =>
+    request.download('/system/dict/data/import-template', undefined, 'dict-data-import-template.xlsx'),
+
+  dataImport: (file: File) =>
+    request.upload<ImportResult>('/system/dict/data/import', file),
+
   dataCreate: (data: DictDataDTO) =>
     request.post<void>('/system/dict/data', data),
 
-  /** 更新字典数据 */
   dataUpdate: (id: number, data: DictDataDTO) =>
     request.put<void>(`/system/dict/data/${id}`, data),
 
-  /** 删除字典数据 */
   dataDelete: (id: number) =>
     request.delete<void>(`/system/dict/data/${id}`),
 }
