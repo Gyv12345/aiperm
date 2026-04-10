@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Jackson 全局配置 统一配置 LocalDateTime 序列化格式
+ * @author shichenyang
  */
 @Configuration
 public class JacksonConfig {
