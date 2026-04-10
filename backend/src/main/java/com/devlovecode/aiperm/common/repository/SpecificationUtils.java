@@ -36,6 +36,26 @@ public final class SpecificationUtils {
 	}
 
 	/**
+	 * 大于等于
+	 */
+	public static <T, V extends Comparable<? super V>> Specification<T> ge(String fieldName, V value) {
+		if (value == null) {
+			return null;
+		}
+		return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get(fieldName), value);
+	}
+
+	/**
+	 * 小于等于
+	 */
+	public static <T, V extends Comparable<? super V>> Specification<T> le(String fieldName, V value) {
+		if (value == null) {
+			return null;
+		}
+		return (root, query, cb) -> cb.lessThanOrEqualTo(root.get(fieldName), value);
+	}
+
+	/**
 	 * IN 查询
 	 */
 	public static <T> Specification<T> in(String fieldName, Collection<?> values) {

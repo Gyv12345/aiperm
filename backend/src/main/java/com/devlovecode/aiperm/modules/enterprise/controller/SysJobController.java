@@ -86,4 +86,13 @@ public class SysJobController {
 		return R.ok();
 	}
 
+	@Operation(summary = "立即执行一次定时任务")
+	@SaCheckPermission("enterprise:job:execute")
+	@Log(title = "定时任务管理", operType = OperType.OTHER)
+	@PutMapping("/{id}/run")
+	public R<Void> runOnce(@PathVariable Long id) {
+		jobService.runOnce(id);
+		return R.ok();
+	}
+
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -27,6 +28,8 @@ public class JobSchedulerService {
 	private final JobRepository jobRepo;
 
 	private final JobInvokeExecutor jobInvokeExecutor;
+
+	private final JobLogService jobLogService;
 
 	private final Map<Long, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
@@ -97,11 +100,24 @@ public class JobSchedulerService {
 	}
 
 	private void executeJob(SysJob job) {
+		executeJob(job, "SCHEDULE", "system");
+	}
+
+	public void executeNow(SysJob job, String operator) {
+		executeJob(job, "MANUAL", operator);
+	}
+
+	private void executeJob(SysJob job, String triggerSource, String operator) {
+		LocalDateTime startTime = LocalDateTime.now();
 		try {
 			jobInvokeExecutor.execute(job);
+			LocalDateTime endTime = LocalDateTime.now();
+			jobLogService.recordSuccess(job, triggerSource, operator, startTime, endTime, "执行成功");
 			log.info("任务 {} 执行成功", job.getId());
 		}
 		catch (Exception e) {
+			LocalDateTime endTime = LocalDateTime.now();
+			jobLogService.recordFailure(job, triggerSource, operator, startTime, endTime, e);
 			log.error("任务 {} 执行失败，target={}", job.getId(), job.getBeanClass(), e);
 		}
 	}

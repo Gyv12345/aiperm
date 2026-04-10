@@ -1,7 +1,8 @@
 package com.devlovecode.aiperm.config;
 
 import com.devlovecode.aiperm.common.interceptor.DataScopeInterceptor;
-import com.devlovecode.aiperm.modules.mfa.interceptor.MfaInterceptor;
+import com.devlovecode.aiperm.modules.auth.mfa.interceptor.MfaInterceptor;
+import com.devlovecode.aiperm.modules.monitor.interceptor.OnlineUserActivityInterceptor;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -27,6 +28,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 	private final DataScopeInterceptor dataScopeInterceptor;
 
 	private final MfaInterceptor mfaInterceptor;
+
+	private final OnlineUserActivityInterceptor onlineUserActivityInterceptor;
 
 	/**
 	 * 本地 OSS 文件访问映射
@@ -61,9 +64,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 		// 2FA 拦截器（检查敏感操作是否需要二次验证）
 		registry.addInterceptor(mfaInterceptor)
-			.addPathPatterns("/system/**", "/enterprise/**", "/mfa/unbind")
+			.addPathPatterns("/system/**", "/enterprise/**", "/monitor/**", "/mfa/unbind")
 			.excludePathPatterns("/auth/**", "/captcha/**", "/error", "/v3/api-docs/**", "/swagger-ui/**",
 					"/mfa/status", "/mfa/bind/**", "/mfa/verify");
+
+		registry.addInterceptor(onlineUserActivityInterceptor)
+			.addPathPatterns("/**")
+			.excludePathPatterns("/auth/**", "/captcha/**", "/oauth/login/**", "/approval/callback/**", "/error",
+					"/v3/api-docs/**", "/swagger-ui/**", "/webjars/**", "/favicon.ico");
 	}
 
 	/**

@@ -9,6 +9,8 @@ server:
 spring:
   application:
     name: aiperm
+  modulith:
+    detection-strategy: explicitly-annotated
   threads:
     virtual:
       enabled: true

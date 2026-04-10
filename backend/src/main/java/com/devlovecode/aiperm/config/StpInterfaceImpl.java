@@ -1,7 +1,7 @@
 package com.devlovecode.aiperm.config;
 
 import cn.dev33.satoken.stp.StpInterface;
-import com.devlovecode.aiperm.modules.auth.service.AuthService;
+import com.devlovecode.aiperm.modules.auth.core.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

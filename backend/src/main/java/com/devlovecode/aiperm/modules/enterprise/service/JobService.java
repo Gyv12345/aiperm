@@ -122,6 +122,12 @@ public class JobService {
 		jobSchedulerService.refreshJobAfterCommit(entity);
 	}
 
+	@Transactional(readOnly = true)
+	public void runOnce(Long id) {
+		SysJob entity = jobRepo.findByIdAndDeleted(id, 0).orElseThrow(() -> new BusinessException("定时任务不存在"));
+		jobSchedulerService.executeNow(entity, getCurrentUsername());
+	}
+
 	// ========== 私有方法 ==========
 
 	private JobVO toVO(SysJob entity) {

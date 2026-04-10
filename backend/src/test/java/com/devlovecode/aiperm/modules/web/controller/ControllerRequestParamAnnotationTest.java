@@ -1,11 +1,11 @@
 package com.devlovecode.aiperm.modules.web.controller;
 
 import com.devlovecode.aiperm.modules.enterprise.controller.SysNoticeController;
-import com.devlovecode.aiperm.modules.log.controller.SysOperLogController;
-import com.devlovecode.aiperm.modules.oauth.controller.OAuthController;
-import com.devlovecode.aiperm.modules.oss.controller.OssController;
-import com.devlovecode.aiperm.modules.profile.controller.ProfileController;
-import com.devlovecode.aiperm.modules.system.controller.SysUserController;
+import com.devlovecode.aiperm.modules.audit.controller.SysOperLogController;
+import com.devlovecode.aiperm.modules.auth.oauth.controller.OAuthController;
+import com.devlovecode.aiperm.modules.storage.controller.OssController;
+import com.devlovecode.aiperm.modules.system.profile.controller.ProfileController;
+import com.devlovecode.aiperm.modules.system.rbac.controller.SysUserController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.RequestParam;

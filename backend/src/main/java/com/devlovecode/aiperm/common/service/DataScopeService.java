@@ -2,8 +2,8 @@ package com.devlovecode.aiperm.common.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.enums.DataScopeEnum;
-import com.devlovecode.aiperm.modules.system.entity.SysUser;
-import com.devlovecode.aiperm.modules.system.repository.UserRepository;
+import com.devlovecode.aiperm.modules.system.rbac.entity.SysUser;
+import com.devlovecode.aiperm.modules.system.rbac.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
