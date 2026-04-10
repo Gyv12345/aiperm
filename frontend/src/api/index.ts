@@ -14,6 +14,14 @@ export * from './oss'
 
 // 操作日志
 export * from './log'
+export {
+  cacheMonitorApi,
+  jobLogApi,
+  loginLogApi,
+  onlineMonitorApi,
+  operLogMonitorApi,
+  serverMonitorApi,
+} from './monitor'
 
 // 系统管理模块
 export * from './system/user'
