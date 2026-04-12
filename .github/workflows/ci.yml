@@ -9,6 +9,8 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      MAVEN_VERSION: 4.0.0-rc-5
     steps:
       - uses: actions/checkout@v4
 
@@ -17,17 +19,24 @@ jobs:
         with:
           java-version: '25'
           distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Download Maven 4
+        run: |
+          curl -fsSL "https://dlcdn.apache.org/maven/maven-4/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" -o "$RUNNER_TEMP/apache-maven.tar.gz"
+          tar -xzf "$RUNNER_TEMP/apache-maven.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-${MAVEN_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Maven
+        run: mvn -version
 
       - name: Build Backend
         working-directory: backend
-        run: ./gradlew build -x test
+        run: mvn -B -ntp -DskipTests package
 
       - name: Run Backend Tests
         working-directory: backend
-        run: ./gradlew test
+        run: mvn -B -ntp test
 
   frontend:
     runs-on: ubuntu-latest
