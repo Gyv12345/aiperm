@@ -20,10 +20,6 @@ interface MenuItem extends MenuVO {
 }
 
 const DISABLED_ROUTE_PATHS = new Set([
-  '/system/im-config',
-  '/system/approval-scene',
-  '/approval/my',
-  '/approval/todo',
   '/enterprise/message-template',
   '/enterprise/message-log',
 ])
