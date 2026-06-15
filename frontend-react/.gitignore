@@ -1,0 +1,19 @@
+/node_modules
+/.env.local
+/.umirc.local.ts
+/config/config.local.ts
+
+# umi 生成产物
+/src/.umi
+/src/.umi-production
+/src/.umi-test
+/.umi
+/.umi-production
+/.umi-test
+/dist
+/.mfsu
+.swc
+.turbopack
+
+# OpenAPI 本地备份（可选提交，按需调整）
+# /openapi.json
