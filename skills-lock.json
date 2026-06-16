@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "chinese-copyright-application": {
+      "source": "na57/chinese-copyright-application-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "820134e4d373ebe9dc82916303f2fa1a3eee41d24178569a04694bb15df0b77e"
+    },
     "context7": {
       "source": "intellectronica/agent-skills",
       "sourceType": "github",

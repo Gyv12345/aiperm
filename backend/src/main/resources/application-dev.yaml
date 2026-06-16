@@ -34,11 +34,17 @@ spring:
           max-wait: -1ms
 
 # 日志配置
+# SQL 打印说明（Hibernate 7 / Spring Boot 4）：
+#   - org.hibernate.SQL=trace：打印执行的 SQL 语句（仍含 ? 占位符）。
+#   - org.hibernate.orm.jdbc.bind=trace：打印每个绑定参数的值与类型，与上一行
+#     对应，可手动拼出完整可执行的 SQL。
+#   - spring.jpa.show-sql 保持 false（走 logging 通道，避免 System.out 重复输出）。
 logging:
   level:
     com.devlovecode.aiperm: debug
-    org.hibernate.SQL: debug
+    org.hibernate.SQL: trace
     org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.orm.jdbc.extract: trace
 
 management:
   endpoint:
