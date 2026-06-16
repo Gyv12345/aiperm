@@ -48,14 +48,6 @@ function isButton(menuType: string | undefined): boolean {
   return menuType === '3' || menuType === 'F' || menuType === 'f';
 }
 
-/** 把单个 path 规整为以 / 开头 */
-function normalizePath(p: string | null | undefined): string {
-  let path = (p || '').trim();
-  if (!path) return '';
-  if (!path.startsWith('/')) path = `/${path}`;
-  return path;
-}
-
 /**
  * 把后端菜单树转为 ProLayout 的 MenuDataItem
  * - 仅渲染目录(1/M)与菜单(2/C)，按钮(3/F)不进菜单。
@@ -72,18 +64,21 @@ function toMenuData(
     .filter((n) => !isButton(n.menuType))
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
     .map((n) => {
-      // 拼接完整路径：父级绝对路径 + 子级相对路径
-      const rawPath = normalizePath(n.path);
+      // 区分绝对/相对路径：以后端原始 path 是否以 / 开头为准。
+      // 注意必须用原始值判断——normalizePath 会给相对路径补前导 /，
+      // 若在补 / 之后再判断 startsWith('/')，子级会被误判为绝对路径，
+      // 从而跳过与父级的拼接（例如 user → /user 而非 /system/user）。
+      const original = (n.path || '').trim();
       let path: string;
-      if (!rawPath) {
+      if (!original) {
         // 目录无 path：用占位
         path = parentPath ? `${parentPath}/menu-${n.id}` : `/menu-${n.id}`;
-      } else if (rawPath.startsWith('/')) {
+      } else if (original.startsWith('/')) {
         // 子级是绝对路径，直接用
-        path = rawPath;
+        path = original;
       } else {
-        // 子级是相对路径，与父级拼接
-        path = `${parentPath}${rawPath}`;
+        // 子级是相对路径，与父级拼接（顶层父级为空时补前导 /）
+        path = parentPath ? `${parentPath}/${original}` : `/${original}`;
       }
       const item: MenuDataItem = {
         key: String(n.id),
@@ -159,23 +154,12 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
     fixSiderbar: true,
     contentWidth: 'Fluid',
     colorPrimary: '#0060a9',
-    // 动态菜单：后端菜单 + 前端补充（工作台首页、系统监控，后端菜单未含）
+    // 动态菜单：后端菜单 + 前端补充（仅工作台首页，后端菜单未含）
+    // 监控中心现已由后端菜单提供（V4.8.0），不再硬编码，避免重复。
     menuDataRender: () => {
       const backend = toMenuData((initialState as InitialState)?.menus);
-      // 前端补充菜单：固定首页 + 监控类（后端菜单未含，但接口已实现）
       const extra: MenuDataItem[] = [
         { key: 'welcome', name: '工作台', path: '/welcome' },
-        {
-          key: 'monitor',
-          name: '系统监控',
-          path: '/monitor',
-          children: [
-            { key: 'monitor-online', name: '在线用户', path: '/monitor/online' },
-            { key: 'monitor-login-log', name: '登录日志', path: '/monitor/login-log' },
-            { key: 'monitor-job-log', name: '任务日志', path: '/monitor/job-log' },
-            { key: 'monitor-oper-log', name: '操作日志', path: '/monitor/oper-log' },
-          ],
-        },
       ];
       return [...extra, ...backend];
     },
