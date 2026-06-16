@@ -137,13 +137,29 @@ onMounted(() => {
           </template>
 
           <template v-if="overview?.userGuide">
-            <div class="grid gap-3 md:grid-cols-3">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div class="rounded-xl bg-[var(--el-fill-color-light)] p-4">
+                <div class="text-xs uppercase tracking-[0.08em] text-[var(--el-text-color-secondary)]">
+                  模块开关
+                </div>
+                <div class="mt-2 text-lg font-semibold">
+                  {{ overview.userGuide.moduleEnabled ? '已开启' : '未开启' }}
+                </div>
+              </div>
               <div class="rounded-xl bg-[var(--el-fill-color-light)] p-4">
                 <div class="text-xs uppercase tracking-[0.08em] text-[var(--el-text-color-secondary)]">
                   平台状态
                 </div>
                 <div class="mt-2 text-lg font-semibold">
                   {{ overview.userGuide.platformEnabled ? '已启用' : '未启用' }}
+                </div>
+              </div>
+              <div class="rounded-xl bg-[var(--el-fill-color-light)] p-4">
+                <div class="text-xs uppercase tracking-[0.08em] text-[var(--el-text-color-secondary)]">
+                  平台配置
+                </div>
+                <div class="mt-2 text-lg font-semibold">
+                  {{ overview.userGuide.platformConfigReady ? '已完整' : '待补齐' }}
                 </div>
               </div>
               <div class="rounded-xl bg-[var(--el-fill-color-light)] p-4">

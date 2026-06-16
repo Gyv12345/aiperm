@@ -32,7 +32,11 @@ public class ApprovalTodoOverviewVO {
 	@Data
 	public static class UserGuide {
 
+		private Boolean moduleEnabled;
+
 		private Boolean platformEnabled;
+
+		private Boolean platformConfigReady;
 
 		private Boolean oauthBound;
 

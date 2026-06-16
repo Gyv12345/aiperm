@@ -77,7 +77,9 @@ export interface ApprovalTodoOverviewVO {
     focusPlatform: string
   }
   userGuide: {
+    moduleEnabled: boolean
     platformEnabled: boolean
+    platformConfigReady: boolean
     oauthBound: boolean
     enabledSceneCount: number
     nextStep: string

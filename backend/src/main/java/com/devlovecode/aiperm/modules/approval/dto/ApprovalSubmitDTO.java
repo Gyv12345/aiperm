@@ -35,4 +35,8 @@ public class ApprovalSubmitDTO {
 	@Schema(description = "业务载荷")
 	private Map<String, Object> payload;
 
+	@JsonView(Views.Create.class)
+	@Schema(description = "是否强制要求审批能力已就绪。true: 未启用/未配置IM时报错；false: 直接跳过审批")
+	private Boolean required;
+
 }

@@ -93,21 +93,34 @@ public class ApprovalBridgeService implements ApprovalClient {
 	@Override
 	@Transactional
 	public Long submit(ApprovalSubmitCommand command) {
-		SysApprovalScene scene = approvalSceneRepo.findBySceneCode(command.sceneCode())
-			.orElseThrow(() -> new BusinessException("审批场景不存在：" + command.sceneCode()));
+		if (!isApprovalModuleEnabled()) {
+			return unavailable(command.required(), "审批模块未启用，请先开启配置键 approval.module.enabled");
+		}
+
+		SysApprovalScene scene = approvalSceneRepo.findBySceneCode(command.sceneCode()).orElse(null);
+		if (scene == null) {
+			return unavailable(command.required(), "审批场景不存在：" + command.sceneCode());
+		}
 		if (!isEnabled(scene.getEnabled()) || !isEnabled(scene.getAutoSubmitEnabled())) {
-			return null;
+			return unavailable(command.required(), "审批场景未启用或未开启自动提交：" + scene.getSceneCode());
 		}
 
 		SysImConfig config = imConfigService.getOrCreateEntity(scene.getPlatform());
 		if (!isEnabled(config.getEnabled())) {
-			throw new BusinessException("管理员尚未启用 " + scene.getPlatform() + " 审批通道");
+			return unavailable(command.required(), "管理员尚未启用 " + scene.getPlatform() + " 审批通道");
+		}
+		ImConfigService.ConfigAssessment assessment = imConfigService.assessConfig(config);
+		if (!assessment.ready()) {
+			return unavailable(command.required(),
+					scene.getPlatform() + " 平台配置不完整，缺少字段: " + String.join(", ", assessment.missingFields()));
 		}
 
 		Long userId = getCurrentUserId();
-		SysUserOauth binding = userOauthRepo.findByUserIdAndPlatform(userId, scene.getPlatform())
-			.filter(item -> Integer.valueOf(1).equals(item.getStatus()))
-			.orElseThrow(() -> new BusinessException("当前账号未绑定 " + scene.getPlatform() + " 账号"));
+		SysUserOauth binding = userOauthRepo.findByUserIdAndPlatform(userId, scene.getPlatform()).filter(
+				item -> Integer.valueOf(1).equals(item.getStatus())).orElse(null);
+		if (binding == null) {
+			return unavailable(command.required(), "当前账号未绑定 " + scene.getPlatform() + " 账号");
+		}
 
 		String businessType = isBlank(command.businessType()) ? scene.getBusinessType() : command.businessType().trim();
 		String activeInstanceKey = buildActiveInstanceKey(businessType, command.businessId());
@@ -169,7 +182,7 @@ public class ApprovalBridgeService implements ApprovalClient {
 	@Transactional
 	public Long submit(ApprovalSubmitDTO dto) {
 		return submit(new ApprovalSubmitCommand(dto.getSceneCode(), dto.getBusinessType(), dto.getBusinessId(),
-				safePayload(dto.getPayload())));
+				safePayload(dto.getPayload()), Boolean.TRUE.equals(dto.getRequired())));
 	}
 
 	public PageResult<ApprovalInstanceVO> queryMyPage(ApprovalInstanceDTO dto) {
@@ -243,6 +256,7 @@ public class ApprovalBridgeService implements ApprovalClient {
 	public ApprovalTodoOverviewVO getTodoOverview(String platform) {
 		String focusPlatform = isBlank(platform) ? "FEISHU" : normalizePlatform(platform);
 		Long userId = getCurrentUserId();
+		boolean moduleEnabled = isApprovalModuleEnabled();
 		SysImConfig config = imConfigService.getOrCreateEntity(focusPlatform);
 		ImConfigService.ConfigAssessment assessment = imConfigService.assessConfig(config);
 		boolean oauthBound = userOauthRepo.findByUserIdAndPlatform(userId, focusPlatform)
@@ -254,8 +268,8 @@ public class ApprovalBridgeService implements ApprovalClient {
 
 		ApprovalTodoOverviewVO overview = new ApprovalTodoOverviewVO();
 		overview.setViewer(buildViewer(userId, diagnosticsVisible, focusPlatform));
-		overview.setUserGuide(buildUserGuide(config, oauthBound, enabledSceneCount, todoUrl));
-		overview.setQuickActions(buildQuickActions(focusPlatform, config, oauthBound, enabledSceneCount, todoUrl));
+		overview.setUserGuide(buildUserGuide(moduleEnabled, config, assessment.ready(), oauthBound, enabledSceneCount, todoUrl));
+		overview.setQuickActions(buildQuickActions(moduleEnabled, focusPlatform, config, oauthBound, enabledSceneCount, todoUrl));
 		if (diagnosticsVisible) {
 			overview.setAdminDiagnostics(buildAdminDiagnostics(focusPlatform, config, assessment, enabledSceneCount));
 		}
@@ -270,16 +284,26 @@ public class ApprovalBridgeService implements ApprovalClient {
 		return viewer;
 	}
 
-	private ApprovalTodoOverviewVO.UserGuide buildUserGuide(SysImConfig config, boolean oauthBound, long enabledSceneCount,
-			String todoUrl) {
+	private ApprovalTodoOverviewVO.UserGuide buildUserGuide(boolean moduleEnabled, SysImConfig config,
+			boolean platformConfigReady, boolean oauthBound, long enabledSceneCount, String todoUrl) {
 		ApprovalTodoOverviewVO.UserGuide userGuide = new ApprovalTodoOverviewVO.UserGuide();
+		userGuide.setModuleEnabled(moduleEnabled);
 		boolean platformEnabled = isEnabled(config.getEnabled());
 		userGuide.setPlatformEnabled(platformEnabled);
+		userGuide.setPlatformConfigReady(platformConfigReady);
 		userGuide.setOauthBound(oauthBound);
 		userGuide.setEnabledSceneCount(enabledSceneCount);
-		if (!platformEnabled) {
+		if (!moduleEnabled) {
+			userGuide.setNextStep("ENABLE_APPROVAL_MODULE");
+			userGuide.setNextStepReason("审批模块未启用，请先在系统配置中开启 approval.module.enabled。");
+		}
+		else if (!platformEnabled) {
 			userGuide.setNextStep("ENABLE_PLATFORM");
 			userGuide.setNextStepReason("管理员尚未启用 " + config.getPlatform() + " 审批通道。");
+		}
+		else if (!platformConfigReady) {
+			userGuide.setNextStep("CONFIGURE_PLATFORM");
+			userGuide.setNextStepReason(config.getPlatform() + " 平台配置尚不完整，请补齐 App ID、Secret、回调密钥等字段。");
 		}
 		else if (!oauthBound) {
 			userGuide.setNextStep("BIND_OAUTH");
@@ -300,20 +324,21 @@ public class ApprovalBridgeService implements ApprovalClient {
 		return userGuide;
 	}
 
-	private List<ApprovalTodoOverviewVO.QuickAction> buildQuickActions(String platform, SysImConfig config, boolean oauthBound,
-			long enabledSceneCount, String todoUrl) {
+	private List<ApprovalTodoOverviewVO.QuickAction> buildQuickActions(boolean moduleEnabled, String platform,
+			SysImConfig config, boolean oauthBound, long enabledSceneCount, String todoUrl) {
 		boolean platformEnabled = isEnabled(config.getEnabled());
 		ApprovalTodoOverviewVO.QuickAction openTodo = new ApprovalTodoOverviewVO.QuickAction();
 		openTodo.setCode("OPEN_PLATFORM_TODO");
-		openTodo.setEnabled(platformEnabled && oauthBound && enabledSceneCount > 0 && !isBlank(todoUrl));
+		openTodo.setEnabled(moduleEnabled && platformEnabled && oauthBound && enabledSceneCount > 0 && !isBlank(todoUrl));
 		openTodo.setUrl(todoUrl);
-		openTodo.setReason(resolveTodoActionReason(platformEnabled, oauthBound, enabledSceneCount, todoUrl, platform));
+		openTodo.setReason(resolveTodoActionReason(moduleEnabled, platformEnabled, oauthBound, enabledSceneCount, todoUrl,
+				platform));
 
 		ApprovalTodoOverviewVO.QuickAction bindOauth = new ApprovalTodoOverviewVO.QuickAction();
 		bindOauth.setCode("BIND_OAUTH");
-		bindOauth.setEnabled(!oauthBound);
+		bindOauth.setEnabled(moduleEnabled && !oauthBound);
 		bindOauth.setUrl("/oauth/bind/" + platform);
-		bindOauth.setReason(oauthBound ? "当前账号已绑定" + platform : "绑定后即可处理平台待办");
+		bindOauth.setReason(!moduleEnabled ? "审批模块未启用" : oauthBound ? "当前账号已绑定" + platform : "绑定后即可处理平台待办");
 
 		ApprovalTodoOverviewVO.QuickAction viewMyApproval = new ApprovalTodoOverviewVO.QuickAction();
 		viewMyApproval.setCode("VIEW_MY_APPROVAL");
@@ -496,6 +521,10 @@ public class ApprovalBridgeService implements ApprovalClient {
 		return Integer.valueOf(1).equals(value);
 	}
 
+	private boolean isApprovalModuleEnabled() {
+		return systemAccess.getBooleanConfig("approval.module.enabled", false);
+	}
+
 	private String normalizePlatform(String platform) {
 		return platform == null ? null : platform.trim().toUpperCase();
 	}
@@ -530,8 +559,11 @@ public class ApprovalBridgeService implements ApprovalClient {
 		}
 	}
 
-	private String resolveTodoActionReason(boolean platformEnabled, boolean oauthBound, long enabledSceneCount,
-			String todoUrl, String platform) {
+	private String resolveTodoActionReason(boolean moduleEnabled, boolean platformEnabled, boolean oauthBound,
+			long enabledSceneCount, String todoUrl, String platform) {
+		if (!moduleEnabled) {
+			return "审批模块未启用";
+		}
 		if (!platformEnabled) {
 			return "管理员尚未启用" + platform + "审批通道";
 		}
@@ -556,6 +588,13 @@ public class ApprovalBridgeService implements ApprovalClient {
 			return value;
 		}
 		return value.substring(0, limit);
+	}
+
+	private Long unavailable(boolean required, String message) {
+		if (required) {
+			throw new BusinessException(message);
+		}
+		return null;
 	}
 
 }

@@ -14,6 +14,16 @@ public interface ApprovalClient {
 	 */
 	Long submit(ApprovalSubmitCommand command);
 
+	default Long submitOptional(String sceneCode, String businessType, Long businessId,
+			java.util.Map<String, Object> payload) {
+		return submit(ApprovalSubmitCommand.optional(sceneCode, businessType, businessId, payload));
+	}
+
+	default Long submitRequired(String sceneCode, String businessType, Long businessId,
+			java.util.Map<String, Object> payload) {
+		return submit(ApprovalSubmitCommand.required(sceneCode, businessType, businessId, payload));
+	}
+
 	/**
 	 * 查询业务最新审批实例。
 	 */
