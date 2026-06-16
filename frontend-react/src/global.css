@@ -1,0 +1,13 @@
+/**
+ * 全局样式（umi 自动加载 src/global.*）
+ *
+ * 仅放少量跨页面复用的轻量样式，组件局部样式仍用内联 style。
+ */
+
+/* 字典管理：左侧选中行的背景高亮 */
+.dict-row-selected > td {
+  background-color: #e6f4ff !important;
+}
+.dict-row-selected:hover > td {
+  background-color: #bae0ff !important;
+}

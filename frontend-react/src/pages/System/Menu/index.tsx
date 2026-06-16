@@ -1,16 +1,15 @@
 /**
  * 菜单管理
  *
- * - 树形 ProTable，数据来自 /system/menu（全量列表）。
- * - 新增/编辑：ModalForm，菜单类型 M=目录/C=菜单/F=按钮。
- *
- * 注意：list1 返回 RListSysMenu（未解包），手动取 .data。
+ * - 树形 ProTable，数据来自 /system/menu/tree（后端已组装成嵌套树，
+ *   节点 children 字段即子菜单，与 ProTable 默认 childrenColumnName 对齐）。
+ * - 新增/编辑：ModalForm，菜单类型 1=目录/2=菜单/3=按钮（后端存储数字字符串）。
  */
 import { AddButton } from '@/components/AccessButton';
 import {
   create4 as createMenu,
   delete4 as deleteMenu,
-  list1 as listMenu,
+  tree as menuTree,
   update4 as updateMenu,
 } from '@/services/aiperm/menu';
 import {
@@ -22,14 +21,36 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import type { ProColumns } from '@ant-design/pro-components';
+import * as AllIcons from '@ant-design/icons';
 import { Popconfirm, Tag, message } from 'antd';
 import React, { useRef, useState } from 'react';
 
+/**
+ * 菜单类型映射。
+ * 后端实际存储数字字符串：'1'=目录 / '2'=菜单 / '3'=按钮；
+ * 同时兼容部分历史数据可能用 M/C/F（OpenAPI schema 标注）。
+ */
 const MENU_TYPE_MAP: Record<string, { text: string; color: string }> = {
+  '1': { text: '目录', color: 'blue' },
+  '2': { text: '菜单', color: 'green' },
+  '3': { text: '按钮', color: 'orange' },
   M: { text: '目录', color: 'blue' },
   C: { text: '菜单', color: 'green' },
   F: { text: '按钮', color: 'orange' },
 };
+
+/**
+ * 把后端存的图标驼峰名（如 Odometer / Setting）渲染为 antd 图标。
+ * 后端约定：存不带 Outlined 后缀的 PascalCase 名称，这里拼上 Outlined 后查表。
+ * 查不到或为空时回退显示原始字符串 / '-'。
+ */
+function renderIcon(name?: string) {
+  if (!name) return <span style={{ color: '#ccc' }}>-</span>;
+  const fullName = `${name}Outlined`;
+  const IconComp = (AllIcons as any)[fullName];
+  if (IconComp) return <IconComp />;
+  return <span>{name}</span>;
+}
 
 const MenuList: React.FC = () => {
   const actionRef = useRef<any>();
@@ -48,7 +69,14 @@ const MenuList: React.FC = () => {
         return t ? <Tag color={t.color}>{t.text}</Tag> : r.menuType;
       },
     },
-    { title: '图标', dataIndex: 'icon', width: 100, hideInSearch: true },
+    {
+      title: '图标',
+      dataIndex: 'icon',
+      width: 80,
+      align: 'center',
+      hideInSearch: true,
+      render: (_, r) => renderIcon(r.icon),
+    },
     { title: '路由地址', dataIndex: 'path', hideInSearch: true, ellipsis: true },
     { title: '组件路径', dataIndex: 'component', hideInSearch: true, ellipsis: true },
     { title: '权限标识', dataIndex: 'perms', hideInSearch: true, ellipsis: true },
@@ -59,7 +87,7 @@ const MenuList: React.FC = () => {
       width: 80,
       hideInSearch: true,
       render: (_, r) =>
-        r.status === 0 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
+        r.status === 1 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
     },
     {
       title: '操作',
@@ -107,13 +135,17 @@ const MenuList: React.FC = () => {
         columns={columns}
         search={false}
         pagination={false}
-        expandable={{ defaultExpandAllRows: true }}
+        expandable={{
+          defaultExpandAllRows: true,
+          // ProTable 树形缩进依赖 childrenColumnName（默认 children）
+          childrenColumnName: 'children',
+        }}
         request={async () => {
           try {
-            const res: any = await listMenu();
-            // RListSysMenu 未解包，取 data
-            const list: API.SysMenu[] = res?.data ?? res ?? [];
-            return { data: list, success: true };
+            const res: any = await menuTree();
+            // tree 返回 RListSysMenu：responseInterceptor 已解包，这里兼容两种形态
+            const treeData: API.SysMenu[] = res?.data ?? res ?? [];
+            return { data: treeData, success: true };
           } catch {
             return { data: [], success: false };
           }
@@ -139,16 +171,20 @@ const MenuList: React.FC = () => {
         modalProps={{ destroyOnClose: true }}
         onFinish={async (values) => {
           const payload = { ...current, ...values } as API.MenuDTO;
-          if (current?.id) {
-            await updateMenu({ id: current.id }, payload);
-            message.success('更新成功');
-          } else {
-            await createMenu(payload);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateMenu({ id: current.id }, payload);
+              message.success('更新成功');
+            } else {
+              await createMenu(payload);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormSelect
@@ -156,9 +192,9 @@ const MenuList: React.FC = () => {
           label="菜单类型"
           rules={[{ required: true, message: '请选择菜单类型' }]}
           options={[
-            { label: '目录', value: 'M' },
-            { label: '菜单', value: 'C' },
-            { label: '按钮', value: 'F' },
+            { label: '目录', value: '1' },
+            { label: '菜单', value: '2' },
+            { label: '按钮', value: '3' },
           ]}
         />
         <ProFormText
@@ -176,8 +212,8 @@ const MenuList: React.FC = () => {
           name="status"
           label="状态"
           options={[
-            { label: '正常', value: 0 },
-            { label: '停用', value: 1 },
+            { label: '正常', value: 1 },
+            { label: '停用', value: 0 },
           ]}
         />
         <ProFormTextArea name="remark" label="备注" />

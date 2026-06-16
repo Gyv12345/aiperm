@@ -71,11 +71,11 @@ const RoleList: React.FC = () => {
       dataIndex: 'status',
       valueType: 'select',
       valueEnum: {
-        0: { text: '正常', status: 'Success' },
-        1: { text: '停用', status: 'Error' },
+        1: { text: '正常', status: 'Success' },
+        0: { text: '停用', status: 'Error' },
       },
       render: (_, r) =>
-        r.status === 0 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
+        r.status === 1 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
     },
     { title: '备注', dataIndex: 'remark', hideInSearch: true, ellipsis: true },
     {
@@ -163,16 +163,20 @@ const RoleList: React.FC = () => {
         initialValues={current}
         modalProps={{ destroyOnClose: true }}
         onFinish={async (values) => {
-          if (current?.id) {
-            await updateRole({ id: current.id }, values as API.RoleDTO);
-            message.success('更新成功');
-          } else {
-            await createRole(values as API.RoleDTO);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateRole({ id: current.id }, values as API.RoleDTO);
+              message.success('更新成功');
+            } else {
+              await createRole(values as API.RoleDTO);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText
@@ -190,8 +194,8 @@ const RoleList: React.FC = () => {
           name="status"
           label="状态"
           options={[
-            { label: '正常', value: 0 },
-            { label: '停用', value: 1 },
+            { label: '正常', value: 1 },
+            { label: '停用', value: 0 },
           ]}
         />
         <ProFormTextArea name="remark" label="备注" />

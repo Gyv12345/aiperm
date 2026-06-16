@@ -143,10 +143,14 @@ const MessageList: React.FC = () => {
         onOpenChange={setSendOpen}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
-          await sendMessage(values as API.MessageDTO);
-          message.success('发送成功');
-          setSendOpen(false);
-          return true;
+          try {
+            await sendMessage(values as API.MessageDTO);
+            message.success('发送成功');
+            setSendOpen(false);
+            return true;
+          } catch {
+            return false;
+          }
         }}
         request={async () => {
           const res: any = await listReceivers();

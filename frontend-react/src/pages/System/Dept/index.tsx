@@ -41,7 +41,7 @@ const DeptList: React.FC = () => {
       width: 80,
       hideInSearch: true,
       render: (_, r) =>
-        r.status === 0 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
+        r.status === 1 ? <Tag color="success">正常</Tag> : <Tag color="error">停用</Tag>,
     },
     {
       title: '操作',
@@ -120,16 +120,21 @@ const DeptList: React.FC = () => {
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           const payload = { ...current, ...values } as API.DeptDTO;
-          if (current?.id) {
-            await updateDept({ id: current.id }, payload);
-            message.success('更新成功');
-          } else {
-            await createDept(payload);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateDept({ id: current.id }, payload);
+              message.success('更新成功');
+            } else {
+              await createDept(payload);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            // 业务失败已在拦截器统一提示，这里吞掉避免 Unhandled Rejection 崩溃
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText
@@ -146,8 +151,8 @@ const DeptList: React.FC = () => {
           name="status"
           label="状态"
           options={[
-            { label: '正常', value: 0 },
-            { label: '停用', value: 1 },
+            { label: '正常', value: 1 },
+            { label: '停用', value: 0 },
           ]}
         />
         <ProFormTextArea name="remark" label="备注" />

@@ -152,16 +152,20 @@ const NoticeList: React.FC = () => {
         initialValues={current}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
-          if (current?.id) {
-            await updateNotice({ id: current.id } as any, values as API.NoticeDTO);
-            message.success('更新成功');
-          } else {
-            await createNotice(values as API.NoticeDTO);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateNotice({ id: current.id } as any, values as API.NoticeDTO);
+              message.success('更新成功');
+            } else {
+              await createNotice(values as API.NoticeDTO);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText

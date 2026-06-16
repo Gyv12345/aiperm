@@ -32,7 +32,7 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { Popconfirm, Tag, message } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const Dict: React.FC = () => {
   const typeActionRef = useRef<any>();
@@ -43,6 +43,11 @@ const Dict: React.FC = () => {
   const [dataModalOpen, setDataModalOpen] = useState(false);
   const [currentData, setCurrentData] = useState<API.DictDataVO | undefined>();
 
+  // 选中类型变化时，刷新右侧字典数据列表
+  useEffect(() => {
+    dataActionRef.current?.reload();
+  }, [selectedType]);
+
   const statusEnum = {
     0: { text: '禁用', status: 'Error' },
     1: { text: '启用', status: 'Success' },
@@ -50,10 +55,31 @@ const Dict: React.FC = () => {
 
   const typeColumns: ProColumns<API.DictTypeVO>[] = [
     { title: 'ID', dataIndex: 'id', width: 70, hideInSearch: true },
-    { title: '字典名称', dataIndex: 'dictName' },
-    { title: '字典类型', dataIndex: 'dictType', hideInSearch: true, render: (_, r) => (
-      <a onClick={() => setSelectedType(r)}>{r.dictType}</a>
-    ) },
+    {
+      title: '字典名称',
+      dataIndex: 'dictName',
+      render: (_, r) => (
+        <a
+          onClick={() => setSelectedType(r)}
+          style={{ fontWeight: r.id === selectedType?.id ? 600 : 400 }}
+        >
+          {r.dictName}
+        </a>
+      ),
+    },
+    {
+      title: '字典类型',
+      dataIndex: 'dictType',
+      hideInSearch: true,
+      render: (_, r) => (
+        <a
+          onClick={() => setSelectedType(r)}
+          style={{ fontWeight: r.id === selectedType?.id ? 600 : 400 }}
+        >
+          {r.dictType}
+        </a>
+      ),
+    },
     {
       title: '状态',
       dataIndex: 'status',
@@ -144,11 +170,13 @@ const Dict: React.FC = () => {
           actionRef={typeActionRef}
           columns={typeColumns}
           search={{ labelWidth: 'auto' }}
-          rowSelection={{
-            selectedRowKeys: selectedType?.id ? [selectedType.id] : [],
-            type: 'radio',
-            onChange: (_, rows) => setSelectedType(rows[0]),
-          }}
+          onRow={(record) => ({
+            onClick: () => setSelectedType(record),
+            style: { cursor: 'pointer' },
+          })}
+          rowClassName={(record) =>
+            record.id === selectedType?.id ? 'dict-row-selected' : ''
+          }
           request={async (params) => {
             const { current, pageSize, ...rest } = params;
             try {
@@ -179,39 +207,53 @@ const Dict: React.FC = () => {
         />
       </div>
 
-      {selectedType && (
-        <div style={{ flex: 1 }}>
-          <ProTable<API.DictDataVO>
-            rowKey="id"
-            actionRef={dataActionRef}
-            headerTitle={`字典数据 - ${selectedType.dictType}`}
-            columns={dataColumns}
-            search={false}
-            request={async () => {
-              try {
-                const res: any = await listByDictType({
-                  dictType: selectedType.dictType,
-                } as any);
-                const list: API.DictDataVO[] = res?.data ?? res ?? [];
-                return { data: list, success: true };
-              } catch {
-                return { data: [], success: false };
-              }
-            }}
-            toolBarRender={() => [
-              <AddButton
-                key="add"
-                onClick={() => {
-                  setCurrentData({ dictType: selectedType.dictType } as API.DictDataVO);
-                  setDataModalOpen(true);
-                }}
-              >
-                新增数据
-              </AddButton>,
-            ]}
-          />
-        </div>
-      )}
+      <div style={{ flex: 1 }}>
+        <ProTable<API.DictDataVO>
+          rowKey="id"
+          actionRef={dataActionRef}
+          headerTitle={
+            selectedType
+              ? `字典数据 - ${selectedType.dictType}`
+              : '字典数据'
+          }
+          columns={dataColumns}
+          search={false}
+          request={async () => {
+            if (!selectedType) return { data: [], total: 0, success: true };
+            try {
+              const res: any = await listByDictType({
+                dictType: selectedType.dictType,
+              } as any);
+              const list: API.DictDataVO[] = res?.data ?? res ?? [];
+              return { data: list, success: true };
+            } catch {
+              return { data: [], success: false };
+            }
+          }}
+          locale={{
+            emptyText: selectedType
+              ? '暂无数据'
+              : '请先在左侧选择一个字典类型',
+          }}
+          toolBarRender={() =>
+            selectedType
+              ? [
+                  <AddButton
+                    key="add"
+                    onClick={() => {
+                      setCurrentData({
+                        dictType: selectedType.dictType,
+                      } as API.DictDataVO);
+                      setDataModalOpen(true);
+                    }}
+                  >
+                    新增数据
+                  </AddButton>,
+                ]
+              : []
+          }
+        />
+      </div>
 
       <ModalForm
         title={currentType?.id ? '编辑字典类型' : '新增字典类型'}
@@ -220,16 +262,20 @@ const Dict: React.FC = () => {
         initialValues={currentType}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
-          if (currentType?.id) {
-            await updateDictType({ id: currentType.id }, values as API.DictTypeDTO);
-            message.success('更新成功');
-          } else {
-            await createDictType(values as API.DictTypeDTO);
-            message.success('创建成功');
+          try {
+            if (currentType?.id) {
+              await updateDictType({ id: currentType.id }, values as API.DictTypeDTO);
+              message.success('更新成功');
+            } else {
+              await createDictType(values as API.DictTypeDTO);
+              message.success('创建成功');
+            }
+            setTypeModalOpen(false);
+            typeActionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setTypeModalOpen(false);
-          typeActionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText
@@ -261,16 +307,20 @@ const Dict: React.FC = () => {
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           const payload = { ...currentData, ...values } as API.DictDataDTO;
-          if (currentData?.id) {
-            await updateDictData({ id: currentData.id }, payload);
-            message.success('更新成功');
-          } else {
-            await createDictData(payload);
-            message.success('创建成功');
+          try {
+            if (currentData?.id) {
+              await updateDictData({ id: currentData.id }, payload);
+              message.success('更新成功');
+            } else {
+              await createDictData(payload);
+              message.success('创建成功');
+            }
+            setDataModalOpen(false);
+            dataActionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setDataModalOpen(false);
-          dataActionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText name="dictType" label="字典类型" disabled />

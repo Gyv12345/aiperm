@@ -155,16 +155,20 @@ const JobList: React.FC = () => {
         initialValues={current}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
-          if (current?.id) {
-            await updateJob({ id: current.id } as any, values as API.JobDTO);
-            message.success('更新成功');
-          } else {
-            await createJob(values as API.JobDTO);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateJob({ id: current.id } as any, values as API.JobDTO);
+              message.success('更新成功');
+            } else {
+              await createJob(values as API.JobDTO);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText

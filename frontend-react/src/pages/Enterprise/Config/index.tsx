@@ -102,16 +102,20 @@ const ConfigList: React.FC = () => {
         initialValues={current}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
-          if (current?.id) {
-            await updateConfig({ id: current.id } as any, values as API.ConfigDTO);
-            message.success('更新成功');
-          } else {
-            await createConfig(values as API.ConfigDTO);
-            message.success('创建成功');
+          try {
+            if (current?.id) {
+              await updateConfig({ id: current.id } as any, values as API.ConfigDTO);
+              message.success('更新成功');
+            } else {
+              await createConfig(values as API.ConfigDTO);
+              message.success('创建成功');
+            }
+            setModalOpen(false);
+            actionRef.current?.reload();
+            return true;
+          } catch {
+            return false;
           }
-          setModalOpen(false);
-          actionRef.current?.reload();
-          return true;
         }}
       >
         <ProFormText
