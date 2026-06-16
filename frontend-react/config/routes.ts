@@ -41,6 +41,8 @@ export default [
       { path: '/system/dept', name: '部门管理', component: './System/Dept', access: 'canUser' },
       { path: '/system/post', name: '岗位管理', component: './System/Post', access: 'canUser' },
       { path: '/system/dict', name: '字典管理', component: './System/Dict', access: 'canUser' },
+      { path: '/system/im-config', name: 'IM平台配置', component: './System/ImConfig', access: 'canUser' },
+      { path: '/system/approval-scene', name: '审批场景管理', component: './System/ApprovalScene', access: 'canUser' },
     ],
   },
   {
@@ -60,6 +62,8 @@ export default [
     access: 'canUser',
     routes: [
       { path: '/monitor/online', name: '在线用户', component: './Monitor/Online', access: 'canUser' },
+      { path: '/monitor/server', name: '服务监控', component: './Monitor/Server', access: 'canUser' },
+      { path: '/monitor/cache', name: '缓存监控', component: './Monitor/Cache', access: 'canUser' },
       { path: '/monitor/login-log', name: '登录日志', component: './Monitor/LoginLog', access: 'canUser' },
       { path: '/monitor/job-log', name: '任务日志', component: './Monitor/JobLog', access: 'canUser' },
       { path: '/monitor/oper-log', name: '操作日志', component: './Monitor/OperLog', access: 'canUser' },
