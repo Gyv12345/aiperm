@@ -81,3 +81,5 @@ backend/.env
 .agents/
 .claude/
 .codex/
+.omc/
+.planning/research/
