@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,10 +68,13 @@ public class DeptService {
 		entity.setLeader(dto.getLeader());
 		entity.setPhone(dto.getPhone());
 		entity.setEmail(dto.getEmail());
-		entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 0);
+		entity.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
 		entity.setRemark(dto.getRemark());
+		entity.setDeptCode(dto.getDeptCode());
 		entity.setCreateBy(getCurrentUsername());
 		entity.setCreateTime(LocalDateTime.now());
+		// 计算祖级路径：根部门 "0"；子部门 = 父级 ancestors + "," + 父级 id
+		entity.setAncestors(buildAncestors(entity.getParentId()));
 
 		deptRepo.save(entity);
 	}
@@ -96,6 +100,10 @@ public class DeptService {
 			throw new BusinessException("父部门不能是自己或自己的子部门");
 		}
 
+		// 检测父部门是否变更：变更时需级联重算本部门及所有子孙的 ancestors
+		boolean parentChanged = !Objects.equals(entity.getParentId(), dto.getParentId());
+		String oldAncestors = entity.getAncestors();
+
 		entity.setDeptName(dto.getDeptName());
 		entity.setParentId(dto.getParentId());
 		entity.setSort(dto.getSort());
@@ -104,10 +112,19 @@ public class DeptService {
 		entity.setEmail(dto.getEmail());
 		entity.setStatus(dto.getStatus());
 		entity.setRemark(dto.getRemark());
+		entity.setDeptCode(dto.getDeptCode());
 		entity.setUpdateBy(getCurrentUsername());
 		entity.setUpdateTime(LocalDateTime.now());
+		// 重新计算本部门 ancestors
+		entity.setAncestors(buildAncestors(entity.getParentId()));
 
 		deptRepo.save(entity);
+
+		// 父部门变更：级联重算所有子孙的 ancestors（旧前缀 → 新前缀替换）
+		if (parentChanged && oldAncestors != null) {
+			String newAncestors = entity.getAncestors();
+			updateDescendantsAncestors(id, oldAncestors, newAncestors);
+		}
 	}
 
 	/**
@@ -126,6 +143,40 @@ public class DeptService {
 	}
 
 	// ========== 私有方法 ==========
+
+	/**
+	 * 根据父部门ID构建祖级路径。
+	 * 根部门（parentId 为空或 0）返回 "0"；否则返回 "父级ancestors + , + 父级id"。
+	 */
+	private String buildAncestors(Long parentId) {
+		if (parentId == null || parentId == 0L) {
+			return "0";
+		}
+		SysDept parent = deptRepo.findById(parentId)
+			.orElseThrow(() -> new BusinessException("父级部门不存在"));
+		String parentAncestors = parent.getAncestors() != null ? parent.getAncestors() : "0";
+		return parentAncestors + "," + parentId;
+	}
+
+	/**
+	 * 移动部门后级联重算所有子孙的 ancestors。
+	 * 策略：找出所有 ancestors 以 "oldAncestors,部门id" 开头的部门，把该前缀替换为
+	 * "newAncestors,部门id"。这样子孙链一次性修正，无需递归。
+	 */
+	private void updateDescendantsAncestors(Long deptId, String oldAncestors, String newAncestors) {
+		List<SysDept> allDepts = deptRepo.findAllByDeletedOrderByParentIdAscSortAsc(0);
+		// 本部门作为子孙前缀的锚点
+		String oldPrefix = oldAncestors + "," + deptId;
+		String newPrefix = newAncestors + "," + deptId;
+		for (SysDept dept : allDepts) {
+			String ancestors = dept.getAncestors();
+			if (ancestors != null && ancestors.startsWith(oldPrefix)) {
+				dept.setAncestors(newPrefix + ancestors.substring(oldPrefix.length()));
+				dept.setUpdateTime(LocalDateTime.now());
+				deptRepo.save(dept);
+			}
+		}
+	}
 
 	/**
 	 * 构建部门树

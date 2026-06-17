@@ -22,6 +22,11 @@ public class DeptDTO {
 	private Long parentId = 0L;
 
 	@JsonView({ Views.Create.class, Views.Update.class, Views.Query.class })
+	@Schema(description = "部门编码")
+	@Size(max = 50, message = "部门编码不能超过50个字符")
+	private String deptCode;
+
+	@JsonView({ Views.Create.class, Views.Update.class, Views.Query.class })
 	@Schema(description = "显示顺序")
 	private Integer sort;
 
@@ -41,7 +46,7 @@ public class DeptDTO {
 	private String email;
 
 	@JsonView({ Views.Create.class, Views.Update.class, Views.Query.class })
-	@Schema(description = "部门状态（0=正常，1=停用）")
+	@Schema(description = "部门状态（1=启用，0=停用）")
 	private Integer status;
 
 	@JsonView({ Views.Create.class, Views.Update.class })

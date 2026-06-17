@@ -26,6 +26,12 @@ public class SysDept extends BaseEntity {
 
 	private Long parentId;
 
+	/** 祖级列表，逗号分隔的祖先部门ID，如 "0,1,5"。根部门为 "0" */
+	private String ancestors;
+
+	/** 部门编码 */
+	private String deptCode;
+
 	private Integer sort;
 
 	private String leader;
