@@ -1,7 +1,7 @@
 /**
  * 部门管理（树形）
  *
- * - 全量列表 /system/dept（list3，返回 RListSysDept，需取 .data）。
+ * - 部门树 /system/dept/tree（tree1，返回 RListSysDept，需取 .data）。
  * - 新增/编辑：ModalForm。
  * - 部门树自带 children，直接展开渲染。
  */
@@ -9,7 +9,7 @@ import { AddButton } from '@/components/AccessButton';
 import {
   create7 as createDept,
   delete7 as deleteDept,
-  list3 as listDept,
+  tree1 as getDeptTree,
   update8 as updateDept,
 } from '@/services/aiperm/dept';
 import {
@@ -96,7 +96,7 @@ const DeptList: React.FC = () => {
         expandable={{ defaultExpandAllRows: true }}
         request={async () => {
           try {
-            const res: any = await listDept();
+            const res: any = await getDeptTree();
             const list: API.SysDept[] = res?.data ?? res ?? [];
             return { data: list, success: true };
           } catch {

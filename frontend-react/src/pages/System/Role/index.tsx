@@ -61,11 +61,28 @@ const RoleList: React.FC = () => {
     }
   };
 
+  /** 数据权限范围文案 + 标签颜色 */
+  const DATA_SCOPE_META: Record<number, { text: string; color: string }> = {
+    1: { text: '全部数据', color: 'green' },
+    2: { text: '本部门', color: 'blue' },
+    3: { text: '本部门及下级', color: 'cyan' },
+    4: { text: '仅本人', color: 'orange' },
+  };
+
   const columns: ProColumns<API.SysRole>[] = [
-    { title: 'ID', dataIndex: 'id', width: 70, hideInSearch: true },
     { title: '角色名称', dataIndex: 'roleName' },
     { title: '角色编码', dataIndex: 'roleCode', hideInSearch: true },
     { title: '排序', dataIndex: 'sort', hideInSearch: true },
+    {
+      title: '数据权限',
+      dataIndex: 'dataScope',
+      hideInSearch: true,
+      width: 130,
+      render: (_, r) => {
+        const meta = DATA_SCOPE_META[r.dataScope ?? 1];
+        return <Tag color={meta.color}>{meta.text}</Tag>;
+      },
+    },
     {
       title: '状态',
       dataIndex: 'status',
@@ -199,6 +216,18 @@ const RoleList: React.FC = () => {
           rules={[{ required: true, message: '请输入角色编码' }]}
         />
         <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
+        <ProFormSelect
+          name="dataScope"
+          label="数据权限"
+          colProps={{ span: 12 }}
+          tooltip="控制该角色用户可见的数据范围：全部数据/本部门/本部门及下级/仅本人"
+          options={[
+            { label: '全部数据', value: 1 },
+            { label: '本部门数据', value: 2 },
+            { label: '本部门及下级', value: 3 },
+            { label: '仅本人', value: 4 },
+          ]}
+        />
         <ProFormSelect
           name="status"
           label="状态"

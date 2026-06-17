@@ -61,11 +61,20 @@ export const requestInterceptor: RequestInterceptor = (config: any) => {
 };
 
 /**
+ * 业务失败的静默错误标记：携带该标记的 Error 会被 app.tsx 中注册的
+ * capture 阶段 unhandledrejection 监听器吞掉，不触发 React dev 全屏错误页。
+ * 业务提示已在拦截器内通过 message.error 完成。
+ */
+export const SILENT_BUSINESS_ERROR = '__silentBusinessError';
+
+/**
  * 响应拦截器：解包 R<T>.data
  * - blob/arraybuffer / 非 JSON：文件流或非业务响应，原样放行。
- * - JSON：业务码非 200 → message.error + reject；成功 → 把 response.data
- *   改写为业务数据（R<T>.data），返回 response。这样 axios 后续流程结束后，
- *   request() resolve 的就是解包后的业务数据。
+ * - JSON：业务码非 200 → message.error 提示 + reject 带标记的错误；成功 →
+ *   把 response.data 改写为业务数据（R<T>.data），返回 response。
+ *
+ * 调用方的 try/catch 能感知失败。未被立即 catch 的 rejection 在 dev 环境会
+ * 触发 React 全屏错误页——由 app.tsx 的 capture 阶段监听器按标记吞掉。
  */
 export const responseInterceptor: ResponseInterceptor = (response: any) => {
   const responseType = response.config?.responseType;
@@ -99,17 +108,23 @@ export const responseInterceptor: ResponseInterceptor = (response: any) => {
     return response;
   }
 
-  // 业务失败：打印请求信息便于定位，并提示
+  // 业务失败：提示后 reject 带静默标记的错误
   const reqUrl = `${response.config?.method?.toUpperCase() || ''} ${response.config?.url || ''}`;
   // eslint-disable-next-line no-console
   console.warn('[request] 业务失败:', reqUrl, data);
   const msg = data.message || data.msg || '请求失败';
   message.error(msg);
-  throw new Error(msg);
+  const err = new Error(msg) as Error & { [SILENT_BUSINESS_ERROR]?: boolean };
+  err[SILENT_BUSINESS_ERROR] = true;
+  return Promise.reject(err);
 };
 
-/** umi request errorConfig：统一错误处理（针对抛出的 HTTP 错误） */
+/** umi request errorConfig：统一错误处理（针对 HTTP 层错误） */
 export const errorHandler = (error: any, opts: any) => {
+  // 业务失败已在 responseInterceptor 提示过，静默 reject 不重复处理
+  if (error?.[SILENT_BUSINESS_ERROR]) {
+    return Promise.reject(error);
+  }
   const response = error?.response;
   if (!response) {
     // 网络错误 / 超时

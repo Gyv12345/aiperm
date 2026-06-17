@@ -73,7 +73,11 @@ const Login: React.FC = () => {
       window.location.href = redirect;
       return;
     } catch (e: any) {
-      const msg = e?.message || '登录失败';
+      // 业务错误（拦截器已 message.error 提示）取原始消息；网络错误显示友好提示
+      const raw = e?.message || '';
+      const msg = !raw || raw === 'Network Error' || raw.includes('timeout')
+        ? '网络异常，请检查后端服务是否启动'
+        : raw;
       setErrorMsg(msg);
       refreshCaptcha();
     }
