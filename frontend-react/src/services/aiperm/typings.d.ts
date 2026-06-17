@@ -330,8 +330,8 @@ declare namespace API {
     parentId?: number;
     /** 显示顺序 */
     sort?: number;
-    /** 负责人 */
-    leader?: string;
+    /** 负责人用户ID（关联 sys_user.id） */
+    leader?: number;
     /** 联系电话 */
     phone?: string;
     /** 邮箱 */
@@ -2115,7 +2115,8 @@ declare namespace API {
     deptName?: string;
     parentId?: number;
     sort?: number;
-    leader?: string;
+    /** 负责人用户ID（关联 sys_user.id） */
+    leader?: number;
     phone?: string;
     email?: string;
     status?: number;
