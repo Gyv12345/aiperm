@@ -43,6 +43,7 @@ export default [
       { path: '/system/dict', name: '字典管理', component: './System/Dict', access: 'canUser' },
       { path: '/system/im-config', name: 'IM平台配置', component: './System/ImConfig', access: 'canUser' },
       { path: '/system/approval-scene', name: '审批场景管理', component: './System/ApprovalScene', access: 'canUser' },
+      { path: '/system/file', name: '文件管理', component: './System/File', access: 'canUser' },
     ],
   },
   {

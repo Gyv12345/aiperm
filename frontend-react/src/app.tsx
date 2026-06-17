@@ -47,6 +47,7 @@ const loginPath = '/user/login';
  */
 const menuIconMap: Record<string, React.ReactNode> = {
   Setting: <SettingOutlined />,
+  Bank: <BankOutlined />,
   OfficeBuilding: <BankOutlined />,
   Monitor: <MonitorOutlined />,
   Odometer: <DashboardOutlined />,

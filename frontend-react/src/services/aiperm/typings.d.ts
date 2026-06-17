@@ -2399,4 +2399,43 @@ declare namespace API {
   type withdrawParams = {
     id: number;
   };
+
+  /** 文件记录（sys_file） */
+  type SysFile = {
+    id?: number;
+    /** 存储文件名（含相对路径） */
+    fileName?: string;
+    /** 原始文件名 */
+    originalName?: string;
+    /** 存储路径 */
+    filePath?: string;
+    /** 访问 URL */
+    fileUrl?: string;
+    /** 文件大小（字节） */
+    fileSize?: number;
+    /** MIME 类型 */
+    fileType?: string;
+    /** 存储类型：local/aliyun */
+    storageType?: string;
+    deleted?: number;
+    createTime?: string;
+    createBy?: string;
+  };
+
+  type PageResultSysFile = {
+    total?: number;
+    list?: SysFile[];
+    pageNum?: number;
+    pageSize?: number;
+    pages?: number;
+  };
+
+  /** 文件查询参数 */
+  type FileDTO = {
+    originalName?: string;
+    fileType?: string;
+    storageType?: string;
+    page?: number;
+    pageSize?: number;
+  };
 }
