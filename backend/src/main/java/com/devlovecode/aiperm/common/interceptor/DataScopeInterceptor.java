@@ -1,5 +1,6 @@
 package com.devlovecode.aiperm.common.interceptor;
 
+import com.devlovecode.aiperm.common.context.DataScopeContext;
 import com.devlovecode.aiperm.common.context.DataScopeHolder;
 import com.devlovecode.aiperm.common.service.DataScopeService;
 import jakarta.servlet.DispatcherType;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 数据权限拦截器 在请求开始时计算并存储数据权限 SQL
+ * 数据权限拦截器：在请求开始时计算数据权限上下文并存入 Holder，供业务查询消费。
  *
  * @author DevLoveCode
  */
@@ -22,15 +23,14 @@ public class DataScopeInterceptor implements HandlerInterceptor {
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-		// 跳过异步分发请求（SSE 等场景），此时 Sa-Token 上下文已不存在
-		// 数据权限 SQL 已在原始请求中计算
+		// 跳过异步分发请求（SSE 等场景），此时 Sa-Token 上下文已不存在；
+		// 数据权限上下文已在原始请求中计算
 		if (request.getDispatcherType() == DispatcherType.ASYNC) {
 			return true;
 		}
 
-		// 计算并存储数据权限 SQL（使用默认别名 d 和 u）
-		String sql = dataScopeService.buildDataScopeSql("d", "u");
-		DataScopeHolder.set(sql);
+		DataScopeContext context = dataScopeService.getDataScopeContext();
+		DataScopeHolder.set(context);
 		return true;
 	}
 
@@ -41,3 +41,4 @@ public class DataScopeInterceptor implements HandlerInterceptor {
 	}
 
 }
+

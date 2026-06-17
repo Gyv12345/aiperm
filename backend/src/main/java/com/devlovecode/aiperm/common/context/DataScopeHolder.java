@@ -1,13 +1,17 @@
 package com.devlovecode.aiperm.common.context;
 
 /**
- * 数据权限上下文持有者 使用 ThreadLocal 存储当前请求的数据权限 SQL 片段
+ * 数据权限上下文持有者：使用 ThreadLocal 存储当前请求的数据权限判定结果。
+ *
+ * <p>由 {@code DataScopeInterceptor} 在请求开始时填充，业务 Service 通过
+ * {@code DataScopeService.getDataScopeContext()} 或直接读取本 Holder 消费。
+ * SSE 等异步场景可通过 {@link #disable()} 临时关闭。
  *
  * @author DevLoveCode
  */
 public class DataScopeHolder {
 
-	private static final ThreadLocal<String> SQL_HOLDER = new ThreadLocal<>();
+	private static final ThreadLocal<DataScopeContext> CONTEXT_HOLDER = new ThreadLocal<>();
 
 	private static final ThreadLocal<Boolean> ENABLED_HOLDER = new ThreadLocal<>();
 
@@ -15,41 +19,41 @@ public class DataScopeHolder {
 	}
 
 	/**
-	 * 设置数据权限 SQL 片段
+	 * 设置数据权限上下文。
 	 */
-	public static void set(String sql) {
-		SQL_HOLDER.set(sql);
+	public static void set(DataScopeContext context) {
+		CONTEXT_HOLDER.set(context);
 	}
 
 	/**
-	 * 获取数据权限 SQL 片段
-	 * @return SQL 片段，未设置或已禁用时返回空字符串
+	 * 获取数据权限上下文。
+	 * @return 上下文；未设置或已禁用时返回 ALL（不过滤）。
 	 */
-	public static String get() {
-		// 如果已禁用，返回空字符串
+	public static DataScopeContext get() {
+		// 如果已禁用，返回 ALL（不过滤）
 		if (Boolean.FALSE.equals(ENABLED_HOLDER.get())) {
-			return "";
+			return DataScopeContext.all();
 		}
-		String sql = SQL_HOLDER.get();
-		return sql != null ? sql : "";
+		DataScopeContext context = CONTEXT_HOLDER.get();
+		return context != null ? context : DataScopeContext.all();
 	}
 
 	/**
-	 * 禁用当前线程的数据权限 用于 SSE 等异步场景
+	 * 禁用当前线程的数据权限，用于 SSE 等异步场景。
 	 */
 	public static void disable() {
 		ENABLED_HOLDER.set(false);
 	}
 
 	/**
-	 * 启用当前线程的数据权限
+	 * 启用当前线程的数据权限。
 	 */
 	public static void enable() {
 		ENABLED_HOLDER.set(true);
 	}
 
 	/**
-	 * 检查数据权限是否启用
+	 * 检查数据权限是否启用。
 	 */
 	public static boolean isEnabled() {
 		Boolean enabled = ENABLED_HOLDER.get();
@@ -57,10 +61,10 @@ public class DataScopeHolder {
 	}
 
 	/**
-	 * 清理当前线程的数据权限
+	 * 清理当前线程的数据权限。
 	 */
 	public static void clear() {
-		SQL_HOLDER.remove();
+		CONTEXT_HOLDER.remove();
 		ENABLED_HOLDER.remove();
 	}
 

@@ -70,14 +70,16 @@ public interface UserRepository extends BaseJpaRepository<SysUser> {
 	List<SysUser> findEnabledReceivers(@Param("excludeUserId") Long excludeUserId);
 
 	/**
-	 * 分页查询
+	 * 分页查询（已接入数据权限：按角色的 dataScope 过滤部门/本人）。
 	 */
 	default Page<SysUser> queryPage(String username, String phone, Long deptId, Integer status, int pageNum,
 			int pageSize) {
 		return findAll(
 				SpecificationUtils.and(SpecificationUtils.like("username", username),
 						SpecificationUtils.like("phone", phone), SpecificationUtils.eq("deptId", deptId),
-						SpecificationUtils.eq("status", status)),
+						SpecificationUtils.eq("status", status),
+						// 数据权限：DEPT/DEPT_AND_CHILD 按 deptId 过滤，SELF 按 id 过滤
+						SpecificationUtils.dataScope("deptId", "id")),
 				PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime")));
 	}
 
