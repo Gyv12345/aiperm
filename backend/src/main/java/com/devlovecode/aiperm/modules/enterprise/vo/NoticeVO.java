@@ -33,4 +33,7 @@ public class NoticeVO {
 	@Schema(description = "创建人")
 	private String createBy;
 
+	@Schema(description = "创建人姓名")
+	private String createByName;
+
 }
