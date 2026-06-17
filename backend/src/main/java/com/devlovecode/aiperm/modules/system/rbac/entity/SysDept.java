@@ -34,7 +34,8 @@ public class SysDept extends BaseEntity {
 
 	private Integer sort;
 
-	private String leader;
+	/** 负责人用户ID（关联 sys_user.id） */
+	private Long leader;
 
 	private String phone;
 

@@ -31,9 +31,8 @@ public class DeptDTO {
 	private Integer sort;
 
 	@JsonView({ Views.Create.class, Views.Update.class })
-	@Schema(description = "负责人")
-	@Size(max = 50, message = "负责人不能超过50个字符")
-	private String leader;
+	@Schema(description = "负责人用户ID（关联 sys_user.id）")
+	private Long leader;
 
 	@JsonView({ Views.Create.class, Views.Update.class })
 	@Schema(description = "联系电话")
