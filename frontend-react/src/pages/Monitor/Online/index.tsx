@@ -34,9 +34,13 @@ const OnlineList: React.FC = () => {
           key="kick"
           title={`确认强退用户 ${record.username}？`}
           onConfirm={async () => {
-            await forceLogout({ id: record.id! } as any);
-            message.success('已强退');
-            actionRef.current?.reload();
+            try {
+              await forceLogout({ id: record.id! } as any);
+              message.success('已强退');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>强退</a>

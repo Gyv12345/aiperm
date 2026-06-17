@@ -9,8 +9,18 @@
  */
 import type { MenuDataItem } from '@ant-design/pro-components';
 import {
+  AppstoreOutlined,
+  BellOutlined,
+  DashboardOutlined,
+  DesktopOutlined,
+  HomeOutlined,
   LogoutOutlined,
+  MessageOutlined,
+  MonitorOutlined,
+  BankOutlined,
   SettingOutlined,
+  TeamOutlined,
+  ToolOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
@@ -29,6 +39,42 @@ import {
 } from './services/auth';
 
 const loginPath = '/user/login';
+
+/**
+ * 后端菜单 icon 字段 → antd 图标组件映射。
+ * 后端存储为 PascalCase 且不带 Outlined 后缀（如 Setting / Monitor），
+ * 这里统一映射为 @ant-design/icons 组件。未知值返回 undefined（不渲染图标）。
+ */
+const menuIconMap: Record<string, React.ReactNode> = {
+  Setting: <SettingOutlined />,
+  OfficeBuilding: <BankOutlined />,
+  Monitor: <MonitorOutlined />,
+  Odometer: <DashboardOutlined />,
+  ChatDotRound: <MessageOutlined />,
+  System: <SettingOutlined />,
+  User: <UserOutlined />,
+  Users: <TeamOutlined />,
+  Tree: <TeamOutlined />,
+  Post: <AppstoreOutlined />,
+  Menu: <ToolOutlined />,
+  Dict: <AppstoreOutlined />,
+  Log: <DesktopOutlined />,
+  Server: <DesktopOutlined />,
+  Cache: <DashboardOutlined />,
+  Online: <UserOutlined />,
+  Job: <BellOutlined />,
+  Message: <MessageOutlined />,
+  Notice: <BellOutlined />,
+  Home: <HomeOutlined />,
+};
+
+/** 把后端 icon 字符串解析为 React 图标节点 */
+function resolveMenuIcon(icon: string | undefined): React.ReactNode | undefined {
+  if (!icon) return undefined;
+  // 去除可能的空白与 Outlined 后缀（兼容历史数据）
+  const key = icon.trim().replace(/Outlined$/i, '');
+  return menuIconMap[key];
+}
 
 /** 全局初始状态类型 */
 export type InitialState = {
@@ -84,7 +130,7 @@ function toMenuData(
         key: String(n.id),
         name: n.menuName,
         path,
-        icon: n.icon,
+        icon: resolveMenuIcon(n.icon),
       };
       const children = toMenuData(n.children, path);
       if (children.length) item.children = children;

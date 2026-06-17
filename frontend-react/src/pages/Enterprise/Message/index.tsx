@@ -69,9 +69,13 @@ const MessageList: React.FC = () => {
           key="del"
           title="确认删除？"
           onConfirm={async () => {
-            await deleteMsg({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteMsg({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -141,6 +145,9 @@ const MessageList: React.FC = () => {
         title="发送消息"
         open={sendOpen}
         onOpenChange={setSendOpen}
+        width={640}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           try {
@@ -166,6 +173,7 @@ const MessageList: React.FC = () => {
         <ProFormSelect
           name="receiverId"
           label="接收人"
+          colProps={{ span: 12 }}
           request={async () => {
             const res: any = await listReceivers();
             const list: API.MessageReceiverVO[] = res?.data ?? res ?? [];
@@ -179,11 +187,13 @@ const MessageList: React.FC = () => {
         <ProFormText
           name="title"
           label="标题"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入标题' }]}
         />
         <ProFormTextArea
           name="content"
           label="内容"
+          colProps={{ span: 24 }}
           fieldProps={{ autoSize: { minRows: 4 } }}
           rules={[{ required: true, message: '请输入内容' }]}
         />

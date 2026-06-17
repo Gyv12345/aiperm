@@ -77,9 +77,13 @@ const NoticeList: React.FC = () => {
             key="pub"
             title="确认发布？"
             onConfirm={async () => {
-              await publishNotice({ id: record.id! } as any);
-              message.success('已发布');
-              actionRef.current?.reload();
+              try {
+                await publishNotice({ id: record.id! } as any);
+                message.success('已发布');
+                actionRef.current?.reload();
+              } catch {
+                // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+              }
             }}
           >
             <a>发布</a>
@@ -90,9 +94,13 @@ const NoticeList: React.FC = () => {
             key="wd"
             title="确认撤回？"
             onConfirm={async () => {
-              await withdrawNotice({ id: record.id! } as any);
-              message.success('已撤回');
-              actionRef.current?.reload();
+              try {
+                await withdrawNotice({ id: record.id! } as any);
+                message.success('已撤回');
+                actionRef.current?.reload();
+              } catch {
+                // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+              }
             }}
           >
             <a>撤回</a>
@@ -102,9 +110,13 @@ const NoticeList: React.FC = () => {
           key="del"
           title="确认删除？"
           onConfirm={async () => {
-            await deleteNotice({ id: record.id! } as any);
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteNotice({ id: record.id! } as any);
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -150,6 +162,9 @@ const NoticeList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={640}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           try {
@@ -171,11 +186,13 @@ const NoticeList: React.FC = () => {
         <ProFormText
           name="title"
           label="标题"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入标题' }]}
         />
         <ProFormSelect
           name="type"
           label="类型"
+          colProps={{ span: 12 }}
           options={[
             { label: '通知', value: 1 },
             { label: '公告', value: 2 },
@@ -184,6 +201,7 @@ const NoticeList: React.FC = () => {
         <ProFormTextArea
           name="content"
           label="内容"
+          colProps={{ span: 24 }}
           fieldProps={{ autoSize: { minRows: 4 } }}
         />
       </ModalForm>

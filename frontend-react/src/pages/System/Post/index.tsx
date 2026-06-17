@@ -63,9 +63,13 @@ const PostList: React.FC = () => {
           key="del"
           title="确认删除该岗位？"
           onConfirm={async () => {
-            await deletePost({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deletePost({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -115,6 +119,9 @@ const PostList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={640}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           try {
@@ -136,23 +143,26 @@ const PostList: React.FC = () => {
         <ProFormText
           name="postName"
           label="岗位名称"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入岗位名称' }]}
         />
         <ProFormText
           name="postCode"
           label="岗位编码"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入岗位编码' }]}
         />
-        <ProFormDigit name="sort" label="排序" min={0} />
+        <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
         <ProFormSelect
           name="status"
           label="状态"
+          colProps={{ span: 12 }}
           options={[
             { label: '正常', value: 1 },
             { label: '停用', value: 0 },
           ]}
         />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
     </>
   );

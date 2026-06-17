@@ -113,9 +113,13 @@ const RoleList: React.FC = () => {
           key="del"
           title="确认删除该角色？"
           onConfirm={async () => {
-            await deleteRole({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteRole({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -161,6 +165,9 @@ const RoleList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={640}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnClose: true }}
         onFinish={async (values) => {
           try {
@@ -182,23 +189,26 @@ const RoleList: React.FC = () => {
         <ProFormText
           name="roleName"
           label="角色名称"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入角色名称' }]}
         />
         <ProFormText
           name="roleCode"
           label="角色编码"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入角色编码' }]}
         />
-        <ProFormDigit name="sort" label="排序" min={0} />
+        <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
         <ProFormSelect
           name="status"
           label="状态"
+          colProps={{ span: 12 }}
           options={[
             { label: '正常', value: 1 },
             { label: '停用', value: 0 },
           ]}
         />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
 
       <DrawerForm

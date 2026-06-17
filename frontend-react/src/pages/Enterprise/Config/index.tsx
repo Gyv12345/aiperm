@@ -52,9 +52,13 @@ const ConfigList: React.FC = () => {
           key="del"
           title="确认删除？"
           onConfirm={async () => {
-            await deleteConfig({ id: record.id! } as any);
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteConfig({ id: record.id! } as any);
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -100,6 +104,9 @@ const ConfigList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={640}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           try {
@@ -121,12 +128,13 @@ const ConfigList: React.FC = () => {
         <ProFormText
           name="configKey"
           label="配置键"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入配置键' }]}
           disabled={!!current?.id}
         />
-        <ProFormText name="configValue" label="配置值" />
-        <ProFormText name="configType" label="配置类型" />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormText name="configValue" label="配置值" colProps={{ span: 12 }} />
+        <ProFormText name="configType" label="配置类型" colProps={{ span: 12 }} />
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
     </>
   );

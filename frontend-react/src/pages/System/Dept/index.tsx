@@ -70,9 +70,13 @@ const DeptList: React.FC = () => {
           key="del"
           title="确认删除该部门？"
           onConfirm={async () => {
-            await deleteDept({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteDept({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -117,6 +121,9 @@ const DeptList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={720}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           const payload = { ...current, ...values } as API.DeptDTO;
@@ -140,22 +147,24 @@ const DeptList: React.FC = () => {
         <ProFormText
           name="deptName"
           label="部门名称"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入部门名称' }]}
         />
-        <ProFormDigit name="parentId" label="父级ID" min={0} />
-        <ProFormDigit name="sort" label="排序" min={0} />
-        <ProFormText name="leader" label="负责人" />
-        <ProFormText name="phone" label="联系电话" />
-        <ProFormText name="email" label="邮箱" rules={[{ type: 'email', message: '邮箱格式不正确' }]} />
+        <ProFormDigit name="parentId" label="父级ID" colProps={{ span: 12 }} min={0} />
+        <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
+        <ProFormText name="leader" label="负责人" colProps={{ span: 12 }} />
+        <ProFormText name="phone" label="联系电话" colProps={{ span: 12 }} />
+        <ProFormText name="email" label="邮箱" colProps={{ span: 12 }} rules={[{ type: 'email', message: '邮箱格式不正确' }]} />
         <ProFormSelect
           name="status"
           label="状态"
+          colProps={{ span: 12 }}
           options={[
             { label: '正常', value: 1 },
             { label: '停用', value: 0 },
           ]}
         />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
     </>
   );

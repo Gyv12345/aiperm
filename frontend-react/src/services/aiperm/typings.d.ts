@@ -961,6 +961,8 @@ declare namespace API {
     createTime?: string;
     /** 创建人 */
     createBy?: string;
+    /** 创建人姓名 */
+    createByName?: string;
   };
 
   type OauthBindingVO = {

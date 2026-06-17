@@ -42,9 +42,13 @@ const JobLogList: React.FC = () => {
           key="del"
           title="确认删除？"
           onConfirm={async () => {
-            await deleteJobLog({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteJobLog({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -74,9 +78,13 @@ const JobLogList: React.FC = () => {
           key="clean"
           title="确认清空所有任务日志？此操作不可恢复"
           onConfirm={async () => {
-            await cleanJobLog();
-            message.success('已清空');
-            actionRef.current?.reload();
+            try {
+              await cleanJobLog();
+              message.success('已清空');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <Button danger>清空</Button>

@@ -198,12 +198,6 @@ const UserList: React.FC = () => {
 
   const columns: ProColumns<API.UserVO>[] = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      width: 70,
-      hideInSearch: true,
-    },
-    {
       title: '用户名',
       dataIndex: 'username',
       width: 180,

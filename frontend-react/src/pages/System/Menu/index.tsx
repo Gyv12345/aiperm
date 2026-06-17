@@ -4,8 +4,10 @@
  * - 树形 ProTable，数据来自 /system/menu/tree（后端已组装成嵌套树，
  *   节点 children 字段即子菜单，与 ProTable 默认 childrenColumnName 对齐）。
  * - 新增/编辑：ModalForm，菜单类型 1=目录/2=菜单/3=按钮（后端存储数字字符串）。
+ * - 表单字段按菜单类型联动（按钮只需名称+权限标识等），父级菜单用树形选择。
  */
 import { AddButton } from '@/components/AccessButton';
+import IconPicker from '@/components/IconPicker';
 import {
   create4 as createMenu,
   delete4 as deleteMenu,
@@ -15,15 +17,18 @@ import {
 import {
   ModalForm,
   ProFormDigit,
+  ProFormDependency,
+  ProFormItem,
   ProFormSelect,
   ProFormText,
   ProFormTextArea,
+  ProFormTreeSelect,
   ProTable,
 } from '@ant-design/pro-components';
 import type { ProColumns } from '@ant-design/pro-components';
 import * as AllIcons from '@ant-design/icons';
-import { Popconfirm, Tag, message } from 'antd';
-import React, { useRef, useState } from 'react';
+import { Col, Popconfirm, Tag, message } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * 菜单类型映射。
@@ -52,10 +57,62 @@ function renderIcon(name?: string) {
   return <span>{name}</span>;
 }
 
+/** TreeSelect 节点数据结构 */
+type TreeSelectNode = {
+  title: string;
+  value: number;
+  key: number;
+  children?: TreeSelectNode[];
+};
+
+/**
+ * 判断是否可作为父级（目录/菜单可，按钮不可）。
+ * 后端 menuType：'1'=目录 / '2'=菜单 / '3'=按钮。
+ */
+function canBeParent(menuType?: string): boolean {
+  return menuType !== '3' && menuType !== 'F' && menuType !== 'f';
+}
+
+/**
+ * 把后端菜单树转为 ProFormTreeSelect 的 treeData。
+ * - 只保留可作父级的节点（目录/菜单），按钮(3/F)排除。
+ * - 顶层固定补充一个"根目录"(value=0)，对应 parentId=0。
+ */
+function toTreeSelectData(nodes: API.SysMenu[] | undefined): TreeSelectNode[] {
+  const walk = (list: API.SysMenu[]): TreeSelectNode[] =>
+    list
+      .filter((n) => canBeParent(n.menuType))
+      .map((n) => {
+        const node: TreeSelectNode = {
+          title: n.menuName || `#${n.id}`,
+          value: n.id!,
+          key: n.id!,
+        };
+        const children = n.children ? walk(n.children) : [];
+        if (children.length) node.children = children;
+        return node;
+      });
+  return [{ title: '根目录', value: 0, key: 0, children: walk(nodes ?? []) }];
+}
+
 const MenuList: React.FC = () => {
   const actionRef = useRef<any>();
   const [modalOpen, setModalOpen] = useState(false);
   const [current, setCurrent] = useState<API.SysMenu | undefined>();
+  // 父级菜单树（供父级菜单选择），挂载时加载一次
+  const [parentTreeData, setParentTreeData] = useState<TreeSelectNode[]>([
+    { title: '根目录', value: 0, key: 0 },
+  ]);
+  useEffect(() => {
+    menuTree()
+      .then((res: any) => {
+        const treeData: API.SysMenu[] = res?.data ?? res ?? [];
+        setParentTreeData(toTreeSelectData(treeData));
+      })
+      .catch(() => {
+        // 加载失败时保持仅"根目录"
+      });
+  }, []);
 
   const columns: ProColumns<API.SysMenu>[] = [
     { title: '菜单名称', dataIndex: 'menuName', width: 200 },
@@ -116,9 +173,13 @@ const MenuList: React.FC = () => {
           key="del"
           title="确认删除该菜单？"
           onConfirm={async () => {
-            await deleteMenu({ id: record.id! });
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteMenu({ id: record.id! });
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -168,6 +229,9 @@ const MenuList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={720}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnClose: true }}
         onFinish={async (values) => {
           const payload = { ...current, ...values } as API.MenuDTO;
@@ -190,6 +254,7 @@ const MenuList: React.FC = () => {
         <ProFormSelect
           name="menuType"
           label="菜单类型"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请选择菜单类型' }]}
           options={[
             { label: '目录', value: '1' },
@@ -197,26 +262,122 @@ const MenuList: React.FC = () => {
             { label: '按钮', value: '3' },
           ]}
         />
-        <ProFormText
-          name="menuName"
-          label="菜单名称"
-          rules={[{ required: true, message: '请输入菜单名称' }]}
-        />
-        <ProFormDigit name="parentId" label="父级ID" min={0} />
-        <ProFormDigit name="sort" label="排序" min={0} />
-        <ProFormText name="path" label="路由地址" />
-        <ProFormText name="component" label="组件路径" />
-        <ProFormText name="perms" label="权限标识" placeholder="如 system:user:add" />
-        <ProFormText name="icon" label="图标" />
         <ProFormSelect
           name="status"
           label="状态"
+          colProps={{ span: 12 }}
           options={[
             { label: '正常', value: 1 },
             { label: '停用', value: 0 },
           ]}
         />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormText
+          name="menuName"
+          label="菜单名称"
+          colProps={{ span: 12 }}
+          rules={[{ required: true, message: '请输入菜单名称' }]}
+        />
+        <ProFormTreeSelect
+          name="parentId"
+          label="父级菜单"
+          colProps={{ span: 12 }}
+          placeholder="请选择父级菜单"
+          allowClear={false}
+          fieldProps={{
+            treeData: parentTreeData,
+            treeDefaultExpandAll: true,
+            treeNodeFilterProp: 'title',
+            showSearch: true,
+          }}
+        />
+        <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
+        {/* 路由地址：目录/菜单需要 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '1' || menuType === '2' ? (
+              <ProFormText name="path" label="路由地址" colProps={{ span: 12 }} placeholder="如 user" />
+            ) : null
+          }
+        </ProFormDependency>
+        {/* 组件路径：仅菜单需要 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '2' ? (
+              <ProFormText
+                name="component"
+                label="组件路径"
+                colProps={{ span: 12 }}
+                placeholder="如 system/user/index"
+              />
+            ) : null
+          }
+        </ProFormDependency>
+        {/* 图标：目录/菜单需要 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '1' || menuType === '2' ? (
+              <Col span={12}>
+                <ProFormItem name="icon" label="图标">
+                  <IconPicker placeholder="点击选择图标" />
+                </ProFormItem>
+              </Col>
+            ) : null
+          }
+        </ProFormDependency>
+        {/* 是否外链：目录/菜单需要 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '1' || menuType === '2' ? (
+              <ProFormSelect
+                name="isExternal"
+                label="是否外链"
+                colProps={{ span: 12 }}
+                options={[
+                  { label: '否', value: 0 },
+                  { label: '是', value: 1 },
+                ]}
+              />
+            ) : null
+          }
+        </ProFormDependency>
+        {/* 是否缓存：目录/菜单需要 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '1' || menuType === '2' ? (
+              <ProFormSelect
+                name="isCache"
+                label="是否缓存"
+                colProps={{ span: 12 }}
+                options={[
+                  { label: '缓存', value: 1 },
+                  { label: '不缓存', value: 0 },
+                ]}
+              />
+            ) : null
+          }
+        </ProFormDependency>
+        {/* 权限标识：菜单可选 / 按钮必填 */}
+        <ProFormDependency name={['menuType']}>
+          {({ menuType }) =>
+            menuType === '3' ? (
+              <ProFormText
+                name="perms"
+                label="权限标识"
+                colProps={{ span: 12 }}
+                rules={[{ required: true, message: '请输入权限标识' }]}
+                placeholder="如 system:user:add"
+              />
+            ) : menuType === '2' ? (
+              <ProFormText
+                name="perms"
+                label="权限标识"
+                colProps={{ span: 12 }}
+                placeholder="如 system:user:add"
+              />
+            ) : null
+          }
+        </ProFormDependency>
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
     </>
   );

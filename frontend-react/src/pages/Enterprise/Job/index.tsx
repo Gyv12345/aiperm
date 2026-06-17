@@ -70,9 +70,13 @@ const JobList: React.FC = () => {
             key="pause"
             title="确认暂停？"
             onConfirm={async () => {
-              await pauseJob({ id: record.id! } as any);
-              message.success('已暂停');
-              actionRef.current?.reload();
+              try {
+                await pauseJob({ id: record.id! } as any);
+                message.success('已暂停');
+                actionRef.current?.reload();
+              } catch {
+                // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+              }
             }}
           >
             <a>暂停</a>
@@ -82,9 +86,13 @@ const JobList: React.FC = () => {
             key="resume"
             title="确认恢复？"
             onConfirm={async () => {
-              await resumeJob({ id: record.id! } as any);
-              message.success('已恢复');
-              actionRef.current?.reload();
+              try {
+                await resumeJob({ id: record.id! } as any);
+                message.success('已恢复');
+                actionRef.current?.reload();
+              } catch {
+                // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+              }
             }}
           >
             <a>恢复</a>
@@ -94,9 +102,13 @@ const JobList: React.FC = () => {
           key="run"
           title="确认立即执行一次？"
           onConfirm={async () => {
-            await runJob({ id: record.id! } as any);
-            message.success('已触发执行');
-            actionRef.current?.reload();
+            try {
+              await runJob({ id: record.id! } as any);
+              message.success('已触发执行');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a>执行</a>
@@ -105,9 +117,13 @@ const JobList: React.FC = () => {
           key="del"
           title="确认删除？"
           onConfirm={async () => {
-            await deleteJob({ id: record.id! } as any);
-            message.success('删除成功');
-            actionRef.current?.reload();
+            try {
+              await deleteJob({ id: record.id! } as any);
+              message.success('删除成功');
+              actionRef.current?.reload();
+            } catch {
+              // 业务失败已在拦截器统一提示，吞掉避免 Unhandled Rejection
+            }
           }}
         >
           <a style={{ color: '#ff4d4f' }}>删除</a>
@@ -153,6 +169,9 @@ const JobList: React.FC = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         initialValues={current}
+        width={720}
+        grid
+        rowProps={{ gutter: 16 }}
         modalProps={{ destroyOnHidden: true }}
         onFinish={async (values) => {
           try {
@@ -174,29 +193,33 @@ const JobList: React.FC = () => {
         <ProFormText
           name="jobName"
           label="任务名称"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入任务名称' }]}
         />
-        <ProFormText name="jobGroup" label="任务分组" />
+        <ProFormText name="jobGroup" label="任务分组" colProps={{ span: 12 }} />
         <ProFormText
           name="cronExpression"
           label="Cron 表达式"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入 Cron 表达式' }]}
           placeholder="如 0 0/5 * * * ?"
         />
         <ProFormText
           name="beanClass"
           label="执行类"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请输入执行类全限定名' }]}
         />
         <ProFormSelect
           name="status"
           label="状态"
+          colProps={{ span: 12 }}
           options={[
             { label: '运行', value: 1 },
             { label: '暂停', value: 0 },
           ]}
         />
-        <ProFormTextArea name="remark" label="备注" />
+        <ProFormTextArea name="remark" label="备注" colProps={{ span: 24 }} />
       </ModalForm>
     </>
   );

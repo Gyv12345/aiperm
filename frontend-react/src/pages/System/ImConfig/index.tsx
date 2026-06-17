@@ -133,7 +133,9 @@ const ImConfig: React.FC = () => {
       <ModalForm
         form={form}
         title={`编辑 ${current?.platform ?? ''} 配置`}
-        width={680}
+        width={720}
+        grid
+        rowProps={{ gutter: 16 }}
         open={modalOpen}
         onOpenChange={setModalOpen}
         modalProps={{ destroyOnClose: true }}
@@ -162,38 +164,44 @@ const ImConfig: React.FC = () => {
         <ProFormSelect
           name="enabled"
           label="启用状态"
+          colProps={{ span: 12 }}
           rules={[{ required: true, message: '请选择启用状态' }]}
           options={[
             { label: '启用', value: 1 },
             { label: '禁用', value: 0 },
           ]}
         />
-        <ProFormText name="appId" label="App ID" placeholder="请输入平台 App ID" />
+        <ProFormText name="appId" label="App ID" colProps={{ span: 12 }} placeholder="请输入平台 App ID" />
         <ProFormText.Password
           name="appSecret"
           label="App Secret"
+          colProps={{ span: 12 }}
           placeholder="保留现值可直接提交"
         />
-        <ProFormText name="corpId" label="Corp ID" placeholder="企业ID（企微等平台需要）" />
+        <ProFormText name="corpId" label="Corp ID" colProps={{ span: 12 }} placeholder="企业ID（企微等平台需要）" />
         <ProFormText
           name="callbackToken"
           label="Callback Token"
+          colProps={{ span: 12 }}
           placeholder="请输入回调校验 Token"
         />
         <ProFormText.Password
           name="callbackAesKey"
           label="Callback AES Key"
+          colProps={{ span: 12 }}
           placeholder="请输入回调 AES Key"
         />
         <ProFormTextArea
           name="extraConfig"
           label="扩展配置 JSON"
+          colProps={{ span: 24 }}
           fieldProps={{ rows: 8 }}
           placeholder='例如：{ "simulationMode": true, "todoUrl": "https://..." }'
         />
         <ProFormTextArea
           name="remark"
           label="备注"
+          colProps={{ span: 24 }}
           fieldProps={{ rows: 3 }}
           placeholder="记录平台对接说明、回调地址约定等"
         />
