@@ -10,7 +10,7 @@
     "setup": "max setup",
     "start": "max dev",
     "tsc": "tsc --noEmit",
-    "type-check": "max g tmp && tsc --noEmit",
+    "type-check": "max setup && tsc --noEmit",
     "openapi": "node scripts/gen-openapi.mjs",
     "openapi:fetch": "curl -s http://localhost:8080/v3/api-docs -o openapi.json && node scripts/gen-openapi.mjs"
   },
