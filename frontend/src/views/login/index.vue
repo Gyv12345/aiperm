@@ -21,7 +21,6 @@ const loginConfig = ref<LoginConfigVO>({
   passwordEnabled: true,
   smsEnabled: false,
   emailEnabled: false,
-  oauthConfigs: [],
 })
 
 // 表单数据

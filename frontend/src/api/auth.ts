@@ -19,9 +19,9 @@ export interface LoginRequest {
 
 /** 统一登录请求 */
 export interface UnifiedLoginDTO {
-  loginType: 'PASSWORD' | 'SMS' | 'EMAIL' | 'OAUTH'
+  loginType: 'PASSWORD' | 'SMS' | 'EMAIL'
   identifier: string      // 用户名/手机号/邮箱
-  credential: string       // 密码/验证码/OAuth code
+  credential: string       // 密码/验证码
   imageCaptcha?: string    // 图形验证码（密码登录时需要）
   imageCaptchaKey?: string // 图形验证码Key
 }
@@ -60,14 +60,6 @@ export interface LoginConfigVO {
   passwordEnabled: boolean
   smsEnabled: boolean
   emailEnabled: boolean
-  oauthConfigs: OAuthConfig[]
-}
-
-interface OAuthConfig {
-  platform: string
-  displayName: string
-  icon: string
-  enabled: boolean
 }
 
 // ==================== API 函数 ====================
