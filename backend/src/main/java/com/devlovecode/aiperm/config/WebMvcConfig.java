@@ -70,7 +70,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 		registry.addInterceptor(onlineUserActivityInterceptor)
 			.addPathPatterns("/**")
-			.excludePathPatterns("/auth/**", "/captcha/**", "/oauth/login/**", "/approval/callback/**", "/error",
+			.excludePathPatterns("/auth/**", "/captcha/**", "/error",
 					"/v3/api-docs/**", "/swagger-ui/**", "/webjars/**", "/favicon.ico");
 	}
 
@@ -87,7 +87,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 	}
 
 	/**
-	 * RestTemplate Bean（用于 OAuth HTTP 调用）
+	 * RestTemplate Bean
 	 */
 	@Bean
 	public RestTemplate restTemplate() {

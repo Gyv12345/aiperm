@@ -153,37 +153,10 @@ public class AuthService {
 		boolean smsEnabled = systemAccess.getBooleanConfig("login.sms.enabled", false);
 		boolean emailEnabled = systemAccess.getBooleanConfig("login.email.enabled", false);
 
-		List<LoginConfigVO.OAuthConfig> oauthConfigs = new ArrayList<>();
-		if (systemAccess.getBooleanConfig("oauth.wework.enabled", false)) {
-			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-				.platform("WEWORK")
-				.displayName("企业微信")
-				.icon("/icons/wework.svg")
-				.enabled(true)
-				.build());
-		}
-		if (systemAccess.getBooleanConfig("oauth.dingtalk.enabled", false)) {
-			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-				.platform("DINGTALK")
-				.displayName("钉钉")
-				.icon("/icons/dingtalk.svg")
-				.enabled(true)
-				.build());
-		}
-		if (systemAccess.getBooleanConfig("oauth.feishu.enabled", false)) {
-			oauthConfigs.add(LoginConfigVO.OAuthConfig.builder()
-				.platform("FEISHU")
-				.displayName("飞书")
-				.icon("/icons/feishu.svg")
-				.enabled(true)
-				.build());
-		}
-
 		return LoginConfigVO.builder()
 			.passwordEnabled(true)
 			.smsEnabled(smsEnabled)
 			.emailEnabled(emailEnabled)
-			.oauthConfigs(oauthConfigs)
 			.build();
 	}
 

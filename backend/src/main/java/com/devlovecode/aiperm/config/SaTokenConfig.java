@@ -24,10 +24,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
 					"/auth/login", "/auth/unified-login", "/auth/captcha", "/auth/login-config",
 					// 排除验证码发送接口
 					"/captcha/**",
-					// 排除 OAuth 登录接口
-					"/oauth/login/**",
-					// 审批回调接口（来自企业IM服务端）
-					"/approval/callback/**",
 					// 排除Swagger相关
 					"/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**", "/doc.html",
 					// 排除静态资源
