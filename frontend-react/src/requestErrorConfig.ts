@@ -61,8 +61,8 @@ export const requestInterceptor: RequestInterceptor = (config: any) => {
 };
 
 /**
- * 业务失败的静默错误标记：携带该标记的 Error 会被 app.tsx 中注册的
- * capture 阶段 unhandledrejection 监听器吞掉，不触发 React dev 全屏错误页。
+ * 业务失败的静默错误标记：携带该标记的 Error 用于避免 errorHandler
+ * 重复提示。调用方仍可通过 try/catch 感知失败。
  * 业务提示已在拦截器内通过 message.error 完成。
  */
 export const SILENT_BUSINESS_ERROR = '__silentBusinessError';
@@ -73,8 +73,7 @@ export const SILENT_BUSINESS_ERROR = '__silentBusinessError';
  * - JSON：业务码非 200 → message.error 提示 + reject 带标记的错误；成功 →
  *   把 response.data 改写为业务数据（R<T>.data），返回 response。
  *
- * 调用方的 try/catch 能感知失败。未被立即 catch 的 rejection 在 dev 环境会
- * 触发 React 全屏错误页——由 app.tsx 的 capture 阶段监听器按标记吞掉。
+ * 调用方的 try/catch 能感知失败。
  */
 export const responseInterceptor: ResponseInterceptor = (response: any) => {
   const responseType = response.config?.responseType;
@@ -121,9 +120,11 @@ export const responseInterceptor: ResponseInterceptor = (response: any) => {
 
 /** umi request errorConfig：统一错误处理（针对 HTTP 层错误） */
 export const errorHandler = (error: any, opts: any) => {
-  // 业务失败已在 responseInterceptor 提示过，静默 reject 不重复处理
+  // 业务失败已在 responseInterceptor 提示过，errorHandler 只做副作用处理。
+  // Umi request 外层会继续 reject 原错误；这里不能再返回 Promise.reject，
+  // 否则该返回值会被忽略并形成新的 unhandled rejection，触发开发红屏。
   if (error?.[SILENT_BUSINESS_ERROR]) {
-    return Promise.reject(error);
+    return;
   }
   const response = error?.response;
   if (!response) {
@@ -132,7 +133,7 @@ export const errorHandler = (error: any, opts: any) => {
     if (msg.includes('timeout')) {
       message.error('请求超时，请稍后重试');
     }
-    return Promise.reject(error);
+    return;
   }
 
   const status: number = response.status;
@@ -141,24 +142,24 @@ export const errorHandler = (error: any, opts: any) => {
   if (status === 401) {
     setToken(null);
     redirectToLogin();
-    return Promise.reject(error);
+    return;
   }
 
   // 423：需要 MFA 二次验证
   if (status === 423) {
     window.dispatchEvent(new CustomEvent('mfa-required'));
-    return Promise.reject(error);
+    return;
   }
 
   // 403：无权限
   if (status === 403) {
     message.error('没有访问权限');
-    return Promise.reject(error);
+    return;
   }
 
   // 404：静默
   if (status === 404) {
-    return Promise.reject(error);
+    return;
   }
 
   // 其余：尝试读后端 message
@@ -169,8 +170,6 @@ export const errorHandler = (error: any, opts: any) => {
       message.error(body?.message || body?.msg || `请求错误（${status}）`);
     })
     ?.catch?.(() => {});
-
-  return Promise.reject(error);
 };
 
 /** 透传给 config.request 的配置对象 */

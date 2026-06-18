@@ -29,7 +29,7 @@ import { App as AntdApp, Dropdown, message } from 'antd';
 import type { ReactNode } from 'react';
 import React from 'react';
 import MfaVerifyModal from './components/MfaVerifyModal';
-import { getToken, requestConfig, setToken } from './requestErrorConfig';
+import { getToken, requestConfig, setToken, SILENT_BUSINESS_ERROR } from './requestErrorConfig';
 import {
   getMenus,
   getUserInfo,
@@ -39,6 +39,25 @@ import {
 } from './services/auth';
 
 const loginPath = '/user/login';
+
+/**
+ * 全局吞掉「已被提示的业务错误」的未捕获 rejection，避免 dev 下 React
+ * 弹出全屏错误页。
+ *
+ * 背景：requestErrorConfig 的 responseInterceptor 在业务码非 200 时，会
+ * message.error 提示并 reject 一个带 SILENT_BUSINESS_ERROR 标记的 Error。
+ * 若调用方未 try/catch，该 rejection 会冒泡为 unhandledrejection，在
+ * 开发环境触发全屏错误覆盖层。这里按标记吞掉这类 rejection（业务提示
+ * 已完成，无需再上报）。其它 rejection 原样抛出，便于排查真实 bug。
+ */
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    if (reason && typeof reason === 'object' && (reason as any)[SILENT_BUSINESS_ERROR]) {
+      event.preventDefault();
+    }
+  });
+}
 
 /**
  * 后端菜单 icon 字段 → antd 图标组件映射。
