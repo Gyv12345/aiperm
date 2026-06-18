@@ -9,7 +9,7 @@
 import { request } from '@umijs/max';
 
 /** 登录方式 */
-export type LoginType = 'PASSWORD' | 'SMS' | 'EMAIL' | 'OAUTH';
+export type LoginType = 'PASSWORD' | 'SMS' | 'EMAIL';
 
 /** 用户信息（/auth/info 返回） */
 export interface UserInfo {
