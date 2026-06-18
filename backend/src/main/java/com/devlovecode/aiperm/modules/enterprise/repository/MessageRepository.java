@@ -18,7 +18,7 @@ public interface MessageRepository extends BaseJpaRepository<SysMessage> {
 	 * 标记消息为已读
 	 */
 	@Modifying
-	@Query("UPDATE SysMessage m SET m.isRead = 1, m.readTime = :readTime, m.updateTime = :updateTime WHERE m.id = :id AND m.deleted = 0")
+	@Query("UPDATE SysMessage m SET m.isRead = 1, m.readTime = :readTime, m.updateTime = :updateTime WHERE m.id = :id")
 	int markAsRead(@Param("id") Long id, @Param("readTime") LocalDateTime readTime,
 			@Param("updateTime") LocalDateTime updateTime);
 
@@ -27,7 +27,7 @@ public interface MessageRepository extends BaseJpaRepository<SysMessage> {
 	 */
 	@Modifying
 	@Query("UPDATE SysMessage m SET m.isRead = 1, m.readTime = :readTime, m.updateTime = :updateTime "
-			+ "WHERE m.receiverId = :receiverId AND m.isRead = 0 AND m.deleted = 0")
+			+ "WHERE m.receiverId = :receiverId AND m.isRead = 0")
 	int markAllAsRead(@Param("receiverId") Long receiverId, @Param("readTime") LocalDateTime readTime,
 			@Param("updateTime") LocalDateTime updateTime);
 
@@ -36,20 +36,20 @@ public interface MessageRepository extends BaseJpaRepository<SysMessage> {
 	 */
 	@Modifying
 	@Query("UPDATE SysMessage m SET m.isRead = 1, m.readTime = :readTime, m.updateTime = :updateTime "
-			+ "WHERE m.id IN :ids AND m.deleted = 0")
+			+ "WHERE m.id IN :ids")
 	int markAsReadByIds(@Param("ids") List<Long> ids, @Param("readTime") LocalDateTime readTime,
 			@Param("updateTime") LocalDateTime updateTime);
 
 	/**
 	 * 统计用户未读消息数量
 	 */
-	@Query("SELECT COUNT(m) FROM SysMessage m WHERE m.receiverId = :receiverId AND m.isRead = 0 AND m.deleted = 0")
+	@Query("SELECT COUNT(m) FROM SysMessage m WHERE m.receiverId = :receiverId AND m.isRead = 0")
 	long countUnread(@Param("receiverId") Long receiverId);
 
 	/**
 	 * 查询用户的所有消息
 	 */
-	@Query("SELECT m FROM SysMessage m WHERE m.receiverId = :receiverId AND m.deleted = 0 ORDER BY m.createTime DESC")
+	@Query("SELECT m FROM SysMessage m WHERE m.receiverId = :receiverId ORDER BY m.createTime DESC")
 	List<SysMessage> findByReceiverId(@Param("receiverId") Long receiverId);
 
 }

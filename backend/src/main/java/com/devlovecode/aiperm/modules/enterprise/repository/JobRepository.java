@@ -18,7 +18,7 @@ public interface JobRepository extends BaseJpaRepository<SysJob> {
 	/**
 	 * 查询所有启用中的任务
 	 */
-	@Query("FROM SysJob j WHERE j.status = 1 AND j.deleted = 0")
+	@Query("FROM SysJob j WHERE j.status = 1")
 	List<SysJob> findAllEnabled();
 
 	Optional<SysJob> findByIdAndDeleted(Long id, Integer deleted);
@@ -28,7 +28,7 @@ public interface JobRepository extends BaseJpaRepository<SysJob> {
 	 */
 	@Modifying
 	@Query("UPDATE SysJob j SET j.status = :status, j.updateTime = :updateTime, j.updateBy = :updateBy "
-			+ "WHERE j.id = :id AND j.deleted = 0")
+			+ "WHERE j.id = :id")
 	int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updateBy") String updateBy,
 			@Param("updateTime") LocalDateTime updateTime);
 

@@ -18,7 +18,7 @@ public interface NoticeRepository extends BaseJpaRepository<SysNotice> {
 	 * 发布公告
 	 */
 	@Modifying
-	@Query("UPDATE SysNotice n SET n.status = 1, n.publishTime = :publishTime, n.updateTime = :updateTime, n.updateBy = :updateBy WHERE n.id = :id AND n.deleted = 0")
+	@Query("UPDATE SysNotice n SET n.status = 1, n.publishTime = :publishTime, n.updateTime = :updateTime, n.updateBy = :updateBy WHERE n.id = :id")
 	int publish(@Param("id") Long id, @Param("updateBy") String updateBy,
 			@Param("publishTime") LocalDateTime publishTime, @Param("updateTime") LocalDateTime updateTime);
 
@@ -26,14 +26,14 @@ public interface NoticeRepository extends BaseJpaRepository<SysNotice> {
 	 * 撤回公告
 	 */
 	@Modifying
-	@Query("UPDATE SysNotice n SET n.status = 0, n.updateTime = :updateTime, n.updateBy = :updateBy WHERE n.id = :id AND n.deleted = 0")
+	@Query("UPDATE SysNotice n SET n.status = 0, n.updateTime = :updateTime, n.updateBy = :updateBy WHERE n.id = :id")
 	int withdraw(@Param("id") Long id, @Param("updateBy") String updateBy,
 			@Param("updateTime") LocalDateTime updateTime);
 
 	/**
 	 * 查询已发布的公告列表
 	 */
-	@Query("SELECT n FROM SysNotice n WHERE n.status = 1 AND n.deleted = 0 " + "AND (:type IS NULL OR n.type = :type) "
+	@Query("SELECT n FROM SysNotice n WHERE n.status = 1 " + "AND (:type IS NULL OR n.type = :type) "
 			+ "ORDER BY n.publishTime DESC")
 	List<SysNotice> findPublished(@Param("type") Integer type);
 

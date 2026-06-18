@@ -27,24 +27,24 @@ public interface UserRepository extends BaseJpaRepository<SysUser> {
 
 	boolean existsByUsername(String username);
 
-	@Query("SELECT COUNT(u) > 0 FROM SysUser u WHERE u.username = :username AND u.id != :id AND u.deleted = 0")
+	@Query("SELECT COUNT(u) > 0 FROM SysUser u WHERE u.username = :username AND u.id != :id")
 	boolean existsByUsernameExcludeId(@Param("username") String username, @Param("id") Long excludeId);
 
 	@Modifying
 	@Transactional
-	@Query("UPDATE SysUser u SET u.password = :password, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
+	@Query("UPDATE SysUser u SET u.password = :password, u.updateTime = :updateTime WHERE u.id = :id")
 	int updatePassword(@Param("id") Long id, @Param("password") String newPassword,
 			@Param("updateTime") LocalDateTime updateTime);
 
 	@Modifying
 	@Transactional
-	@Query("UPDATE SysUser u SET u.status = :status, u.updateTime = :updateTime WHERE u.id = :id AND u.deleted = 0")
+	@Query("UPDATE SysUser u SET u.status = :status, u.updateTime = :updateTime WHERE u.id = :id")
 	int updateStatus(@Param("id") Long id, @Param("status") Integer status,
 			@Param("updateTime") LocalDateTime updateTime);
 
 	@Modifying
 	@Transactional
-	@Query("UPDATE SysUser u SET u.lastLoginIp = :loginIp, u.lastLoginTime = :loginTime WHERE u.id = :id AND u.deleted = 0")
+	@Query("UPDATE SysUser u SET u.lastLoginIp = :loginIp, u.lastLoginTime = :loginTime WHERE u.id = :id")
 	int updateLoginInfo(@Param("id") Long id, @Param("loginIp") String loginIp,
 			@Param("loginTime") LocalDateTime loginTime);
 
@@ -52,18 +52,16 @@ public interface UserRepository extends BaseJpaRepository<SysUser> {
 			SELECT COUNT(u) > 0
 			FROM SysUser u
 			WHERE u.id = :id
-			  AND u.deleted = 0
 			  AND u.isAdmin = 1
 			""")
 	boolean isAdmin(@Param("id") Long id);
 
-	@Query("SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId AND ur.deleted = 0")
+	@Query("SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId")
 	List<Long> findRoleIdsByUserId(@Param("userId") Long userId);
 
 	@Query("""
 			SELECT u FROM SysUser u
 			WHERE u.status = 1
-			  AND u.deleted = 0
 			  AND u.id <> :excludeUserId
 			ORDER BY u.realName ASC, u.nickname ASC, u.username ASC
 			""")

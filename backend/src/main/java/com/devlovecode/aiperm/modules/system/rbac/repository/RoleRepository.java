@@ -25,19 +25,19 @@ public interface RoleRepository extends BaseJpaRepository<SysRole> {
 	/**
 	 * 检查角色编码是否存在（排除指定ID）
 	 */
-	@Query("SELECT COUNT(r) > 0 FROM SysRole r WHERE r.roleCode = :roleCode AND r.id != :id AND r.deleted = 0")
+	@Query("SELECT COUNT(r) > 0 FROM SysRole r WHERE r.roleCode = :roleCode AND r.id != :id")
 	boolean existsByRoleCodeExcludeId(@Param("roleCode") String roleCode, @Param("id") Long excludeId);
 
 	/**
 	 * 获取角色的菜单ID列表
 	 */
-	@Query("SELECT rm.menuId FROM SysRoleMenu rm WHERE rm.roleId = :roleId AND rm.deleted = 0")
+	@Query("SELECT rm.menuId FROM SysRoleMenu rm WHERE rm.roleId = :roleId")
 	List<Long> getMenuIdsByRoleId(@Param("roleId") Long roleId);
 
 	/**
 	 * 检查角色是否被用户使用
 	 */
-	@Query("SELECT COUNT(ur) > 0 FROM SysUserRole ur WHERE ur.roleId = :roleId AND ur.deleted = 0")
+	@Query("SELECT COUNT(ur) > 0 FROM SysUserRole ur WHERE ur.roleId = :roleId")
 	boolean isUsedByUser(@Param("roleId") Long roleId);
 
 	/**
@@ -62,7 +62,7 @@ public interface RoleRepository extends BaseJpaRepository<SysRole> {
 	/**
 	 * 检查是否为内置角色（超级管理员）
 	 */
-	@Query("SELECT COUNT(r) > 0 FROM SysRole r WHERE r.id = :id AND r.roleCode = 'admin' AND r.deleted = 0")
+	@Query("SELECT COUNT(r) > 0 FROM SysRole r WHERE r.id = :id AND r.roleCode = 'admin'")
 	boolean isBuiltin(@Param("id") Long id);
 
 	SysRole findByRoleCodeAndDeleted(String roleCode, Integer deleted);

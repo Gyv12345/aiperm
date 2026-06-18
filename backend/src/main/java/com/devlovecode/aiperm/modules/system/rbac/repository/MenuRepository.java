@@ -24,19 +24,19 @@ public interface MenuRepository extends BaseJpaRepository<SysMenu> {
 	/**
 	 * 检查是否有子菜单
 	 */
-	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.parentId = :parentId AND m.deleted = 0")
+	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.parentId = :parentId")
 	boolean hasChildren(@Param("parentId") Long parentId);
 
 	/**
 	 * 检查菜单名称是否重复（同父级下）
 	 */
-	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId AND m.deleted = 0")
+	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId")
 	boolean existsByMenuNameAndParentId(@Param("menuName") String menuName, @Param("parentId") Long parentId);
 
 	/**
 	 * 检查菜单名称是否重复（同父级下，排除指定ID）
 	 */
-	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId AND m.id != :id AND m.deleted = 0")
+	@Query("SELECT COUNT(m) > 0 FROM SysMenu m WHERE m.menuName = :menuName AND m.parentId = :parentId AND m.id != :id")
 	boolean existsByMenuNameAndParentIdExcludeId(@Param("menuName") String menuName, @Param("parentId") Long parentId,
 			@Param("id") Long excludeId);
 
@@ -49,7 +49,6 @@ public interface MenuRepository extends BaseJpaRepository<SysMenu> {
 			WHERE rm.roleId IN (
 			    SELECT ur.roleId FROM SysUserRole ur WHERE ur.userId = :userId AND ur.deleted = 0
 			)
-			AND rm.deleted = 0
 			""")
 	List<Long> findMenuIdsByUserId(@Param("userId") Long userId);
 

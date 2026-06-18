@@ -21,7 +21,7 @@ public interface PostRepository extends BaseJpaRepository<SysPost> {
 	/**
 	 * 检查岗位编码是否存在（排除指定ID）
 	 */
-	@Query("SELECT COUNT(p) > 0 FROM SysPost p WHERE p.postCode = :postCode AND p.id != :id AND p.deleted = 0")
+	@Query("SELECT COUNT(p) > 0 FROM SysPost p WHERE p.postCode = :postCode AND p.id != :id")
 	boolean existsByPostCodeExcludeId(@Param("postCode") String postCode, @Param("id") Long excludeId);
 
 	SysPost findByPostCodeAndDeleted(String postCode, Integer deleted);

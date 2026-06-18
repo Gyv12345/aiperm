@@ -18,7 +18,7 @@ public interface ApprovalSceneRepository extends BaseJpaRepository<SysApprovalSc
 
 	boolean existsBySceneCode(String sceneCode);
 
-	@Query("SELECT COUNT(s) > 0 FROM SysApprovalScene s WHERE s.sceneCode = :sceneCode AND s.id <> :id AND s.deleted = 0")
+	@Query("SELECT COUNT(s) > 0 FROM SysApprovalScene s WHERE s.sceneCode = :sceneCode AND s.id <> :id")
 	boolean existsBySceneCodeExcludeId(@Param("sceneCode") String sceneCode, @Param("id") Long id);
 
 	long countByPlatformAndEnabledAndDeleted(String platform, Integer enabled, Integer deleted);

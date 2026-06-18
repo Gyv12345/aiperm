@@ -29,7 +29,7 @@ public interface DictTypeRepository extends BaseJpaRepository<SysDictType> {
 	/**
 	 * 检查字典类型是否存在（排除指定ID）
 	 */
-	@Query("SELECT COUNT(dt) > 0 FROM SysDictType dt WHERE dt.dictType = :dictType AND dt.id != :id AND dt.deleted = 0")
+	@Query("SELECT COUNT(dt) > 0 FROM SysDictType dt WHERE dt.dictType = :dictType AND dt.id != :id")
 	boolean existsByDictTypeExcludeId(@Param("dictType") String dictType, @Param("id") Long excludeId);
 
 	/**
