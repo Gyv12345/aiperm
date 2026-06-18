@@ -31,7 +31,7 @@ public interface OnlineUserRepository extends BaseJpaRepository<SysOnlineUser> {
 			UPDATE SysOnlineUser u
 			SET u.lastAccessTime = :lastAccessTime,
 			    u.updateTime = :updateTime
-			WHERE u.token = :token AND u.deleted = 0
+			WHERE u.token = :token
 			""")
 	int touchByToken(@Param("token") String token, @Param("lastAccessTime") LocalDateTime lastAccessTime,
 			@Param("updateTime") LocalDateTime updateTime);
@@ -41,7 +41,7 @@ public interface OnlineUserRepository extends BaseJpaRepository<SysOnlineUser> {
 			UPDATE SysOnlineUser u
 			SET u.deleted = 1,
 			    u.updateTime = :updateTime
-			WHERE u.token = :token AND u.deleted = 0
+			WHERE u.token = :token
 			""")
 	int softDeleteByToken(@Param("token") String token, @Param("updateTime") LocalDateTime updateTime);
 
