@@ -18,8 +18,14 @@ WHERE d.leader IS NOT NULL
   AND d.leader <> ''
   AND u.deleted = 0;
 
--- 2. 兜底：仍为非纯数字的 leader（匹配不上的脏值）置 NULL。
---    REGEXP 判断含非数字字符，确保下一步 ALTER 列类型不会失败。
+-- 2. 兜底：仍为非纯数字的 leader（匹配不上的脏值、空字符串）置 NULL。
+--    先清空字符串，再用 REGEXP 清掉含非数字字符的脏值，
+--    确保下一步 ALTER 列类型（VARCHAR→BIGINT）不会因 '' 报 Error 1366。
+UPDATE `sys_dept`
+SET `leader` = NULL
+WHERE `leader` IS NOT NULL
+  AND `leader` = '';
+
 UPDATE `sys_dept`
 SET `leader` = NULL
 WHERE `leader` IS NOT NULL
