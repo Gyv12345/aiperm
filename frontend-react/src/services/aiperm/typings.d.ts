@@ -716,8 +716,6 @@ declare namespace API {
     smsEnabled?: boolean;
     /** 邮箱验证码登录是否启用 */
     emailEnabled?: boolean;
-    /** OAuth 登录配置列表 */
-    oauthConfigs?: OAuthConfig[];
   };
 
   type LoginLogVO = {
@@ -976,34 +974,6 @@ declare namespace API {
     createTime?: string;
     /** 最后登录时间 */
     lastLoginTime?: string;
-  };
-
-  type OAuthConfig = {
-    platform?: string;
-    displayName?: string;
-    icon?: string;
-    enabled?: boolean;
-  };
-
-  type OauthConfigDTO = {
-    enabled?: number;
-    corpId?: string;
-    agentId?: string;
-    appKey?: string;
-    appSecret?: string;
-    callbackUrl?: string;
-    remark?: string;
-  };
-
-  type OauthConfigVO = {
-    id?: number;
-    platform?: string;
-    enabled?: number;
-    corpId?: string;
-    agentId?: string;
-    appKey?: string;
-    callbackUrl?: string;
-    remark?: string;
   };
 
   type OnlineUserVO = {
@@ -1735,16 +1705,6 @@ declare namespace API {
     message?: string;
     /** 返回数据 */
     data?: NoticeVO;
-    success?: boolean;
-  };
-
-  type ROauthConfigVO = {
-    /** 状态码 */
-    code?: number;
-    /** 返回消息 */
-    message?: string;
-    /** 返回数据 */
-    data?: OauthConfigVO;
     success?: boolean;
   };
 
