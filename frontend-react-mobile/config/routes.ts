@@ -14,7 +14,15 @@ export default [
   { path: '/apps', name: '应用', component: './Apps' },
   { path: '/message', name: '消息', component: './Message' },
   { path: '/profile', name: '我的', component: './Profile' },
-  { path: '/system/user', name: '用户管理', component: './System/User' },
+  {
+    path: '/system/user',
+    routes: [
+      { path: '/system/user', name: '用户管理', component: './System/User' },
+      { path: '/system/user/detail/:id', name: '用户详情', component: './System/User/Detail' },
+      { path: '/system/user/create', name: '新增用户', component: './System/User/Form' },
+      { path: '/system/user/edit/:id', name: '编辑用户', component: './System/User/Form' },
+    ],
+  },
   { path: '/', redirect: '/dashboard' },
   { path: '*', component: './404' },
 ];

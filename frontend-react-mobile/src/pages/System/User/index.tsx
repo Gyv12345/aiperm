@@ -1,69 +1,109 @@
 /**
- * 用户管理 - 移动端示范列表页（Phase 0）
- *
- * - 调用生成的 page() 拉用户分页，antd-mobile List 卡片化展示。
- * - PullToRefresh 下拉刷新。
- * - 完整筛选/详情/编辑/删除在 Phase 1（通用组件 MobileList/FilterPopup/FormPage）实现。
- *
- * 字段以生成的 API.UserVO 为准；status: 0=禁用 1=正常。
+ * 用户管理 - 列表页（Phase 1）
+ * 用 MobileList + FilterPopup + SwipeActions，左滑编辑/删除，点行进详情。
  */
-import { List, NavBar, PullToRefresh, Tag, Toast } from 'antd-mobile';
-import React, { useCallback, useEffect, useState } from 'react';
+import { FilterPopup } from '@/components/FilterPopup';
+import { MobileList } from '@/components/MobileList';
+import { SwipeActions } from '@/components/SwipeActions';
+import { Dialog, Form, Input, NavBar, Tag } from 'antd-mobile';
 import { history } from '@umijs/max';
-import { page as userPage } from '@/services/aiperm/user';
+import React, { useState } from 'react';
+import { page as userPage, deleteUsingDelete } from '@/services/aiperm/user';
+
+const statusTag = (status?: number) =>
+  status === 1 ? (
+    <Tag color="#00b578" fill="outline" style={{ '--border-radius': '4px' }}>
+      正常
+    </Tag>
+  ) : (
+    <Tag color="#ff3141" fill="outline" style={{ '--border-radius': '4px' }}>
+      禁用
+    </Tag>
+  );
 
 const UserList: React.FC = () => {
-  const [users, setUsers] = useState<API.UserVO[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<Record<string, any>>({});
+  const [filterVisible, setFilterVisible] = useState(false);
+  // MobileList 的 reload key：删除后变化以触发重载
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const handleDelete = async (id: number) => {
+    const ok = await Dialog.confirm({ content: '确定删除该用户？', confirmText: '删除', cancelText: '取消' });
+    if (!ok) return;
     try {
-      const res: API.PageResultUserVO = await userPage({
-        dto: { page: 1, pageSize: 20 },
-      });
-      setUsers(res?.list ?? []);
+      await deleteUsingDelete({ id });
+      setReloadKey((k) => k + 1);
     } catch {
-      // 业务错误已由请求拦截器 Toast 提示
-    } finally {
-      setLoading(false);
+      // 拦截器已提示
     }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  };
 
   return (
     <>
-      <NavBar onBack={() => history.back()}>用户管理</NavBar>
-      <PullToRefresh onRefresh={load}>
-        <List header={`共 ${users.length} 条（Phase 0 仅前 20 条）`}>
-          {users.map((u) => (
-            <List.Item
-              key={u.id}
-              description={
-                <span style={{ fontSize: 12, color: '#999' }}>
-                  {u.deptName || '未分配部门'}
-                  {u.roleNames ? ` · ${u.roleNames}` : ''}
-                </span>
-              }
-              extra={
-                <Tag
-                  color={u.status === 1 ? '#00b578' : '#ff3141'}
-                  fill="outline"
-                  style={{ '--border-radius': '4px' }}
-                >
-                  {u.status === 1 ? '正常' : '停用'}
-                </Tag>
-              }
+      <NavBar
+        onBack={() => history.back()}
+        right={<span onClick={() => setFilterVisible(true)}>筛选</span>}
+      >
+        用户管理
+      </NavBar>
+
+      <MobileList<API.UserVO>
+        key={reloadKey}
+        fetchFn={(p) =>
+          userPage({ dto: { page: p.pageNum, pageSize: p.pageSize, ...filter } })
+        }
+        keyField="id"
+        filter={filter}
+        renderItem={(u) => (
+          <SwipeActions
+            actions={[
+              {
+                key: 'edit',
+                text: '编辑',
+                color: 'primary',
+                onClick: () => history.push(`/system/user/edit/${u.id}`),
+                perm: 'system:user:update',
+              },
+              {
+                key: 'del',
+                text: '删除',
+                color: 'danger',
+                onClick: () => handleDelete(u.id!),
+                perm: 'system:user:delete',
+              },
+            ]}
+          >
+            <div
+              onClick={() => history.push(`/system/user/detail/${u.id}`)}
+              style={{ padding: '8px 0' }}
             >
-              {u.nickname || u.username}{' '}
-              <span style={{ fontSize: 12, color: '#999' }}>{u.username}</span>
-            </List.Item>
-          ))}
-        </List>
-      </PullToRefresh>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{u.nickname || u.username}</span>
+                {statusTag(u.status)}
+              </div>
+              <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                {u.username}
+                {u.deptName ? ` · ${u.deptName}` : ''}
+                {u.roleNames ? ` · ${u.roleNames}` : ''}
+              </div>
+            </div>
+          </SwipeActions>
+        )}
+      />
+
+      <FilterPopup
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        onConfirm={(vals) => setFilter(vals)}
+        initial={filter}
+      >
+        <Form.Item name="username" label="用户名">
+          <Input placeholder="按用户名筛选" clearable />
+        </Form.Item>
+        <Form.Item name="phone" label="手机号">
+          <Input placeholder="按手机号筛选" clearable />
+        </Form.Item>
+      </FilterPopup>
     </>
   );
 };
