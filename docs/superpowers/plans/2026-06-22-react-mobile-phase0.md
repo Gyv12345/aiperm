@@ -1292,7 +1292,7 @@ Create `frontend-react-mobile/src/pages/System/User/index.tsx`:
  * - PullToRefresh 下拉刷新。
  * - 完整筛选/详情/编辑/删除在 Phase 1（通用组件 MobileList/FilterPopup/FormPage）实现。
  *
- * 字段以生成的 API.UserVO 为准；status: 0=正常 1=停用。
+ * 字段以生成的 API.UserVO 为准；status: 0=禁用 1=正常。
  */
 import { List, NavBar, PullToRefresh, Tag, Toast } from 'antd-mobile';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -1338,11 +1338,11 @@ const UserList: React.FC = () => {
               }
               extra={
                 <Tag
-                  color={u.status === 0 ? '#00b578' : '#ff3141'}
+                  color={u.status === 1 ? '#00b578' : '#ff3141'}
                   fill="outline"
                   style={{ '--border-radius': '4px' }}
                 >
-                  {u.status === 0 ? '正常' : '停用'}
+                  {u.status === 1 ? '正常' : '停用'}
                 </Tag>
               }
             >
