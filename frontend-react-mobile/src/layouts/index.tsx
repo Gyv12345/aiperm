@@ -1,9 +1,13 @@
 /**
  * 移动端全局布局（umi 约定式 src/layouts/index.tsx）
  *
- * - 仅 4 个 TabBar 主路由（/dashboard /apps /message /profile）显示底部 TabBar。
- * - 其余路由（登录、列表、详情等）全屏，无 TabBar，靠页面内 NavBar 返回。
- * - 底部 SafeArea 适配 iPhone home 条。
+ * 关键点：
+ * - umi 4 的 isLayout 全局 layout **不通过 children prop 传子路由**，必须用
+ *   <Outlet/> 让 react-router 渲染当前匹配的路由组件（用 children 会拿到
+ *   undefined，导致白屏只剩 layout 骨架）。
+ * - 所有路由组件均为 React.lazy，必须用 <Suspense> 包裹 <Outlet/>。
+ * - 仅 4 个 TabBar 主路由（/dashboard /apps /message /profile）显示底部 TabBar，
+ *   其余路由全屏，靠页面内 NavBar 返回。
  */
 import {
   AppOutline,
@@ -12,8 +16,8 @@ import {
   UserOutline,
 } from 'antd-mobile-icons';
 import { TabBar } from 'antd-mobile';
-import { useLocation, history } from '@umijs/max';
-import React from 'react';
+import { Outlet, useLocation, history } from '@umijs/max';
+import React, { Suspense } from 'react';
 
 const TABS = [
   { key: '/dashboard', title: '首页', icon: <AppOutline /> },
@@ -24,7 +28,7 @@ const TABS = [
 
 const TAB_PATHS = new Set(TABS.map((t) => t.key));
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC = () => {
   const location = useLocation();
   const showTabBar = TAB_PATHS.has(location.pathname);
 
@@ -37,8 +41,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         background: '#f5f7fa',
       }}
     >
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        {children}
+      <div
+        style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+      >
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </div>
       {showTabBar && (
         <div style={{ borderTop: '1px solid #eee', background: '#fff' }}>

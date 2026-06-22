@@ -22,6 +22,8 @@ Phase 0 是项目骨架搭建，绝大部分是配置与脚手架代码，**不�
 
 凡步骤涉及"运行命令"，都给出**精确命令**与**预期输出**。
 
+> **umi setup 约束（执行时关键）**：`max setup`（生成 `src/.umi/tsconfig.json`）在 setup 阶段会 `resolve.sync` `config/routes.ts` 引用的**每个组件文件**，任一缺失即抛 `MODULE_NOT_FOUND` 终止（而非 tsc 阶段才报"找不到模块"）。因此实际执行时，Task 2–10 应**连续创建所有源文件并各自 commit**，**中间步骤不跑** `max setup` / `type-check` / `build`；统一在 Task 11（全部文件就绪后）跑 `max setup` + `pnpm tsc` + `pnpm build` 做一次性验证。各 Task 内的 type-check 步骤描述的是「该 Task 代码本身无误」的验证意图，实际执行时机以本约束为准。
+
 ---
 
 ## 文件结构总览
@@ -125,7 +127,7 @@ Create `frontend-react-mobile/package.json`:
   "dependencies": {
     "@umijs/max": "^4.6.62",
     "antd-mobile": "^5.37.1",
-    "antd-mobile-icons": "^0.3.9",
+    "antd-mobile-icons": "^0.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -800,9 +802,10 @@ Create `frontend-react-mobile/src/layouts/index.tsx`:
 /**
  * 移动端全局布局（umi 约定式 src/layouts/index.tsx）
  *
- * - 仅 4 个 TabBar 主路由（/dashboard /apps /message /profile）显示底部 TabBar。
- * - 其余路由（登录、列表、详情等）全屏，无 TabBar，靠页面内 NavBar 返回。
- * - 底部 SafeArea 适配 iPhone home 条。
+ * 关键点：umi 4 的 isLayout 全局 layout **不通过 children 传子路由**（children 为
+ * undefined，用它会白屏），必须用 <Outlet/> 渲染当前匹配的路由组件。所有路由组件
+ * 均为 React.lazy，<Outlet/> 须用 <Suspense> 包裹。
+ * - 仅 4 个 TabBar 主路由显示底部 TabBar，其余全屏靠页面内 NavBar 返回。
  */
 import {
   AppOutline,
@@ -811,8 +814,8 @@ import {
   UserOutline,
 } from 'antd-mobile-icons';
 import { TabBar } from 'antd-mobile';
-import { useLocation, history } from '@umijs/max';
-import React from 'react';
+import { Outlet, useLocation, history } from '@umijs/max';
+import React, { Suspense } from 'react';
 
 const TABS = [
   { key: '/dashboard', title: '首页', icon: <AppOutline /> },
@@ -823,7 +826,7 @@ const TABS = [
 
 const TAB_PATHS = new Set(TABS.map((t) => t.key));
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC = () => {
   const location = useLocation();
   const showTabBar = TAB_PATHS.has(location.pathname);
 
@@ -837,7 +840,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       }}
     >
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        {children}
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </div>
       {showTabBar && (
         <div style={{ borderTop: '1px solid #eee', background: '#fff' }}>
