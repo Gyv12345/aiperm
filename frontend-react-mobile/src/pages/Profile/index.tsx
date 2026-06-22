@@ -1,4 +1,4 @@
-import { Avatar, Button, List, NavBar, Toast } from 'antd-mobile';
+import { Avatar, Button, Dialog, List, NavBar, Toast } from 'antd-mobile';
 import React from 'react';
 import { useModel } from '@umijs/max';
 
@@ -7,9 +7,10 @@ const Profile: React.FC = () => {
   const user = initialState?.currentUser;
 
   const handleLogout = async () => {
-    const ok = await new Promise<boolean>((resolve) => {
-      // antd-mobile 的 Dialog.confirm 二次确认（这里用 window.confirm 简化，Phase 1 换 Dialog）
-      resolve(window.confirm('确定退出登录？'));
+    const ok = await Dialog.confirm({
+      content: '确定退出登录？',
+      confirmText: '退出',
+      cancelText: '取消',
     });
     if (!ok) return;
     try {
