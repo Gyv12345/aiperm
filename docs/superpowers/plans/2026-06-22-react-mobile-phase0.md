@@ -1220,9 +1220,9 @@ const Login: React.FC = () => {
             captchaImg ? (
               <Image
                 src={captchaImg}
-                width={80}
-                height={32}
-                fit="cover"
+                width={100}
+                height={40}
+                fit="contain"
                 onClick={refreshCaptcha}
                 style={{ cursor: 'pointer', borderRadius: 4 }}
               />
