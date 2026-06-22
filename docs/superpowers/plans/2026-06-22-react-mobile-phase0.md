@@ -1185,7 +1185,7 @@ const Login: React.FC = () => {
       </div>
       <Form
         form={form}
-        layout="horizontal"
+        layout="vertical"
         onFinish={handleSubmit}
         footer={
           <Button
