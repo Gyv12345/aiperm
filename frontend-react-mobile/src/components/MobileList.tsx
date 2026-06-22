@@ -44,6 +44,12 @@ function MobileListInner<T>(props: MobileListProps<T>) {
     emptyText = '暂无数据',
   } = props;
 
+  // 用 ref 固化最新的 fetchFn，避免消费方内联 fetchFn 引用变化触发重载
+  // （消费方常写 fetchFn={(p) => ...} 内联箭头函数，每次渲染新引用会导致
+  //   loadPage 重建 → useEffect 重跑 → 列表被重置重载）
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
+
   const [data, setData] = useState<T[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -53,21 +59,22 @@ function MobileListInner<T>(props: MobileListProps<T>) {
 
   const loadPage = useCallback(
     async (pageNum: number) => {
-      const res = await fetchFn({ pageNum, pageSize });
+      const res = await fetchFnRef.current({ pageNum, pageSize });
       const list = res?.list ?? [];
       return { list, total: res?.total ?? 0 };
     },
-    [fetchFn, pageSize],
+    [pageSize], // 只依赖 pageSize，不依赖 fetchFn 引用
   );
 
   const loadMore = useCallback(async () => {
     const { list, total } = await loadPage(pageRef.current);
+    // 先递增再 setData，保证并发/中断场景下页码时机正确
+    pageRef.current += 1;
     setData((prev) => {
       const merged = [...prev, ...list];
       setHasMore(merged.length < total);
       return merged;
     });
-    pageRef.current += 1;
   }, [loadPage]);
 
   // filter 变化或首次：重置并加载第 1 页
