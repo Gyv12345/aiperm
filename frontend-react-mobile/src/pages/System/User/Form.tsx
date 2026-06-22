@@ -6,6 +6,12 @@
  * 字段映射说明：
  * - 后端 UserDTO.postId 为单数（提交用）；UserVO.postIds 为复数（展示用）。
  * - 编辑回填时把 VO 的 postIds[0] 映射到表单 postId，保证岗位正确回显。
+ *
+ * Selector 数组/标量适配（antd-mobile）：
+ * - antd-mobile 的 Selector（无论单选多选）value/onChange 都是数组。
+ *   单选字段（gender/status/deptId/postId）表单内部值统一存为数组
+ *   （initialValues 用 [value]），handleFinish 提交时拍平回标量供后端 DTO 使用。
+ * - roleIds 为多选 Selector（multiple），本身就是数组，保持不变。
  */
 import { FormPage } from '@/components/FormPage';
 import { Form, Input, Selector } from 'antd-mobile';
@@ -40,20 +46,33 @@ const UserForm: React.FC = () => {
           // VO.postIds（数组）→ 表单 postId（单数），取第一个
           setInitialValues({
             ...u,
-            postId: u.postIds && u.postIds.length > 0 ? u.postIds[0] : undefined,
+            postId: u.postIds && u.postIds.length > 0 ? [u.postIds[0]] : [],
             roleIds: u.roleIds ?? [],
+            // 单选 Selector 字段：标量 → 数组（Selector 期望数组）
+            gender: u.gender != null ? [u.gender] : [],
+            status: u.status != null ? [u.status] : [],
+            deptId: u.deptId != null ? [u.deptId] : [],
           });
         } catch {
           // 拦截器已提示
         }
       } else {
-        setInitialValues({ status: 1, gender: 0 });
+        // 单选 Selector 字段用数组（Selector value 始终是数组）
+        setInitialValues({ status: [1], gender: [0], roleIds: [] });
       }
     })();
   }, [id, isEdit]);
 
   const handleFinish = async (values: any) => {
-    const payload = { ...values };
+    const payload = {
+      ...values,
+      // Selector 单选字段从数组拍平为标量（后端 DTO 要求标量 number）
+      gender: Array.isArray(values.gender) ? values.gender[0] : values.gender,
+      status: Array.isArray(values.status) ? values.status[0] : values.status,
+      deptId: Array.isArray(values.deptId) ? values.deptId[0] : values.deptId,
+      postId: Array.isArray(values.postId) ? values.postId[0] : values.postId,
+      // roleIds 保持数组（多选）
+    };
     // 编辑时密码留空则不传
     if (isEdit && !payload.password) {
       delete payload.password;
