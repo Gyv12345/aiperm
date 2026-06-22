@@ -32,7 +32,7 @@ const Profile: React.FC = () => {
           background: '#fff',
         }}
       >
-        <Avatar src={user?.avatar} style={{ '--size': '56px', marginRight: 16 }} />
+        <Avatar src={user?.avatar || ''} style={{ '--size': '56px', marginRight: 16 }} />
         <div>
           <div style={{ fontSize: 17 }}>{user?.nickname || user?.username || '用户'}</div>
           <div style={{ color: '#999', fontSize: 13 }}>{user?.username}</div>

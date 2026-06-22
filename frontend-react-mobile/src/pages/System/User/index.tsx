@@ -20,8 +20,7 @@ const UserList: React.FC = () => {
     setLoading(true);
     try {
       const res: API.PageResultUserVO = await userPage({
-        pageNum: 1,
-        pageSize: 20,
+        dto: { page: 1, pageSize: 20 },
       });
       setUsers(res?.list ?? []);
     } catch {
