@@ -25,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { RuntimeConfig as RuntimeConfigTypes, history } from '@umijs/max';
-import { App as AntdApp, Dropdown, message } from 'antd';
+import { App as AntdApp, ConfigProvider, Dropdown, message } from 'antd';
 import type { ReactNode } from 'react';
 import React from 'react';
 import MfaVerifyModal from './components/MfaVerifyModal';
@@ -293,14 +293,43 @@ export const request: RuntimeConfigTypes['request'] = {
 };
 
 /**
- * 根运行时：用 antd App 包裹，使静态 message/modal 能消费主题 context；
- * 同时挂载全局 MFA 校验弹窗（监听 'mfa-required' 事件）。
+ * 全局 antd 主题 token（Soft UI 风格：柔和圆角/阴影，保留主色 #0060a9）。
+ * 在 rootContainer 最外层注入，作为全应用基础主题。
+ */
+const ANT_THEME = {
+  token: {
+    colorPrimary: '#0060a9',
+    borderRadius: 8,
+    colorBgLayout: '#f5f7fa',
+    colorBorder: '#e5e7eb',
+  },
+  components: {
+    Card: {
+      borderRadiusLG: 10,
+      boxShadowTertiary:
+        '0 1px 2px -2px rgba(16,24,40,0.06), 0 3px 8px 0 rgba(16,24,40,0.04)',
+    },
+    Table: {
+      headerBg: '#fafbfc',
+      rowHoverBg: '#f5f9ff',
+    },
+    Menu: {
+      itemHeight: 40,
+    },
+  },
+};
+
+/**
+ * 根运行时：ConfigProvider 注入全局主题 token（最外层），
+ * antd App 提供静态 message/modal 上下文；挂载全局 MFA 校验弹窗。
  */
 export function rootContainer(container: ReactNode): ReactNode {
   return (
-    <AntdApp>
-      {container}
-      <MfaVerifyModal />
-    </AntdApp>
+    <ConfigProvider theme={ANT_THEME}>
+      <AntdApp>
+        {container}
+        <MfaVerifyModal />
+      </AntdApp>
+    </ConfigProvider>
   );
 }

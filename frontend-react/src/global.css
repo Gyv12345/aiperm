@@ -4,6 +4,44 @@
  * 仅放少量跨页面复用的轻量样式，组件局部样式仍用内联 style。
  */
 
+/* ===== 全局视觉规范（Soft UI 风格，主色 #0060a9） ===== */
+
+/* 字体抗锯齿 + 布局背景（与 antd colorBgLayout 一致，登录页等 layout:false 也生效） */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f7fa;
+}
+
+/* 滚动条美化（webkit 内核） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 文字选中色跟随主色 */
+::selection {
+  background-color: rgba(0, 96, 169, 0.15);
+}
+
+/* 卡片柔和过渡（仅阴影/边框，不改尺寸，避免 hover 布局抖动） */
+.ant-pro-card,
+.ant-card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* ===== 业务局部样式 ===== */
+
 /* 字典管理：左侧选中行的背景高亮 */
 .dict-row-selected > td {
   background-color: #e6f4ff !important;
