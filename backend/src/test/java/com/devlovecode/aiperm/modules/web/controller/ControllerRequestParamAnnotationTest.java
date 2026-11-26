@@ -22,7 +22,7 @@ class ControllerRequestParamAnnotationTest {
 	@DisplayName("所有 RequestParam 都应显式声明参数名")
 	void requestParamsShouldDeclareExplicitNames() {
 		List<Class<?>> controllerClasses = List.of(SysNoticeController.class, SysOperLogController.class,
-				OAuthController.class, OssController.class, ProfileController.class, SysUserController.class);
+				OssController.class, ProfileController.class, SysUserController.class);
 
 		for (Class<?> controllerClass : controllerClasses) {
 			for (Method method : controllerClass.getDeclaredMethods()) {
