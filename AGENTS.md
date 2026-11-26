@@ -8,7 +8,7 @@
 ## 项目结构与模块组织
 本仓库采用前后端分离结构，核心目录如下：
 - `backend/src/main/java/com/devlovecode/aiperm/`：Spring Boot 业务模块（`modules/*`）与公共基础设施（`common/*`、`config/*`）。
-- `backend/src/main/resources/db/migration/`：Flyway 数据库迁移脚本（命名：`Vx.x.x__description.sql`）。
+- `backend/src/main/resources/db/migration/`：历史迁移脚本（仅作参考，Flyway 已移除）。表结构变更通过 dbx 直接操作数据库（连接「我的阿里云数据库」→ `aiperm` 库）：AI 建表/加列，并同步修改对应实体类。
 - `backend/src/test/`：JUnit 集成测试与 `application-test.yaml`。
 - `frontend/src/`：Vue 3 应用（`views/`、`components/`、`stores/`、`composables/`、`router/`、`utils/`）。
 - `frontend/src/api/generated.ts`、`frontend/src/models/`：Orval 自动生成的 API 客户端与类型。

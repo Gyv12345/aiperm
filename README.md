@@ -40,7 +40,6 @@ AiPerm 当前定位是：
 - Spring Boot 4
 - Spring Modulith
 - Spring Data JPA
-- Flyway
 - Redis
 - Sa-Token
 
@@ -131,12 +130,14 @@ aiperm/
 - 跨模块依赖优先通过 `modules/<other>/api` 暴露的能力访问
 - 不要直接把别的模块内部 service/repository 当公共接口使用
 
-### 2. 数据库变更走 Flyway
+### 2. 表结构变更通过 dbx 直接操作数据库
 
-所有表结构、字段、菜单初始化、权限点初始化都通过 Flyway 维护：
+Flyway 已移除，`db/migration/` 仅保留历史迁移脚本作参考。表结构、字段、菜单初始化、
+权限点初始化改为通过 dbx 直接操作项目数据库（连接「我的阿里云数据库」→ `aiperm` 库）：
 
-- 路径：`backend/src/main/resources/db/migration/`
-- 命名：`Vx.x.x__description.sql`
+- 新增表：由 AI 通过 dbx 执行 `CREATE TABLE`，并同步生成对应实体类（继承 `BaseEntity`）与 Repository
+- 新增字段：由 AI 执行 `ALTER TABLE`，并同步修改实体
+- 初始化菜单/按钮权限：沿用既有菜单表结构，由 dbx 写入
 
 新增业务模块时，至少要考虑：
 
