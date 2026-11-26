@@ -31,6 +31,8 @@ export interface RoleDTO extends PageParams {
   status?: number
   dataScope?: number
   remark?: string
+  /** 自定义部门ID列表（dataScope=5 时必填） */
+  deptIds?: number[]
 }
 
 // ==================== API 函数 ====================
@@ -51,6 +53,10 @@ export const roleApi = {
   /** 获取角色的菜单 ID 列表 */
   getRoleMenus: (id: number) =>
     request.get<number[]>(`/system/role/${id}/menus`),
+
+  /** 获取角色的自定义部门 ID 列表（dataScope=5 时使用） */
+  getRoleDepts: (id: number) =>
+    request.get<number[]>(`/system/role/${id}/depts`),
 
   /** 创建角色 */
   create: (data: RoleDTO) =>

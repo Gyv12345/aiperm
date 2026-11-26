@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref} from 'vue'
+import {computed, nextTick, onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox, type FormInstance, type FormRules} from 'element-plus'
 import {Delete, Edit, Plus, Refresh, Search} from '@element-plus/icons-vue'
 import {roleApi, type RoleDTO, type RoleVO} from '@/api/system/role'
+import {deptApi, type DeptVO} from '@/api/system/dept'
 import {menuApi, type MenuVO} from '@/api/system/menu'
 import type {PageResult, TableColumn} from '@/types'
 import {useDict} from '@/composables/useDict'
@@ -17,6 +18,7 @@ const dataScopeOptions = [
   { value: 2, label: '本部门数据' },
   { value: 3, label: '本部门及下级部门数据' },
   { value: 4, label: '仅本人数据' },
+  { value: 5, label: '自定义部门' },
 ]
 
 // 获取数据权限标签
@@ -133,6 +135,10 @@ const assignMenuForm = reactive({
 const menuTreeRef = ref()
 const checkedMenuIds = ref<number[]>([])
 
+// 自定义部门（dataScope=5）
+const deptTree = ref<DeptVO[]>([])
+const deptTreeRef = ref()
+
 // 查询表单
 const queryForm = reactive({
   roleName: '',
@@ -190,6 +196,16 @@ async function fetchMenuTree() {
   }
 }
 
+// 获取部门树（自定义部门选择用）
+async function fetchDeptTree() {
+  try {
+    deptTree.value = await deptApi.tree()
+  }
+  catch (error) {
+    console.error('获取部门树失败:', error)
+  }
+}
+
 // 搜索
 function handleSearch() {
   pagination.page = 1
@@ -217,6 +233,8 @@ function handleCreate() {
     dataScope: 1,
     remark: '',
   })
+  fetchDeptTree()
+  nextTick(() => deptTreeRef.value?.setCheckedKeys([]))
   dialogVisible.value = true
 }
 
@@ -237,6 +255,10 @@ async function handleUpdate(row: RoleVO) {
       dataScope: role.dataScope || 1,
       remark: role.remark || '',
     })
+    fetchDeptTree()
+    // 自定义部门：回显已选部门
+    const deptIds = (role.dataScope || 1) === 5 ? await roleApi.getRoleDepts(role.id!) : []
+    nextTick(() => deptTreeRef.value?.setCheckedKeys(deptIds || []))
   }
   catch (error) {
     console.error('获取角色详情失败:', error)
@@ -330,6 +352,9 @@ async function handleSubmit() {
       status: formData.status,
       dataScope: formData.dataScope,
       remark: formData.remark || undefined,
+      deptIds: formData.dataScope === 5
+        ? (deptTreeRef.value?.getCheckedKeys() || []).map((id: number | string) => Number(id))
+        : undefined,
     }
 
     if (dialogType.value === 'create') {
@@ -707,6 +732,30 @@ onMounted(() => {
               :value="item.value"
             />
           </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="formData.dataScope === 5"
+          label="自定义部门"
+        >
+          <div style="width: 100%">
+            <div class="text-xs text-gray-400 mb-1">
+              选择该角色可见的部门（精确选择，不自动级联子部门）
+            </div>
+            <el-tree
+              ref="deptTreeRef"
+              :data="deptTree"
+              :props="{
+                label: 'deptName',
+                children: 'children',
+              }"
+              node-key="id"
+              show-checkbox
+              check-strictly
+              default-expand-all
+              highlight-current
+              style="max-height: 240px; overflow: auto; border: 1px solid var(--el-border-color-lighter); border-radius: 4px; padding: 4px"
+            />
+          </div>
         </el-form-item>
         <el-form-item
           label="备注"

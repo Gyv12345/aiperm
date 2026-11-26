@@ -8,7 +8,9 @@
  * 注意：getRoleMenus 返回 RListLong（数组包装未自动解包），手动取 .data。
  */
 import { AddButton } from '@/components/AccessButton';
+import { tree1 as getDeptTree } from '@/services/aiperm/dept';
 import { tree as getMenuTree } from '@/services/aiperm/menu';
+import { getRoleDepts } from '@/services/roleDept';
 import {
   assignMenus,
   create1 as createRole,
@@ -20,6 +22,7 @@ import {
 import {
   DrawerForm,
   ModalForm,
+  ProFormDependency,
   ProFormDigit,
   ProFormSelect,
   ProFormText,
@@ -41,6 +44,16 @@ function toTreeData(nodes: any[] | undefined): DataNode[] {
   }));
 }
 
+/** 后端部门树节点 → antd Tree DataNode */
+function toDeptTreeData(nodes: any[] | undefined): DataNode[] {
+  if (!nodes) return [];
+  return nodes.map((n) => ({
+    key: n.id,
+    title: n.deptName,
+    children: toDeptTreeData(n.children),
+  }));
+}
+
 const RoleList: React.FC = () => {
   const actionRef = useRef<any>();
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,6 +62,9 @@ const RoleList: React.FC = () => {
   const [menuTarget, setMenuTarget] = useState<API.SysRole | undefined>();
   const [menuTree, setMenuTree] = useState<DataNode[]>([]);
   const [checkedKeys, setCheckedKeys] = useState<React.Key[]>([]);
+  // 自定义部门（dataScope=5）
+  const [deptTree, setDeptTree] = useState<DataNode[]>([]);
+  const [deptKeys, setDeptKeys] = useState<React.Key[]>([]);
 
   const loadMenuTree = async () => {
     try {
@@ -61,12 +77,23 @@ const RoleList: React.FC = () => {
     }
   };
 
+  /** 加载部门树（自定义部门选择用） */
+  const loadDeptTree = async () => {
+    try {
+      const res: any = await getDeptTree();
+      setDeptTree(toDeptTreeData(res?.data ?? res ?? []));
+    } catch {
+      // 业务失败已在拦截器统一提示，这里静默兜底避免崩溃
+    }
+  };
+
   /** 数据权限范围文案 + 标签颜色 */
   const DATA_SCOPE_META: Record<number, { text: string; color: string }> = {
     1: { text: '全部数据', color: 'green' },
     2: { text: '本部门', color: 'blue' },
     3: { text: '本部门及下级', color: 'cyan' },
     4: { text: '仅本人', color: 'orange' },
+    5: { text: '自定义部门', color: 'purple' },
   };
 
   const columns: ProColumns<API.SysRole>[] = [
@@ -102,9 +129,22 @@ const RoleList: React.FC = () => {
       render: (_, record) => [
         <a
           key="edit"
-          onClick={() => {
+          onClick={async () => {
             setCurrent(record);
             setModalOpen(true);
+            await loadDeptTree();
+            // 自定义部门：回显已选部门
+            if ((record.dataScope ?? 1) === 5) {
+              try {
+                const res: any = await getRoleDepts(record.id!);
+                const ids: number[] = res?.data ?? res ?? [];
+                setDeptKeys(ids.map(String));
+              } catch {
+                setDeptKeys([]);
+              }
+            } else {
+              setDeptKeys([]);
+            }
           }}
         >
           编辑
@@ -167,9 +207,11 @@ const RoleList: React.FC = () => {
         toolBarRender={() => [
           <AddButton
             key="add"
-            onClick={() => {
+            onClick={async () => {
               setCurrent(undefined);
+              setDeptKeys([]);
               setModalOpen(true);
+              await loadDeptTree();
             }}
           >
             新增角色
@@ -188,11 +230,16 @@ const RoleList: React.FC = () => {
         modalProps={{ destroyOnClose: true }}
         onFinish={async (values) => {
           try {
+            // 自定义部门：随表单提交已选部门
+            const payload = {
+              ...values,
+              deptIds: values.dataScope === 5 ? deptKeys.map((k) => Number(k)) : undefined,
+            } as unknown as API.RoleDTO;
             if (current?.id) {
-              await updateRole({ id: current.id }, values as API.RoleDTO);
+              await updateRole({ id: current.id }, payload);
               message.success('更新成功');
             } else {
-              await createRole(values as API.RoleDTO);
+              await createRole(payload);
               message.success('创建成功');
             }
             setModalOpen(false);
@@ -216,18 +263,40 @@ const RoleList: React.FC = () => {
           rules={[{ required: true, message: '请输入角色编码' }]}
         />
         <ProFormDigit name="sort" label="排序" colProps={{ span: 12 }} min={0} />
-        <ProFormSelect
-          name="dataScope"
-          label="数据权限"
-          colProps={{ span: 12 }}
-          tooltip="控制该角色用户可见的数据范围：全部数据/本部门/本部门及下级/仅本人"
-          options={[
-            { label: '全部数据', value: 1 },
-            { label: '本部门数据', value: 2 },
-            { label: '本部门及下级', value: 3 },
-            { label: '仅本人', value: 4 },
-          ]}
-        />
+        <ProFormDependency name={['dataScope']}>
+          {({ dataScope }) => (
+            <>
+              <ProFormSelect
+                name="dataScope"
+                label="数据权限"
+                colProps={{ span: 12 }}
+                tooltip="控制该角色用户可见的数据范围：全部数据/本部门/本部门及下级/仅本人/自定义部门"
+                options={[
+                  { label: '全部数据', value: 1 },
+                  { label: '本部门数据', value: 2 },
+                  { label: '本部门及下级', value: 3 },
+                  { label: '仅本人', value: 4 },
+                  { label: '自定义部门', value: 5 },
+                ]}
+              />
+              {dataScope === 5 && (
+                <div style={{ width: '100%' }}>
+                  <div style={{ marginBottom: 8, color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>
+                    选择该角色可见的部门（精确选择，不自动级联子部门）
+                  </div>
+                  <Tree
+                    checkable
+                    checkStrictly
+                    defaultExpandAll
+                    treeData={deptTree}
+                    checkedKeys={deptKeys}
+                    onCheck={(keys) => setDeptKeys((keys as any).checked ?? keys)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </ProFormDependency>
         <ProFormSelect
           name="status"
           label="状态"
