@@ -193,7 +193,7 @@ public class SocialAuthService {
 		registry.get(platform); // 校验平台
 		Long userId = StpUtil.getLoginIdAsLong();
 		String source = platform.toUpperCase();
-		int affected = bindingRepo.softDeleteByUserIdAndSource(userId, source, LocalDateTime.now());
+		int affected = bindingRepo.deleteByUserIdAndSource(userId, source);
 		if (affected == 0) {
 			throw new BusinessException("未找到该平台的绑定");
 		}

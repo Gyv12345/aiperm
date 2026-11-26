@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,9 +25,9 @@ public interface SocialBindingRepository extends BaseJpaRepository<SysSocialBind
 	/** 某第三方账号是否已被绑定 */
 	boolean existsBySourceAndOpenid(String source, String openid);
 
-	/** 软删除某用户在某平台的绑定 */
+	/** 删除某用户在某平台的绑定（物理删除：表上有 uk_user_source 唯一键，软删除会占用键位导致无法重新绑定） */
 	@Modifying
-	@Query("UPDATE SysSocialBinding e SET e.deleted = 1, e.updateTime = :now WHERE e.userId = :userId AND e.source = :source")
-	int softDeleteByUserIdAndSource(@Param("userId") Long userId, @Param("source") String source, @Param("now") LocalDateTime now);
+	@Query("DELETE FROM SysSocialBinding e WHERE e.userId = :userId AND e.source = :source")
+	int deleteByUserIdAndSource(@Param("userId") Long userId, @Param("source") String source);
 
 }
