@@ -2,14 +2,6 @@
 # 使用方式：设置环境变量 SPRING_PROFILES_ACTIVE=dev 或在 IDE 中激活 dev profile
 
 spring:
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 1
-    validate-on-migrate: false
-    clean-disabled: false
-
   # 数据源配置 - 开发环境
   # 可通过环境变量覆盖，便于本地和测试机复用
   datasource:
@@ -72,6 +64,18 @@ management:
 auth:
   captcha:
     enabled: false
+  # 登录失败锁定：窗口内同一用户名连续失败 max-attempts 次后，锁定 lock-minutes 分钟
+  lockout:
+    enabled: true
+    max-attempts: 5
+    window-minutes: 15
+    lock-minutes: 30
+  # 密码策略：新增/修改/重置密码时校验复杂度；expire-days 为有效期天数（0=不启用）
+  password:
+    min-length: 8
+    require-letter-digit: true
+    require-special: false
+    expire-days: 0
 
 # 第三方社交登录(JustAuth)配置
 # - client-id/secret 留空的平台视为「未启用」，不进 login-config 返回
