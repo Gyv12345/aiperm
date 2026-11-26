@@ -272,6 +272,17 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
       </div>
     ),
     menuHeaderRender: undefined,
+    // 路由守卫：未登录且访问非登录相关页面 → 跳登录页。
+    // access 在权限不通过时只会渲染 unAccessible，不会主动跳转，
+    // 故登录拦截必须由 onPageChange 完成。
+    onPageChange: (location) => {
+      const pathname = location?.pathname;
+      const onUserPage = !!pathname && pathname.startsWith('/user');
+      // 未登录且不在登录相关页面 → 跳登录页
+      if (!getToken() && !onUserPage) {
+        history.push(loginPath);
+      }
+    },
     unAccessible: <div>无权限访问</div>,
   };
 };
