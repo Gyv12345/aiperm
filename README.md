@@ -240,6 +240,41 @@ AiPerm 的一个重要设计目标，就是让 AI 可以直接接着项目往下
 
 这两个 skill 的意义不是做“额外文档”，而是把项目约定显式交给 AI，使它在后续功能开发时更稳定。
 
+## MCP Server
+
+AiPerm 内置 MCP（Model Context Protocol）Server，可以把后台的查询能力作为 MCP 工具暴露给 Claude Code、Cursor 等 AI 客户端，让 AI 直接查询用户、角色、字典、日志、在线用户、服务器状态等。
+
+- 传输：Streamable HTTP，端点 `/mcp`（Spring AI 2.0.x）
+- 鉴权：请求头 `X-API-Key`，取值来自环境变量 `MCP_API_KEY`
+- 默认关闭：设置 `MCP_ENABLED=true` 且 `MCP_API_KEY` 非空后启用；未配置时端点一律返回 404
+- 工具集为只读（14 个工具：首页统计、服务器概览、用户/角色/部门、字典、登录/操作日志、在线用户、公告、定时任务、系统参数），持钥方等同「管理员只读」视角
+- 写操作刻意不暴露：请走管理界面（登录态 + 按钮权限 + 操作日志）
+
+### 客户端接入示例
+
+Claude Code：
+
+```bash
+claude mcp add --transport http aiperm http://localhost:8080/mcp --header "X-API-Key: <MCP_API_KEY>"
+```
+
+Cursor（`mcp.json`）：
+
+```json
+{
+  "mcpServers": {
+    "aiperm": {
+      "url": "http://localhost:8080/mcp",
+      "headers": { "X-API-Key": "<MCP_API_KEY>" }
+    }
+  }
+}
+```
+
+### 新增工具
+
+在 `backend/src/main/java/com/devlovecode/aiperm/modules/mcp/McpAdminTools.java` 里加一个 `@McpTool` 方法即可，启动时自动注册；端点鉴权见 `modules/mcp/config/McpAuthFilterConfig`。
+
 ## 本地开发
 
 ### 后端

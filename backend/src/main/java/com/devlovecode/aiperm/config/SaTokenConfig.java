@@ -26,6 +26,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
 					"/auth/social/authorize", "/auth/social/callback",
 					// 排除验证码发送接口
 					"/captcha/**",
+					// MCP Server 端点（鉴权由 McpAuthFilter 处理：未配置 api-key 时一律 404）
+					"/mcp/**",
 					// 排除Swagger相关
 					"/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**", "/doc.html",
 					// 排除静态资源

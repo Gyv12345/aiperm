@@ -40,6 +40,23 @@ spring:
   profiles:
     active: dev
 
+  # MCP Server：把后台查询能力作为 MCP 工具暴露给 AI 客户端（Streamable HTTP，端点 /mcp）。
+  # 默认关闭。启用方式：设置环境变量 MCP_ENABLED=true 与 MCP_API_KEY=<随机长串>，
+  # 客户端请求头携带 X-API-Key: <MCP_API_KEY>。工具清单见 README「MCP Server」章节。
+  ai:
+    mcp:
+      server:
+        enabled: ${MCP_ENABLED:false}
+        protocol: STREAMABLE
+        type: SYNC
+        name: aiperm
+        version: 1.0.0
+
+# 应用自定义配置
+aiperm:
+  mcp:
+    api-key: ${MCP_API_KEY:}
+
 # Sa-Token配置
 sa-token:
   token-name: Authorization
