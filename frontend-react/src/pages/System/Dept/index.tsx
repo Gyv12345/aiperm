@@ -86,9 +86,10 @@ const DeptList: React.FC = () => {
         const excludeIds = collectSubIds(tree, editingId);
         tree = filterTree(tree, excludeIds);
       }
-      setDeptTreeOptions(tree as any[]);
+      // 最外层包一个虚拟「根目录」节点：parentId=0 表示挂到根，与后端约定一致
+      setDeptTreeOptions([{ id: 0, deptName: '根目录', children: tree as any[] }] as any[]);
     } catch {
-      setDeptTreeOptions([]);
+      setDeptTreeOptions([{ id: 0, deptName: '根目录', children: [] }] as any[]);
     }
   };
 
