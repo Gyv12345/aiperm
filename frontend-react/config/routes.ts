@@ -21,6 +21,12 @@ export default [
         path: '/user/login',
         component: './User/Login',
       },
+      // 第三方登录/绑定 回调中转页（后端 302 重定向至此）
+      {
+        name: 'OAuth回调',
+        path: '/user/oauth/callback',
+        component: './User/OAuthCallback',
+      },
     ],
   },
   // 固定首页（后端菜单不含）

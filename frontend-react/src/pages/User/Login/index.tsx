@@ -10,14 +10,16 @@
  * 但 /auth/info、/auth/menus 的树形菜单类型用手写 services/auth.ts（更贴合业务）。
  */
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
-import { Alert, message, Space, Tabs } from 'antd';
+import { Alert, Button, Divider, message, Space, Tabs, Tooltip } from 'antd';
 import React, { useEffect, useState } from 'react';
 import {
+  GithubOutlined,
   LockOutlined,
   SafetyCertificateOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { captcha as fetchCaptcha, unifiedLogin } from '@/services/aiperm/auth';
+import { socialAuthorize } from '@/services/social';
 import { setToken } from '@/requestErrorConfig';
 
 const LoginMessage: React.FC<{ content: string }> = ({ content }) => (
@@ -83,6 +85,18 @@ const Login: React.FC = () => {
     }
   };
 
+  // 第三方登录：获取授权链接并跳转第三方平台
+  const handleSocial = async (platform: string) => {
+    try {
+      const res = await socialAuthorize(platform, 'login');
+      if (res?.authorizeUrl) {
+        window.location.href = res.authorizeUrl;
+      }
+    } catch {
+      // 业务错误已由请求拦截器统一提示
+    }
+  };
+
   return (
     <LoginForm
       contentStyle={{ minWidth: 280, maxWidth: '75vw' }}
@@ -140,6 +154,34 @@ const Login: React.FC = () => {
           />
         </>
       )}
+      <Divider
+        plain
+        style={{
+          marginTop: 8,
+          marginBottom: 16,
+          fontSize: 13,
+          color: 'rgba(0,0,0,0.45)',
+        }}
+      >
+        其他登录方式
+      </Divider>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <Space size={24}>
+          <Tooltip title="GitHub 登录">
+            <Button
+              shape="circle"
+              size="large"
+              icon={<GithubOutlined />}
+              onClick={() => handleSocial('GITHUB')}
+            />
+          </Tooltip>
+          <Tooltip title="Gitee 登录">
+            <Button shape="circle" size="large" onClick={() => handleSocial('GITEE')}>
+              G
+            </Button>
+          </Tooltip>
+        </Space>
+      </div>
       <div
         style={{
           marginBottom: 24,
