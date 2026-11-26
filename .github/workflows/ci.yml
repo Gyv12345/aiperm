@@ -68,3 +68,53 @@ jobs:
       - name: Build Frontend
         working-directory: frontend
         run: pnpm run build
+
+  frontend-react:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        working-directory: frontend-react
+        run: pnpm install
+
+      - name: Type Check
+        working-directory: frontend-react
+        run: pnpm run type-check
+
+  frontend-react-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        working-directory: frontend-react-mobile
+        run: pnpm install
+
+      - name: Type Check
+        working-directory: frontend-react-mobile
+        run: pnpm run type-check
+
+      - name: Unit Tests
+        working-directory: frontend-react-mobile
+        run: pnpm run test
