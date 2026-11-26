@@ -30,7 +30,7 @@ public record DataScopeContext(DataScopeEnum scope, Long userId, Long deptId, Se
 		return switch (scope) {
 			case ALL -> true;
 			case DEPT -> deptId == null || deptId == 0L;
-			case DEPT_AND_CHILD -> deptIds == null || deptIds.isEmpty();
+			case DEPT_AND_CHILD, CUSTOM -> deptIds == null || deptIds.isEmpty();
 			case SELF -> userId == null;
 		};
 	}

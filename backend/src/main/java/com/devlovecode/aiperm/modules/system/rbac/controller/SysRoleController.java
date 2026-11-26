@@ -57,6 +57,13 @@ public class SysRoleController {
 		return R.ok(roleService.getMenuIds(id));
 	}
 
+	@Operation(summary = "获取角色的自定义部门ID列表")
+	@SaCheckPermission("system:role:list")
+	@GetMapping("/{id}/depts")
+	public R<List<Long>> getRoleDepts(@PathVariable Long id) {
+		return R.ok(roleService.getDeptIds(id));
+	}
+
 	@Operation(summary = "创建角色")
 	@SaCheckPermission("system:role:create")
 	@Log(title = "角色管理", operType = OperType.CREATE)

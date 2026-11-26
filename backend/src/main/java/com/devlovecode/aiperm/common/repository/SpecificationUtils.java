@@ -115,7 +115,7 @@ public final class SpecificationUtils {
 				case DEPT -> (deptField == null || ctx.deptId() == null)
 						? null
 						: cb.equal(root.get(deptField), ctx.deptId());
-				case DEPT_AND_CHILD -> (deptField == null || ctx.deptIds() == null || ctx.deptIds().isEmpty())
+				case DEPT_AND_CHILD, CUSTOM -> (deptField == null || ctx.deptIds() == null || ctx.deptIds().isEmpty())
 						? null
 						: root.get(deptField).in(ctx.deptIds());
 				case SELF -> (creatorField == null || ctx.userId() == null)

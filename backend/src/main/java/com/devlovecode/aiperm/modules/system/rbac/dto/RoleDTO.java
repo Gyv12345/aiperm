@@ -51,10 +51,14 @@ public class RoleDTO {
 	private String remark;
 
 	@JsonView({ Views.Create.class, Views.Update.class, Views.Query.class })
-	@Schema(description = "数据权限范围：1-全部，2-本部门，3-本部门及下级，4-仅本人")
+	@Schema(description = "数据权限范围：1-全部，2-本部门，3-本部门及下级，4-仅本人，5-自定义部门")
 	private Integer dataScope;
 
 	// ========== 关联字段 ==========
+
+	@JsonView({ Views.Create.class, Views.Update.class })
+	@Schema(description = "自定义部门ID列表（dataScope=5 时必填）")
+	private List<Long> deptIds;
 
 	@JsonView(Views.Query.class)
 	@Schema(description = "角色ID（用于分配菜单）")

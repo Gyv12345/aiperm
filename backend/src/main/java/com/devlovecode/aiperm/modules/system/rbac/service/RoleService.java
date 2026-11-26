@@ -2,6 +2,7 @@ package com.devlovecode.aiperm.modules.system.rbac.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.devlovecode.aiperm.common.domain.PageResult;
+import com.devlovecode.aiperm.common.enums.DataScopeEnum;
 import com.devlovecode.aiperm.common.exception.BusinessException;
 import com.devlovecode.aiperm.modules.system.rbac.dto.RoleDTO;
 import com.devlovecode.aiperm.modules.system.rbac.entity.SysRole;
@@ -70,6 +71,7 @@ public class RoleService {
 		entity.setCreateTime(LocalDateTime.now());
 
 		roleRepo.save(entity);
+		saveCustomDepts(entity.getId(), dto);
 	}
 
 	/**
@@ -100,6 +102,7 @@ public class RoleService {
 		entity.setUpdateTime(LocalDateTime.now());
 
 		roleRepo.save(entity);
+		saveCustomDepts(id, dto);
 	}
 
 	/**
@@ -116,8 +119,9 @@ public class RoleService {
 		if (roleRepo.isUsedByUser(id)) {
 			throw new BusinessException("角色已分配给用户，不能删除");
 		}
-		// 删除角色菜单关联
+		// 删除角色菜单/自定义部门关联
 		roleRepo.deleteRoleMenus(id);
+		roleRepo.deleteRoleDepts(id);
 		// 删除角色
 		roleRepo.softDelete(id, LocalDateTime.now());
 	}
@@ -141,6 +145,32 @@ public class RoleService {
 			for (Long menuId : menuIds) {
 				roleRepo.insertRoleMenu(roleId, menuId, now);
 			}
+		}
+	}
+
+	/**
+	 * 获取角色的自定义部门ID列表（dataScope=5 时使用）
+	 */
+	public List<Long> getDeptIds(Long roleId) {
+		return roleRepo.getDeptIdsByRoleId(roleId);
+	}
+
+	/**
+	 * 保存角色的自定义部门关联：CUSTOM 范围写入部门集合，其他范围清理残留
+	 */
+	private void saveCustomDepts(Long roleId, RoleDTO dto) {
+		if (!DataScopeEnum.of(dto.getDataScope()).equals(DataScopeEnum.CUSTOM)) {
+			roleRepo.deleteRoleDepts(roleId);
+			return;
+		}
+		if (dto.getDeptIds() == null || dto.getDeptIds().isEmpty()) {
+			throw new BusinessException("自定义部门数据权限需至少选择一个部门");
+		}
+		roleRepo.deleteRoleDepts(roleId);
+		LocalDateTime now = LocalDateTime.now();
+		String username = getCurrentUsername();
+		for (Long deptId : dto.getDeptIds().stream().distinct().toList()) {
+			roleRepo.insertRoleDept(roleId, deptId, now, username);
 		}
 	}
 

@@ -34,7 +34,8 @@ public class DataScopeService {
 	 * <ul>
 	 *   <li>未登录或无角色 → ALL（不过滤）</li>
 	 *   <li>超管（isAdmin=1）→ 显式短路返回 ALL，无论角色配置如何</li>
-	 *   <li>否则取用户所有启用角色的 MIN(data_scope) 作为最宽范围</li>
+	 *   <li>否则取用户所有启用角色的 MIN(data_scope) 作为最宽范围
+	 *       （CUSTOM=5 编码最窄，仅在全部角色均为 CUSTOM 时生效）</li>
 	 * </ul>
 	 */
 	public DataScopeContext getDataScopeContext() {
@@ -63,6 +64,10 @@ public class DataScopeService {
 				yield new DataScopeContext(scopeEnum, userId, null, deptIds);
 			}
 			case SELF -> new DataScopeContext(scopeEnum, userId, null, Set.of());
+			case CUSTOM -> {
+				Set<Long> deptIds = getCustomDeptIds(userId);
+				yield new DataScopeContext(scopeEnum, userId, null, deptIds);
+			}
 		};
 	}
 
@@ -85,6 +90,8 @@ public class DataScopeService {
 			case DEPT_AND_CHILD -> String.format(" AND %s.id IN (%s)", deptAlias,
 					ctx.deptIds().stream().map(String::valueOf).collect(Collectors.joining(",")));
 			case SELF -> String.format(" AND %s.id = %d", userAlias, ctx.userId());
+			case CUSTOM -> String.format(" AND %s.id IN (%s)", deptAlias,
+					ctx.deptIds().stream().map(String::valueOf).collect(Collectors.joining(",")));
 		};
 	}
 
@@ -120,6 +127,21 @@ public class DataScopeService {
 		@SuppressWarnings("unchecked")
 		List<Number> results = query.getResultList();
 		return results.stream().map(Number::longValue).collect(Collectors.toList());
+	}
+
+	/** 自定义部门：取用户所有启用角色配置的自定义部门并集 */
+	private Set<Long> getCustomDeptIds(Long userId) {
+		Query query = em.createNativeQuery("""
+				SELECT DISTINCT rd.dept_id
+				FROM sys_role_dept rd
+				JOIN sys_user_role ur ON rd.role_id = ur.role_id
+				JOIN sys_role r ON rd.role_id = r.id
+				WHERE ur.user_id = ? AND ur.deleted = 0 AND r.deleted = 0 AND r.status = 1
+				""");
+		query.setParameter(1, userId);
+		@SuppressWarnings("unchecked")
+		List<Number> results = query.getResultList();
+		return results.stream().map(Number::longValue).collect(Collectors.toSet());
 	}
 
 }
