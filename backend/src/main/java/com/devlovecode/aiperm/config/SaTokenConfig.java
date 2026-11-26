@@ -22,6 +22,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
 			.excludePathPatterns(
 					// 排除认证相关接口
 					"/auth/login", "/auth/unified-login", "/auth/captcha", "/auth/login-config",
+					// 第三方社交登录：获取授权链接 + 回调（bind 的登录态由 service 校验）
+					"/auth/social/authorize", "/auth/social/callback",
 					// 排除验证码发送接口
 					"/captcha/**",
 					// 排除Swagger相关

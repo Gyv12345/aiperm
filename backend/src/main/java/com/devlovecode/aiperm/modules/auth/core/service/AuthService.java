@@ -18,6 +18,7 @@ import com.devlovecode.aiperm.modules.auth.core.vo.LoginConfigVO;
 import com.devlovecode.aiperm.modules.auth.core.vo.LoginVO;
 import com.devlovecode.aiperm.modules.auth.core.vo.MenuVO;
 import com.devlovecode.aiperm.modules.auth.core.vo.UserInfoVO;
+import com.devlovecode.aiperm.modules.auth.social.config.SocialPlatformRegistry;
 import com.devlovecode.aiperm.modules.monitor.api.OnlineSessionApi;
 import com.devlovecode.aiperm.modules.system.api.SystemAccess;
 import com.devlovecode.aiperm.modules.system.api.SystemMenuDescriptor;
@@ -59,6 +60,8 @@ public class AuthService {
 	private final LoginAuditApi loginAuditApi;
 
 	private final OnlineSessionApi onlineSessionApi;
+
+	private final SocialPlatformRegistry socialPlatformRegistry;
 
 	@Value("${auth.captcha.enabled:true}")
 	private boolean captchaEnabled;
@@ -157,6 +160,7 @@ public class AuthService {
 			.passwordEnabled(true)
 			.smsEnabled(smsEnabled)
 			.emailEnabled(emailEnabled)
+			.socialPlatforms(socialPlatformRegistry.enabledPlatforms())
 			.build();
 	}
 

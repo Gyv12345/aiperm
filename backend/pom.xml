@@ -19,6 +19,7 @@
         <maven.compiler.target>25</maven.compiler.target>
         <sa-token.version>1.44.0</sa-token.version>
         <hutool.version>5.8.34</hutool.version>
+        <justauth.version>1.16.6</justauth.version>
         <fastexcel.version>1.3.0</fastexcel.version>
         <springdoc.version>3.0.1</springdoc.version>
         <sms4j.version>3.3.3</sms4j.version>
@@ -93,6 +94,11 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>me.zhyd.oauth</groupId>
+            <artifactId>JustAuth</artifactId>
+            <version>${justauth.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.idev.excel</groupId>
