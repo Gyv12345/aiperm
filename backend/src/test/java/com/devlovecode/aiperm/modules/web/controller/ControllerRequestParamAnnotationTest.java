@@ -2,7 +2,6 @@ package com.devlovecode.aiperm.modules.web.controller;
 
 import com.devlovecode.aiperm.modules.enterprise.controller.SysNoticeController;
 import com.devlovecode.aiperm.modules.audit.controller.SysOperLogController;
-import com.devlovecode.aiperm.modules.auth.oauth.controller.OAuthController;
 import com.devlovecode.aiperm.modules.storage.controller.OssController;
 import com.devlovecode.aiperm.modules.system.profile.controller.ProfileController;
 import com.devlovecode.aiperm.modules.system.rbac.controller.SysUserController;
