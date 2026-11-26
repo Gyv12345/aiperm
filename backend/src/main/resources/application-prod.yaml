@@ -68,6 +68,18 @@ management:
 auth:
   captcha:
     enabled: true
+  # 登录失败锁定：窗口内同一用户名连续失败 max-attempts 次后，锁定 lock-minutes 分钟
+  lockout:
+    enabled: true
+    max-attempts: 5
+    window-minutes: 15
+    lock-minutes: 30
+  # 密码策略：新增/修改/重置密码时校验复杂度；expire-days 为有效期天数（0=不启用）
+  password:
+    min-length: 8
+    require-letter-digit: true
+    require-special: false
+    expire-days: 0
 
 # OSS 文件存储配置
 oss:

@@ -51,4 +51,7 @@ public class SysUser extends BaseEntity {
 
 	private LocalDateTime lastLoginTime;
 
+	/** 密码最后更新时间（NULL=未记录，不参与有效期判定） */
+	private LocalDateTime pwdUpdateTime;
+
 }

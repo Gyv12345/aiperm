@@ -32,7 +32,7 @@ public interface UserRepository extends BaseJpaRepository<SysUser> {
 
 	@Modifying
 	@Transactional
-	@Query("UPDATE SysUser u SET u.password = :password, u.updateTime = :updateTime WHERE u.id = :id")
+	@Query("UPDATE SysUser u SET u.password = :password, u.pwdUpdateTime = :updateTime, u.updateTime = :updateTime WHERE u.id = :id")
 	int updatePassword(@Param("id") Long id, @Param("password") String newPassword,
 			@Param("updateTime") LocalDateTime updateTime);
 

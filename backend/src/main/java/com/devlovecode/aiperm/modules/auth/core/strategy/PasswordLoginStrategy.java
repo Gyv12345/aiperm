@@ -3,8 +3,10 @@ package com.devlovecode.aiperm.modules.auth.core.strategy;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.security.PasswordPolicy;
 import com.devlovecode.aiperm.modules.audit.api.LoginAuditApi;
 import com.devlovecode.aiperm.modules.auth.core.enums.LoginType;
+import com.devlovecode.aiperm.modules.auth.core.service.LoginLockService;
 import com.devlovecode.aiperm.modules.auth.core.vo.LoginVO;
 import com.devlovecode.aiperm.modules.monitor.api.OnlineSessionApi;
 import com.devlovecode.aiperm.modules.system.api.SystemAccess;
@@ -25,6 +27,10 @@ public class PasswordLoginStrategy implements LoginStrategy {
 
 	private final OnlineSessionApi onlineSessionApi;
 
+	private final LoginLockService loginLockService;
+
+	private final PasswordPolicy passwordPolicy;
+
 	@Override
 	public String getLoginType() {
 		return LoginType.PASSWORD.getCode();
@@ -33,6 +39,9 @@ public class PasswordLoginStrategy implements LoginStrategy {
 	@Override
 	public LoginVO login(String identifier, String credential, String ip, String userAgent,
 			HttpServletRequest request) {
+		// 登录失败锁定：锁定期内直接拒绝
+		loginLockService.checkLocked(identifier);
+
 		SystemUserAccount user = systemAccess.findUserByUsername(identifier)
 			.orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
@@ -40,9 +49,14 @@ public class PasswordLoginStrategy implements LoginStrategy {
 			throw new BusinessException("账号已被禁用");
 		}
 		if (!BCrypt.checkpw(credential, user.password())) {
+			loginLockService.recordFailure(identifier);
 			throw new BusinessException("用户名或密码错误");
 		}
 
+		// 密码有效期（auth.password.expire-days > 0 时生效）
+		passwordPolicy.checkNotExpired(user.pwdUpdateTime());
+
+		loginLockService.resetFailures(identifier);
 		StpUtil.login(user.id());
 		systemAccess.updateLoginInfo(user.id(), ip, LocalDateTime.now());
 		loginAuditApi.recordSuccess(user.id(), user.username(), ip, userAgent, request);

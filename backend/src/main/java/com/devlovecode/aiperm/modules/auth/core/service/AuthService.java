@@ -6,6 +6,7 @@ import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.security.PasswordPolicy;
 import com.devlovecode.aiperm.common.util.ClientIpUtils;
 import com.devlovecode.aiperm.modules.audit.api.LoginAuditApi;
 import com.devlovecode.aiperm.modules.auth.core.dto.UnifiedLoginDTO;
@@ -63,6 +64,10 @@ public class AuthService {
 
 	private final SocialPlatformRegistry socialPlatformRegistry;
 
+	private final LoginLockService loginLockService;
+
+	private final PasswordPolicy passwordPolicy;
+
 	@Value("${auth.captcha.enabled:true}")
 	private boolean captchaEnabled;
 
@@ -94,6 +99,9 @@ public class AuthService {
 		try {
 			validateCaptcha(request.getCaptchaKey(), request.getCaptcha());
 
+			// 登录失败锁定：锁定期内直接拒绝
+			loginLockService.checkLocked(request.getUsername());
+
 			SystemUserAccount user = systemAccess.findUserByUsername(request.getUsername())
 				.orElseThrow(() -> new BusinessException("用户名或密码错误"));
 
@@ -102,9 +110,14 @@ public class AuthService {
 			}
 
 			if (!BCrypt.checkpw(request.getPassword(), user.password())) {
+				loginLockService.recordFailure(request.getUsername());
 				throw new BusinessException("用户名或密码错误");
 			}
 
+			// 密码有效期（auth.password.expire-days > 0 时生效）
+			passwordPolicy.checkNotExpired(user.pwdUpdateTime());
+
+			loginLockService.resetFailures(request.getUsername());
 			StpUtil.login(user.id());
 			systemAccess.updateLoginInfo(user.id(), ip, LocalDateTime.now());
 			loginAuditApi.recordSuccess(user.id(), user.username(), ip, userAgent, currentRequest);

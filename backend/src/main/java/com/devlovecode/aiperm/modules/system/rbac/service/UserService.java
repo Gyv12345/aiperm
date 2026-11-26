@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.security.PasswordPolicy;
 import com.devlovecode.aiperm.common.util.ExcelExportHelper;
 import com.devlovecode.aiperm.common.util.ExcelImportHelper;
 import com.devlovecode.aiperm.common.vo.ImportResultVO;
@@ -55,6 +56,8 @@ public class UserService {
 	private final ExcelExportHelper excelExportHelper;
 
 	private final ExcelImportHelper excelImportHelper;
+
+	private final PasswordPolicy passwordPolicy;
 
 	/**
 	 * 分页查询
@@ -157,6 +160,8 @@ public class UserService {
 		if (userRepo.existsByUsername(dto.getUsername())) {
 			throw new BusinessException("用户名已存在");
 		}
+
+		passwordPolicy.validate(dto.getPassword());
 
 		SysUser entity = new SysUser();
 		entity.setUsername(dto.getUsername());
@@ -262,6 +267,7 @@ public class UserService {
 		if (!userRepo.existsById(id)) {
 			throw new BusinessException("用户不存在");
 		}
+		passwordPolicy.validate(newPassword);
 		userRepo.updatePassword(id, BCrypt.hashpw(newPassword), LocalDateTime.now());
 	}
 
@@ -282,6 +288,7 @@ public class UserService {
 	private void importSingleUser(UserImportModel row) {
 		String username = requireText(row.getUsername(), "用户名不能为空");
 		String password = requireText(row.getPassword(), "密码不能为空");
+		passwordPolicy.validate(password);
 		if (userRepo.existsByUsername(username)) {
 			throw new BusinessException("用户名已存在: " + username);
 		}

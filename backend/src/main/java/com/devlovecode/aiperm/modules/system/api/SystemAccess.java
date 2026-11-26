@@ -120,7 +120,7 @@ public class SystemAccess {
 
 	private SystemUserAccount toUserAccount(SysUser user) {
 		return new SystemUserAccount(user.getId(), user.getUsername(), user.getPassword(), user.getStatus(),
-				user.getNickname(), user.getAvatar(), user.getEmail(), user.getPhone());
+				user.getNickname(), user.getAvatar(), user.getEmail(), user.getPhone(), user.getPwdUpdateTime());
 	}
 
 	private SystemMenuDescriptor toMenuDescriptor(SysMenu menu) {

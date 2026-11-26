@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.devlovecode.aiperm.common.domain.PageResult;
 import com.devlovecode.aiperm.common.exception.BusinessException;
+import com.devlovecode.aiperm.common.security.PasswordPolicy;
 import com.devlovecode.aiperm.modules.audit.api.AuditLoginLogRecord;
 import com.devlovecode.aiperm.modules.audit.api.LoginAuditApi;
 import com.devlovecode.aiperm.modules.system.rbac.entity.SysUser;
@@ -40,6 +41,8 @@ public class ProfileService {
 
 	private final LoginAuditApi loginAuditApi;
 
+	private final PasswordPolicy passwordPolicy;
+
 	public ProfileVO getProfile() {
 		Long userId = StpUtil.getLoginIdAsLong();
 		SysUser user = userRepo.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
@@ -73,6 +76,7 @@ public class ProfileService {
 		if (BCrypt.checkpw(dto.getNewPassword(), user.getPassword())) {
 			throw new BusinessException("新密码不能与旧密码相同");
 		}
+		passwordPolicy.validate(dto.getNewPassword());
 
 		userRepo.updatePassword(userId, BCrypt.hashpw(dto.getNewPassword()), LocalDateTime.now());
 	}
